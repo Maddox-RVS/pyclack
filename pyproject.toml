@@ -1,0 +1,18 @@
+[project]
+name = "pyclack"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Maddox-RVS", email = "rynvnskl@yahoo.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "colorama>=0.4.6",
+    "readchar>=4.2.2",
+    "rich>=15.0.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.9,<0.12.0"]
+build-backend = "uv_build"
