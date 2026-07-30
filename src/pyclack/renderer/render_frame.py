@@ -46,6 +46,7 @@ class RenderFrame:
 
     def __init__(self):
         self.lines: tuple[Text, ...] = ()
+        self._console: Console = Console()
 
     def _create_raw_frame(self) -> str:
         '''
@@ -54,22 +55,24 @@ class RenderFrame:
 
         return '\n'.join(line.get_raw_text() for line in self.lines)
 
-    def _create_formatted_frame(self) -> str:
+    def _create_formatted_frame(self) -> rText:
         '''
         Create a formatted frame string from the list of Text objects.
+        
+        Returns:
+            rText: A rich Text object representing the formatted frame.
         '''
 
-        return '\n'.join(line.get_formatted_text() for line in self.lines)
+        return rText('\n').join(line.get_formatted_text() for line in self.lines)
 
     def lines_covered(self) -> int:
         '''
         Get the number of lines covered by the frame if printed to the terminal.
         '''
 
-        console: Console = Console()
         total_lines: int = 0
         for frame_line in self._create_raw_frame().splitlines():
-            wrapped = rText(frame_line).wrap(console, console.width)
+            wrapped = rText(frame_line).wrap(self._console, self._console.width)
             total_lines += max(1, len(wrapped))
         return total_lines
 
@@ -80,8 +83,8 @@ class RenderFrame:
 
         if self.lines: Stdout.write(cc.move_to_line_start_and_clear(self.lines_covered()))
         self.lines = lines
-        frame: str = self._create_formatted_frame()
-        rich.print(frame)
+        frame: rText = self._create_formatted_frame()
+        self._console.print(frame)
 
     def clear_frame(self) -> None:
         '''

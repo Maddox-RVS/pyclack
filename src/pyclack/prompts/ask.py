@@ -43,14 +43,23 @@ class Ask(PromptBase):
         self.input_index: int = 0 if initial_value is None else len(initial_value)
         
         self.propogate_key_after_error = True
+        self.allowed_inputs: tuple[str] = self._construct_allowed_inputs()
 
         super().activate()
+
+    def _construct_allowed_inputs(self) -> tuple[str]:
+        '''
+        Construct a list of allowed inputs for the prompt.
+        '''
+
+        allowed_chars: tuple[str] = tuple(chr(i) for i in range(32, 127))
+        return ('BACKSPACE', 'ENTER', 'LEFT', 'RIGHT', 'TAB', 'SPACE') + allowed_chars
 
     @override
     def handle_active(self, key: Optional[str]) -> bool:
         Stdout.put(cc.hide_cursor())
 
-        if not key: key = ''
+        if key not in self.allowed_inputs: key = ''
 
         theme: Theme = get_active_theme()
         step_marker_active: str = theme.symbols.step_marker_active.resolve()
@@ -66,10 +75,8 @@ class Ask(PromptBase):
         else:
             map: dict[str, str] = {
                 'SPACE': ' ',
-                'TAB': '\t',
-                'UP': '',
-                'DOWN': ''}  
-            char: str = map.get(key, key)
+                'TAB': '\t'}  
+            char: str = map.get(key, key) # Translate key to character (if applicable)
             self.input_buffer = self.input_buffer[:self.input_index] + char + self.input_buffer[self.input_index:]
             self.input_index = min(len(self.input_buffer), self.input_index + 1)
 

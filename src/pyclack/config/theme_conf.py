@@ -29,4 +29,3 @@ def set_print_mode_ascii():
     '''
 
     symbols.always_use_ascii = True
-    print(symbols.always_use_ascii)

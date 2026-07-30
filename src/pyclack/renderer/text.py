@@ -1,8 +1,8 @@
+from rich.style import Style as rStyle
 from rich.text import Text as rText
 from rich.console import Console
 from typing import Optional
 from .themes import Style
-import shutil
 
 class Text:
     '''
@@ -24,7 +24,7 @@ class Text:
         '''
 
         self.text: str = text
-        self.texts: tuple['Text'] = texts
+        self.texts: tuple[Text] = texts
         self.style: Optional[Style] = style
 
     def lines_covered(self) -> int:
@@ -53,29 +53,27 @@ class Text:
 
         return self.text + ''.join(text.get_raw_text() for text in self.texts)
 
-    def get_formatted_text(self) -> str:
+    def get_formatted_text(self) -> rText:
         '''
         Get the text with formatting applied, including concatenation of additional Text objects.
+
+        Returns:
+            rText: A rich Text object with the specified formatting and concatenated additional Text objects.
         '''
 
-        formatted_text = self.text
+        formatted_text: rText = rText()
 
-        # Apply formatting to the text
-        if self.style:
-            if self.style.bg_color:
-                formatted_text = f'[on {self.style.bg_color}]{formatted_text}[/on {self.style.bg_color}]'
-            if self.style.fg_color:
-                formatted_text = f'[{self.style.fg_color}]{formatted_text}[/{self.style.fg_color}]'
-            if self.style.bold:
-                formatted_text = f'[bold]{formatted_text}[/bold]'
-            if self.style.underline:
-                formatted_text = f'[underline]{formatted_text}[/underline]'
-            if self.style.italic:
-                formatted_text = f'[italic]{formatted_text}[/italic]'
-            if self.style.strikethrough:
-                formatted_text = f'[strike]{formatted_text}[/strike]'
+        if self.text:
+            rich_style: rStyle = rStyle(
+                    color=self.style.fg_color,
+                    bgcolor=self.style.bg_color,
+                    bold=self.style.bold,
+                    underline=self.style.underline,
+                    italic=self.style.italic,
+                    strike=self.style.strikethrough) if self.style else rStyle()
+            formatted_text.append(self.text, style=rich_style)
 
         for text in self.texts:
-            formatted_text += text.get_formatted_text()
+            formatted_text.append_text(text.get_formatted_text())
 
         return formatted_text
