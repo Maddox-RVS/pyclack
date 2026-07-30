@@ -16,10 +16,10 @@ def _get_os() -> _OS:
 def _get_labels() -> dict[str, str]:
     if _get_os() == _OS._POSIX:
         from .posix_keys import POSIX_LABELS
-        return POSIX_LABELS | base_key.BASE_LABELS
+        return base_key.BASE_LABELS | POSIX_LABELS
     else:
         from .win_keys import WINDOWS_LABELS
-        return WINDOWS_LABELS | base_key.BASE_LABELS
+        return base_key.BASE_LABELS | WINDOWS_LABELS 
 
 class KeyReader:
     '''

@@ -1,34 +1,41 @@
+from typing import Optional
+from .themes import Style
+import shutil
+
 class Text:
+    '''
+    A class representing a piece of text with optional formatting attributes such as background color, foreground color, 
+    bold, underline, italic, and strikethrough. It can also contain additional Text objects to concatenate.
+    '''
+
     def __init__(self, 
         text: str,
         *texts: 'Text',
-        bg_color: str = None,
-        fg_color: str = None,
-        bold: bool = False,
-        underline: bool = False,
-        italic: bool = False,
-        strikethrough: bool = False):
+        style: Optional[Style] = None):
         '''
         Initialize a Text object.
 
-        :param text: The text to display.
-        :param texts: Additional Text objects to concatenate.
-        :param bg_color: The background color of the text.
-        :param fg_color: The foreground color of the text.
-        :param bold: Whether the text should be bold.
-        :param underline: Whether the text should be underlined.
-        :param italic: Whether the text should be italic.
-        :param strikethrough: Whether the text should be struck through.
+        Args:
+            text (str): The main text content.
+            *texts (Text): Additional Text objects to concatenate.
+            style (Optional[Style]): The style to apply to the text.
         '''
 
         self.text: str = text
         self.texts: tuple['Text'] = texts
-        self.bg_color: str = bg_color
-        self.fg_color: str = fg_color
-        self.bold: bool = bold
-        self.underline: bool = underline
-        self.italic: bool = italic
-        self.strikethrough: bool = strikethrough
+        self.style: Optional[Style] = style
+
+    def lines_covered(self) -> int:
+        '''
+        Get the number of lines covered by the raw text if printed to the terminal (including additional Text objects).
+        '''
+
+        columns, lines = shutil.get_terminal_size()
+        lines = self.get_raw_text().splitlines()
+        total_lines: int = 0
+        for line in lines:
+            total_lines += max(1, (len(line) + columns - 1) // columns)  # Calculate how many lines this line will take up
+        return total_lines
 
     def get_raw_isolated_text(self) -> str:
         '''
@@ -52,12 +59,19 @@ class Text:
         formatted_text = self.text
 
         # Apply formatting to the text
-        if self.bg_color: formatted_text = f'[on {self.bg_color}]{formatted_text}[/on {self.bg_color}]'
-        if self.fg_color: formatted_text = f'[{self.fg_color}]{formatted_text}[/{self.fg_color}]'
-        if self.bold: formatted_text = f'[bold]{formatted_text}[/bold]'
-        if self.underline: formatted_text = f'[underline]{formatted_text}[/underline]'
-        if self.italic: formatted_text = f'[italic]{formatted_text}[/italic]'
-        if self.strikethrough: formatted_text = f'[strike]{formatted_text}[/strike]'
+        if self.style:
+            if self.style.bg_color:
+                formatted_text = f'[on {self.style.bg_color}]{formatted_text}[/on {self.style.bg_color}]'
+            if self.style.fg_color:
+                formatted_text = f'[{self.style.fg_color}]{formatted_text}[/{self.style.fg_color}]'
+            if self.style.bold:
+                formatted_text = f'[bold]{formatted_text}[/bold]'
+            if self.style.underline:
+                formatted_text = f'[underline]{formatted_text}[/underline]'
+            if self.style.italic:
+                formatted_text = f'[italic]{formatted_text}[/italic]'
+            if self.style.strikethrough:
+                formatted_text = f'[strike]{formatted_text}[/strike]'
 
         for text in self.texts:
             formatted_text += text.get_formatted_text()

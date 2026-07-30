@@ -4,7 +4,38 @@ from .text import Text
 import shutil
 import rich
 
+class FrameBuilder:
+    '''
+    A class for building frames out of Text objects.
+    '''
+
+    def __init__(self):
+        '''
+        Initialize a FrameBuilder object with an empty list of lines.    
+        '''
+        
+        self.lines: list[Text] = []
+
+    def add_line(self, line: Text) -> None:
+        '''
+        Add a line to the frame. Appends the given Text object to the list of lines in the frame.
+        '''
+        
+        self.lines.append(line)
+
+    def build(self) -> tuple[Text, ...]:
+        '''
+        Build the frame and return a tuple of Text objects representing the lines in the frame.
+        '''
+        
+        return tuple(self.lines)
+
 class RenderFrame:
+    '''
+    A class responsible for rendering frames in the terminal. It manages a collection of Text objects and provides 
+    methods to draw and clear frames, as well as to calculate the number of lines covered by the frame.
+    '''
+
     def __init__(self):
         self.lines: tuple[Text, ...] = ()
 
@@ -22,9 +53,9 @@ class RenderFrame:
 
         return '\n'.join(line.get_formatted_text() for line in self.lines)
 
-    def _lines_covered(self) -> int:
+    def lines_covered(self) -> int:
         '''
-        Get the number of lines covered by the frame.
+        Get the number of lines covered by the frame if printed to the terminal.
         '''
 
         columns, lines = shutil.get_terminal_size()
@@ -39,7 +70,7 @@ class RenderFrame:
         Draw a frame with the given Text objects. If a frame is already drawn, it will be cleared before drawing the new frame.
         '''
 
-        if self.lines: Stdout.put(cc.move_to_line_start_and_clear(self._lines_covered()))
+        if self.lines: Stdout.put(cc.move_to_line_start_and_clear(self.lines_covered()))
         self.lines = lines
         frame: str = self._create_formatted_frame()
         rich.print(frame)
@@ -50,5 +81,5 @@ class RenderFrame:
         '''
 
         if self.lines:
-            Stdout.put(cc.move_to_line_start_and_clear(self._lines_covered()))
+            Stdout.put(cc.move_to_line_start_and_clear(self.lines_covered()))
             self.lines = ()
