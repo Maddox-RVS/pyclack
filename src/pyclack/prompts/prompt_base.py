@@ -31,7 +31,7 @@ class PromptBase:
         self._active()
 
     def _active(self) -> None:
-        self.handle_active('')
+        if self.handle_active(''): self.current_state = PromptState.SUBMIT
 
         cancelled: bool = False
 
@@ -45,19 +45,19 @@ class PromptBase:
 
         if cancelled:
             self.current_state = PromptState.CANCEL
-            self._cancel()
+            self._handle_cancel()
         else:
             self.current_state = PromptState.SUBMIT
-            self._submit()
+            self._handle_submit()
 
-    def _submit(self) -> None:
+    def _handle_submit(self) -> None:
         advance_next_state: bool = self.handle_submit()
         if advance_next_state: return
         else:
             self.current_state = PromptState.ERROR
-            self._error()
+            self._handle_error()
 
-    def _error(self) -> None:
+    def _handle_error(self) -> None:
         cancelled: bool = False
 
         while self.current_state == PromptState.ERROR:
@@ -70,10 +70,10 @@ class PromptBase:
 
         if cancelled:
             self.current_state = PromptState.CANCEL
-            self._cancel()
+            self._handle_cancel()
         else:
             self.current_state = PromptState.ACTIVE
             self._active()
 
-    def _cancel(self) -> None:
+    def _handle_cancel(self) -> None:
         self.handle_cancel()

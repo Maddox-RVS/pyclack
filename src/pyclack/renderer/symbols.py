@@ -1,3 +1,34 @@
+import sys
+import os
+
+def _is_unicode_supported() -> bool:
+    '''
+    Determine if the current environment supports Unicode characters. This function checks the platform
+    and environment variables to make an informed decision about Unicode support.
+
+    Source: https://github.com/sindresorhus/is-unicode-supported/blob/main/index.js
+    '''
+
+    env = os.environ
+    term = env.get("TERM")
+    term_program = env.get("TERM_PROGRAM")
+
+    if sys.platform != "win32":
+        return term != "linux" # Linux console (kernel)
+
+    return bool(
+        env.get("WT_SESSION") # Windows Terminal
+        or env.get("TERMINUS_SUBLIME") # Terminus (<0.2.27)
+        or env.get("ConEmuTask") == "{cmd::Cmder}" # ConEmu and cmder
+        or term_program == "Terminus-Sublime"
+        or term_program == "vscode"
+        or term == "xterm-256color"
+        or term == "alacritty"
+        or term == "rxvt-unicode"
+        or term == "rxvt-unicode-256color"
+        or env.get("TERMINAL_EMULATOR") == "JetBrains-JediTerm"
+    )
+
 class SpinnerSymbols:
     '''
     A class to represent spinner symbols for animations. It holds both Unicode and ASCII representations of the spinner symbols.
@@ -15,6 +46,18 @@ class SpinnerSymbols:
         
         self.unicode_symbols = unicode_symbols
         self.ascii_symbols = ascii_symbols 
+
+    def resolve(self) -> tuple[str]:
+        '''
+        Resolve the appropriate symbols based on the environment's Unicode support. 
+        If Unicode is supported, it returns the Unicode symbols; otherwise, it returns the ASCII symbols.
+
+        Returns:
+            tuple[str]: A tuple of symbols (either Unicode or ASCII).
+        '''
+
+        if _is_unicode_supported(): return self.unicode_symbols
+        else: return self.ascii_symbols
 
     def get_symbols(self, use_unicode: bool = True) -> tuple[str]:
         '''
@@ -47,6 +90,18 @@ class Symbol:
 
         self.unicode_symbol = unicode_symbol
         self.ascii_symbol = ascii_symbol
+
+    def resolve(self) -> str:
+        '''
+        Resolve the appropriate symbol based on the environment's Unicode support.
+        If Unicode is supported, it returns the Unicode symbol; otherwise, it returns the ASCII symbol.
+
+        Returns:
+            str: The appropriate symbol (either Unicode or ASCII).
+        '''
+
+        if _is_unicode_supported(): return self.unicode_symbol
+        else: return self.ascii_symbol
 
     def get_symbol(self, use_unicode: bool = True) -> str:
         '''

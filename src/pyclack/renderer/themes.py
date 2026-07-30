@@ -46,6 +46,7 @@ class Theme:
         info: Style,
         muted: Style,
         text: Style,
+        cursor: Style,
         symbols: Symbols):
         '''
         Initialize a Theme object with the given styles.
@@ -58,6 +59,7 @@ class Theme:
             info (Style): Style for info elements.
             muted (Style): Style for muted elements.
             text (Style): Style for general text.
+            cursor (Style): Style for the cursor.
             symbols (Symbols): Symbols to use in the theme.
         '''
 
@@ -68,6 +70,7 @@ class Theme:
         self.info: Style = info
         self.muted: Style = muted
         self.text: Style = text
+        self.cursor: Style = cursor
         self.symbols: Symbols = symbols
 
 class Themes:
@@ -81,8 +84,9 @@ class Themes:
         cancel   = Style(fg_color='red'),
         error    = Style(fg_color='yellow'),
         info     = Style(fg_color='blue'),
-        muted    = Style(fg_color='grey62'),
+        muted    = Style(fg_color='bright_black'),
         text     = Style(fg_color='white'),
+        cursor   = Style(fg_color='black', bg_color='white'),
         symbols  = Symbols(
             step_marker_active                  = Symbol('◆', '*'),
             step_marker_cancel                  = Symbol('■', 'x'),
