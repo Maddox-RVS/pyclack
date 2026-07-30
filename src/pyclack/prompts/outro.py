@@ -29,7 +29,7 @@ class Outro(PromptBase):
         super().activate()
 
     @override
-    def _handle_active(self, _: Optional[str]) -> bool:
+    def handle_active(self, _: Optional[str]) -> bool:
         Stdout.put(cc.hide_cursor())
 
         theme: Theme = get_active_theme()
@@ -45,7 +45,7 @@ class Outro(PromptBase):
         return True
 
     @override
-    def _handle_submit(self) -> bool:
+    def handle_submit(self) -> bool:
         theme: Theme = get_active_theme()
         frame_builder: FrameBuilder = FrameBuilder()
         connector_text: Text = Text(theme.symbols.connector_bar_vertical.resolve(), style=theme.muted)

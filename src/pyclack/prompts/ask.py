@@ -2,6 +2,7 @@ from ..renderer import Themes, RenderFrame, Text, FrameBuilder, Style, Theme
 from .prompt_base import PromptBase, CancelException
 from typing import Callable, Optional, override
 from ..terminal import CursorController as cc
+from .util import build_wrapped_input_lines
 from ..config import get_active_theme
 from ..terminal import Stdout
 from copy import copy
@@ -46,50 +47,8 @@ class Ask(PromptBase):
 
         super().activate()
 
-    def _build_wrapped_input_lines(self, text_style: Style, connector_bar_vertical_style: Style, show_cursor: bool = False) -> list[Text]:
-        '''
-        Builds the wrapped input lines based on the current input buffer and cursor position, applying the appropriate styles.
-        '''
-
-        theme: Theme = get_active_theme()
- 
-        connector_bar_vertical = theme.symbols.connector_bar_vertical.resolve()
-        prefix_plain = f'{connector_bar_vertical}  '
-        columns, _ = shutil.get_terminal_size()
-        available = max(1, columns - len(prefix_plain))
- 
-        buffer = self.input_buffer
-        idx = self.input_index
- 
-        chunks = [buffer[i:i + available] for i in range(0, len(buffer), available)] or ['']
- 
-        lines: list[Text] = []
-        consumed = 0
-        for chunk in chunks:
-            chunk_start = consumed
-            chunk_end = consumed + len(chunk)
-            consumed = chunk_end
- 
-            cursor_in_chunk = chunk_start <= idx < chunk_end
-            cursor_at_buffer_end_in_chunk = (idx == chunk_end == len(buffer))
- 
-            if cursor_in_chunk or cursor_at_buffer_end_in_chunk:
-                local_idx = idx - chunk_start
-                first = chunk[:local_idx]
-                middle = chunk[local_idx:local_idx + 1]
-                rest = chunk[local_idx + 1:]
-                if len(middle) == 0:
-                    middle = ' '
-                content = Text(first, Text(middle, Text(rest, style=text_style), style=theme.cursor if show_cursor else text_style), style=text_style)
-            else:
-                content = Text(chunk, style=text_style)
- 
-            lines.append(Text(connector_bar_vertical, Text('  ', content, style=theme.text), style=connector_bar_vertical_style))
- 
-        return lines
-
     @override
-    def _handle_active(self, key: Optional[str]) -> bool:
+    def handle_active(self, key: Optional[str]) -> bool:
         Stdout.put(cc.hide_cursor())
 
         if not key: key = ''
@@ -118,20 +77,15 @@ class Ask(PromptBase):
 
         # Create and render next frame based on the current input buffer and state
         frame_builder: FrameBuilder = FrameBuilder()
-        frame_builder.add_line(
-            Text(step_marker_active, 
-                Text(f'  {self.message}', style=theme.text), 
-            style=theme.active))
+        message_lines: list[Text] =  build_wrapped_input_lines(self.message, 0, theme.text, theme.active)
+        message_lines[0] = Text(step_marker_active, Text(message_lines[0].get_raw_text()[1:], style=theme.text), style=theme.active)
+        for line in message_lines: frame_builder.add_line(line)
  
         if self.placeholder and len(self.input_buffer) <= 0:
-            first_char: str = self.placeholder[0]
-            rest_of_str: str = self.placeholder[1:]
-            frame_builder.add_line(
-                Text(connector_bar_vertical, 
-                    Text('  ', Text(f'{first_char}', Text(f'{rest_of_str}', style=theme.muted), style=theme.cursor)),
-                style=theme.active))
+            for line in build_wrapped_input_lines(self.placeholder, 0, theme.muted, theme.active, True):
+                frame_builder.add_line(line)
         else:
-            for line in self._build_wrapped_input_lines(theme.text, theme.active, True):
+            for line in build_wrapped_input_lines(self.input_buffer, self.input_index, theme.text, theme.active, True):
                 frame_builder.add_line(line)
  
         frame_builder.add_line(Text(connector_bar_end, style=theme.active))
@@ -141,17 +95,16 @@ class Ask(PromptBase):
         return False
 
     @override
-    def _handle_submit(self) -> bool:
+    def handle_submit(self) -> bool:
         theme: Theme = get_active_theme()
         step_marker_submit: str = theme.symbols.step_marker_submit.resolve()
 
         # Create and render next frame based on the current input buffer and state
         frame_builder: FrameBuilder = FrameBuilder()
-        frame_builder.add_line(
-            Text(step_marker_submit, 
-                Text(f'  {self.message}', style=theme.text),
-            style=theme.submit))
-        for line in self._build_wrapped_input_lines(theme.muted, theme.muted):
+        message_lines: list[Text] =  build_wrapped_input_lines(self.message, 0, theme.text, theme.muted)
+        message_lines[0] = Text(step_marker_submit, Text(message_lines[0].get_raw_text()[1:], style=theme.text), style=theme.submit)
+        for line in message_lines: frame_builder.add_line(line)
+        for line in build_wrapped_input_lines(self.input_buffer, self.input_index, theme.muted, theme.muted):
             frame_builder.add_line(line)
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
@@ -160,7 +113,7 @@ class Ask(PromptBase):
         return False if self.validate(self.input_buffer) else True
 
     @override
-    def _handle_error(self, key: Optional[str]) -> bool:
+    def handle_error(self, key: Optional[str]) -> bool:
         Stdout.put(cc.hide_cursor())
 
         theme: Theme = get_active_theme()
@@ -170,19 +123,14 @@ class Ask(PromptBase):
 
         # Create and render next frame based on the current input buffer and state
         frame_builder: FrameBuilder = FrameBuilder()
-        frame_builder.add_line(
-            Text(step_marker_error, 
-                Text(f'  {self.message}', style=theme.text),
-            style=theme.error))
+        message_lines: list[Text] =  build_wrapped_input_lines(self.message, 0, theme.text, theme.error)
+        message_lines[0] = Text(step_marker_error, Text(message_lines[0].get_raw_text()[1:], style=theme.text), style=theme.error)
+        for line in message_lines: frame_builder.add_line(line)
         if self.placeholder and len(self.input_buffer) <= 0:
-            first_char: str = self.placeholder[0]
-            rest_of_str: str = self.placeholder[1:]
-            frame_builder.add_line(
-                Text(connector_bar_vertical, 
-                    Text('  ', Text(f'{first_char}', Text(f'{rest_of_str}', style=theme.muted), style=theme.cursor)),
-                style=theme.error))
+            for line in build_wrapped_input_lines(self.placeholder, 0, theme.muted, theme.error, True):
+                frame_builder.add_line(line)
         else:
-            for line in self._build_wrapped_input_lines(theme.text, theme.error, True):
+            for line in build_wrapped_input_lines(self.input_buffer, self.input_index, theme.text, theme.error, True):
                 frame_builder.add_line(line)
 
         frame_builder.add_line(
@@ -197,7 +145,7 @@ class Ask(PromptBase):
         else: return True
 
     @override
-    def _handle_cancel(self) -> None:
+    def handle_cancel(self) -> None:
         theme: Theme = get_active_theme()
         step_marker_cancel: str = theme.symbols.step_marker_cancel.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
@@ -205,21 +153,21 @@ class Ask(PromptBase):
 
         # Create and render next frame based on the current input buffer and state
         frame_builder: FrameBuilder = FrameBuilder()
-        frame_builder.add_line(
-            Text(step_marker_cancel, 
-                Text(f'  {self.message}', style=theme.text),
-            style=theme.cancel))
+        message_lines: list[Text] =  build_wrapped_input_lines(self.message, 0, theme.text, theme.muted)
+        message_lines[0] = Text(step_marker_cancel, Text(message_lines[0].get_raw_text()[1:], style=theme.text), style=theme.cancel)
+        for line in message_lines: frame_builder.add_line(line)
+
         text_style: Style = copy(theme.muted)
         text_style.strikethrough = True
         if len(self.input_buffer) > 0:
-            for line in self._build_wrapped_input_lines(text_style, theme.muted):
+            for line in build_wrapped_input_lines(self.input_buffer, self.input_index, text_style, theme.muted):
                 frame_builder.add_line(line)
         frame_builder.add_line(
             Text(connector_bar_vertical, style=theme.muted))
-        frame_builder.add_line(
-            Text(f'{connector_bar_end}  ', 
-                Text(self.cancellation_message, style=theme.cancel), 
-            style=theme.muted))
+        cancel_lines: list[Text] = build_wrapped_input_lines(self.cancellation_message, 0, theme.cancel, theme.muted)
+        last_index: int = len(cancel_lines) - 1
+        cancel_lines[last_index] = Text(connector_bar_end, Text(cancel_lines[last_index].get_raw_text()[1:], style=theme.cancel), style=theme.muted)
+        for line in cancel_lines: frame_builder.add_line(line)
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
 

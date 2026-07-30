@@ -35,13 +35,63 @@ class PromptBase:
         self.current_state = PromptState.ACTIVE
         self._active()
 
-    def _handle_active(self, key: Optional[str]) -> bool: True
-    def _handle_submit(self) -> bool: True
-    def _handle_error(self, key: Optional[str]) -> bool: True
-    def _handle_cancel(self) -> None: pass
+    def handle_active(self, key: Optional[str]) -> bool: 
+        '''
+        Handle the active state of the prompt. This method should be overridden by subclasses to implement custom behavior for the active state.
+
+        Args:
+            key (Optional[str]): The key pressed by the user, or None if no key was pressed. The first key pressed will always be None when entering the active state, and subsequent keys will be passed to this method.
+
+        Returns:
+            bool: True if the prompt should advance to the next state, False otherwise. (`True -> Submit state`, `False -> Active state`)
+        '''
+
+        return True
+
+    def handle_submit(self) -> bool: 
+        '''
+        Handle the submit state of the prompt. This method should be overridden by subclasses to implement custom behavior for the submit state.
+
+        Returns:
+            bool: True if the prompt should advance to the next state, False otherwise. (`True -> Exit state machine`, `False -> Error state`)
+        '''
+
+        return True
+
+    def handle_error(self, key: Optional[str]) -> bool: 
+        '''
+        Handle the error state of the prompt. This method should be overridden by subclasses to implement custom behavior for the error state.
+
+        Args:
+            key (Optional[str]): The key pressed by the user, or None if no key was pressed. The first key pressed will always be None when entering the error state, and subsequent keys will be passed to this method.
+
+        Returns:
+            bool: True if the prompt should advance to the next state, False otherwise. (`True -> Active state`, `False -> Error state`)
+        '''
+
+        return True
+
+    def handle_cancel(self) -> None: 
+        '''
+        Handle the cancel state of the prompt. This method should be overridden by subclasses to implement custom behavior for the cancel state.
+        This state leads to no other, the state machine will exit after this state is handled. This method should raise a `CancelException` to 
+        indicate that the prompt was cancelled.
+
+        Raises:
+            CancelException: Raised to indicate that the prompt was cancelled.
+        '''
+
+        raise CancelException('Operation cancelled.')
 
     def _active(self, propogation_key: Optional[str] = None) -> None:
-        if self._handle_active(None): self.current_state = PromptState.SUBMIT
+        '''
+        State machine for the active state of the prompt. This method handles user input and transitions between states based on the user's actions.
+
+        Args:
+            propogation_key (Optional[str]): A key propogated from the error state to the active state. This key will be passed to the `_handle_active` method as the first key pressed in the active state. None indicates that no key was propogated from the error state.
+        '''
+
+        if self.handle_active(None): self.current_state = PromptState.SUBMIT
 
         cancelled: bool = False
 
@@ -51,7 +101,7 @@ class PromptBase:
             if key == 'ESC' or key == 'CTRL_C': 
                 cancelled = True
                 break
-            advance_next_state: bool = self._handle_active(key)
+            advance_next_state: bool = self.handle_active(key)
             if advance_next_state: break
             else: propogation_key = None
 
@@ -63,14 +113,22 @@ class PromptBase:
             self._submit()
 
     def _submit(self) -> None:
-        advance_next_state: bool = self._handle_submit()
+        '''
+        State machine for the submit state of the prompt. This method handles user input and transitions between states based on the user's actions.
+        '''
+
+        advance_next_state: bool = self.handle_submit()
         if advance_next_state: return
         else:
             self.current_state = PromptState.ERROR
             self._error()
 
     def _error(self) -> None:
-        if self._handle_error(None): self.current_state = PromptState.ACTIVE
+        '''
+        State machine for the error state of the prompt. This method handles user input and transitions between states based on the user's actions.
+        '''
+
+        if self.handle_error(None): self.current_state = PromptState.ACTIVE
         
         cancelled: bool = False
         propogate_key: Optional[str] = None
@@ -80,7 +138,7 @@ class PromptBase:
             if key == 'ESC' or key == 'CTRL_C': 
                 cancelled = True
                 break
-            advance_next_state: bool = self._handle_error(key)
+            advance_next_state: bool = self.handle_error(key)
             if advance_next_state: 
                 propogate_key = key
                 break
@@ -94,4 +152,9 @@ class PromptBase:
             else: self._active()
 
     def _cancel(self) -> None:
-        self._handle_cancel()
+        '''
+        State machine for the cancel state of the prompt. This method handles user input and transitions between states based on the user's actions.
+        This state leads to no other, the state machine will exit after this state is handled.
+        '''
+
+        self.handle_cancel()
