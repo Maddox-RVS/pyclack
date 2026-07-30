@@ -3,21 +3,6 @@ from pyclack.config import set_print_mode_ascii
 from typing import Optional
 
 def main() -> None:
-    a: str = (
-        'aaaaaaaaaaaaaaaaaaaaaaaaa'
-        'aaaaaaaaaaaaaaaaaaaaaaaaa'
-        'aaaaaaaaaaaaaaaaaaaaaaaaa'
-        'aaaaaaaaaaaaaaaaaaaaaaaaa'
-        'aaaaaaaaaaaaaaaaaaaaaaaaa'
-        'aaaaaaaaaaaaaaaaaaaaaaaaa'
-        'aaaaaaaaaaaaaaaaaaaaaaaaa'
-        'aaaaaaaaaaaaaaaaaaaaaaaaa'
-        'aaaaaaaaaaaaaaaaaaaaaaaaa'
-        'aaaaaaaaaaaaaaaaaaaaaaaaa'
-        'aaaaaaaaaaaaaaaaaaaaaaaaa'
-        'aaaaaaaaaaaaaaaaaaaaaaaaa'
-    )
-
     intro('Welcome to the Ask Example')
 
     try:
@@ -61,7 +46,7 @@ def main() -> None:
         print(f'\nYou cancelled with "{e.value}" entered!')
         exit(0)
 
-    outro(f'Glad to know that your favorite food is {favorite_food} and that you are {age} years old! Goodbye, {name}!' + a)
+    outro(f'Glad to know that your favorite food is {favorite_food} and that you are {age} years old! Goodbye, {name}!')
 
 if __name__ == '__main__':
     main()

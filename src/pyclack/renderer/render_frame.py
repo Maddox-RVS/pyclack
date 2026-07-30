@@ -24,6 +24,13 @@ class FrameBuilder:
         
         self.lines.append(line)
 
+    def add_lines(self, *line: Text) -> None:
+        '''
+        Add multiple lines to the frame. Appends the given Text objects to the list of lines in the frame.
+        '''
+
+        for line in line: self.lines.append(line)
+
     def build(self) -> tuple[Text, ...]:
         '''
         Build the frame and return a tuple of Text objects representing the lines in the frame.

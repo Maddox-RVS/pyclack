@@ -54,7 +54,6 @@ class Ask(PromptBase):
 
         theme: Theme = get_active_theme()
         step_marker_active: str = theme.symbols.step_marker_active.resolve()
-        connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
 
         # Update the input buffer based on the key pressed
@@ -76,16 +75,14 @@ class Ask(PromptBase):
 
         # Create and render next frame based on the current input buffer and state
         frame_builder: FrameBuilder = FrameBuilder()
-        message_lines: list[Text] =  build_wrapped_input_lines(self.message, 0, theme.text, theme.active)
+        message_lines: list[Text] = build_wrapped_input_lines(self.message, 0, theme.text, theme.active)
         message_lines[0] = Text(step_marker_active, Text(message_lines[0].get_raw_text()[1:], style=theme.text), style=theme.active)
-        for line in message_lines: frame_builder.add_line(line)
+        frame_builder.add_lines(*message_lines)
  
         if self.placeholder and len(self.input_buffer) <= 0:
-            for line in build_wrapped_input_lines(self.placeholder, 0, theme.muted, theme.active, True):
-                frame_builder.add_line(line)
+            frame_builder.add_lines(*build_wrapped_input_lines(self.placeholder, 0, theme.muted, theme.active, True))
         else:
-            for line in build_wrapped_input_lines(self.input_buffer, self.input_index, theme.text, theme.active, True):
-                frame_builder.add_line(line)
+            frame_builder.add_lines(*build_wrapped_input_lines(self.input_buffer, self.input_index, theme.text, theme.active, True))
  
         frame_builder.add_line(Text(connector_bar_end, style=theme.active))
  
@@ -102,9 +99,8 @@ class Ask(PromptBase):
         frame_builder: FrameBuilder = FrameBuilder()
         message_lines: list[Text] =  build_wrapped_input_lines(self.message, 0, theme.text, theme.muted)
         message_lines[0] = Text(step_marker_submit, Text(message_lines[0].get_raw_text()[1:], style=theme.text), style=theme.submit)
-        for line in message_lines: frame_builder.add_line(line)
-        for line in build_wrapped_input_lines(self.input_buffer, self.input_index, theme.muted, theme.muted):
-            frame_builder.add_line(line)
+        frame_builder.add_lines(*message_lines)
+        frame_builder.add_lines(*build_wrapped_input_lines(self.input_buffer, self.input_index, theme.muted, theme.muted))
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
 
@@ -117,25 +113,23 @@ class Ask(PromptBase):
 
         theme: Theme = get_active_theme()
         step_marker_error: str = theme.symbols.step_marker_error.resolve()
-        connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
 
         # Create and render next frame based on the current input buffer and state
         frame_builder: FrameBuilder = FrameBuilder()
-        message_lines: list[Text] =  build_wrapped_input_lines(self.message, 0, theme.text, theme.error)
+        message_lines: list[Text] = build_wrapped_input_lines(self.message, 0, theme.text, theme.error)
         message_lines[0] = Text(step_marker_error, Text(message_lines[0].get_raw_text()[1:], style=theme.text), style=theme.error)
-        for line in message_lines: frame_builder.add_line(line)
+        frame_builder.add_lines(*message_lines)
         if self.placeholder and len(self.input_buffer) <= 0:
-            for line in build_wrapped_input_lines(self.placeholder, 0, theme.muted, theme.error, True):
-                frame_builder.add_line(line)
+            frame_builder.add_lines(*build_wrapped_input_lines(self.placeholder, 0, theme.muted, theme.error, True))
         else:
-            for line in build_wrapped_input_lines(self.input_buffer, self.input_index, theme.text, theme.error, True):
-                frame_builder.add_line(line)
+            frame_builder.add_lines(*build_wrapped_input_lines(self.input_buffer, self.input_index, theme.text, theme.error, True))
 
-        frame_builder.add_line(
-            Text(f'{connector_bar_end}  ', 
-                Text(self.validate(self.input_buffer), style=theme.error),
-            style=theme.error))
+        validation_error_message: str = self.validate(self.input_buffer)
+        error_lines: list[Text] = build_wrapped_input_lines(validation_error_message, 0, theme.error, theme.error)
+        last_index: int = len(error_lines) - 1
+        error_lines[last_index] = Text(connector_bar_end, Text(error_lines[last_index].get_raw_text()[1:], style=theme.error), style=theme.error)
+        frame_builder.add_lines(*error_lines)
 
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
@@ -154,19 +148,17 @@ class Ask(PromptBase):
         frame_builder: FrameBuilder = FrameBuilder()
         message_lines: list[Text] =  build_wrapped_input_lines(self.message, 0, theme.text, theme.muted)
         message_lines[0] = Text(step_marker_cancel, Text(message_lines[0].get_raw_text()[1:], style=theme.text), style=theme.cancel)
-        for line in message_lines: frame_builder.add_line(line)
+        frame_builder.add_lines(*message_lines)
 
         text_style: Style = copy(theme.muted)
         text_style.strikethrough = True
         if len(self.input_buffer) > 0:
-            for line in build_wrapped_input_lines(self.input_buffer, self.input_index, text_style, theme.muted):
-                frame_builder.add_line(line)
-        frame_builder.add_line(
-            Text(connector_bar_vertical, style=theme.muted))
+            frame_builder.add_lines(*build_wrapped_input_lines(self.input_buffer, self.input_index, text_style, theme.muted))
+        frame_builder.add_line(Text(connector_bar_vertical, style=theme.muted))
         cancel_lines: list[Text] = build_wrapped_input_lines(self.cancellation_message, 0, theme.cancel, theme.muted)
         last_index: int = len(cancel_lines) - 1
         cancel_lines[last_index] = Text(connector_bar_end, Text(cancel_lines[last_index].get_raw_text()[1:], style=theme.cancel), style=theme.muted)
-        for line in cancel_lines: frame_builder.add_line(line)
+        frame_builder.add_lines(*cancel_lines)
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
 
