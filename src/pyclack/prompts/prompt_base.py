@@ -2,6 +2,19 @@ from ..terminal import KeyReader
 from typing import Any, Optional
 from enum import Enum
 
+class CancelException(Exception):
+    '''
+    Exception raised when a prompt is cancelled.
+    '''
+
+    def __init__(self, message: str, value: Optional[str] = None):
+        '''
+        Initialize a CancelException with the given message.
+        '''
+
+        super().__init__(message)
+        self.value: Optional[str] = value
+
 class PromptState(Enum):
     INITIAL = 'initial'
     ACTIVE = 'active'

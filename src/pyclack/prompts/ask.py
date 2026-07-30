@@ -1,8 +1,8 @@
 from ..renderer import Themes, RenderFrame, Text, FrameBuilder, Style, Theme
+from .prompt_base import PromptBase, CancelException
 from typing import Callable, Optional, override
 from ..terminal import CursorController as cc
 from ..config import get_active_theme
-from .prompt_base import PromptBase
 from ..terminal import Stdout
 from copy import copy
 import shutil
@@ -10,17 +10,19 @@ import shutil
 def ask(message: str, 
         placeholder: Optional[str] = None, 
         initial_value: Optional[str] = None, 
-        validate: Optional[Callable[[str], Optional[str]]] = None) -> str:
+        validate: Optional[Callable[[str], Optional[str]]] = None,
+        cancellation_message: str = 'Operation Cancelled') -> str:
     '''
     Ask the user for input with a message, placeholder, initial value, and validation function.
     '''
     
-    prompt: Ask = Ask(message, placeholder, initial_value, validate)
+    prompt: Ask = Ask(message, cancellation_message, placeholder, initial_value, validate)
     return prompt.input_buffer
 
 class Ask(PromptBase):
     def __init__(self,
             message: str,
+            cancellation_message: str,
             placeholder: Optional[str] = None,
             initial_value: Optional[str] = None,
             validate: Optional[Callable[[str], Optional[str]]] = None):
@@ -31,6 +33,7 @@ class Ask(PromptBase):
         super().__init__()
 
         self.message: str = message
+        self.cancellation_message: str = cancellation_message
         self.placeholder: Optional[str] = placeholder
         self.initial_value: Optional[str] = initial_value
         self.validate: Optional[Callable[[str], Optional[str]]] = validate
@@ -215,10 +218,10 @@ class Ask(PromptBase):
             Text(connector_bar_vertical, style=theme.muted))
         frame_builder.add_line(
             Text(f'{connector_bar_end}  ', 
-                Text('Operation cancelled.', style=theme.cancel), 
+                Text(self.cancellation_message, style=theme.cancel), 
             style=theme.muted))
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
 
         Stdout.put(cc.show_cursor())
-        exit(0)
+        raise CancelException(self.cancellation_message, self.input_buffer)
