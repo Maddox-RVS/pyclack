@@ -1,16 +1,41 @@
+from pyclack.config import set_print_mode_ascii
 from pyclack.prompts import ask, intro, outro
+from typing import Optional
 
 def main() -> None:
     intro('Welcome to the Ask Example')
 
-    value: str = ask(
-        message="Enter your name:",
-        placeholder="Your name here",
-        initial_value=None,
-        validate=lambda x: len(x) > 0
+    def validate_name(value: str) -> Optional[str]:
+        if len(value) == 0: return 'Value is required!'
+
+    name: str = ask(
+        message='Enter your name:',
+        placeholder='Your name here',
+        initial_value='Bob',
+        validate=validate_name
     )
 
-    outro(f'Goodbye, {value}! 👋')
+    def validate_age(value: str) -> Optional[str]:
+        try: int(value)
+        except: return 'Value must be a number!'
+
+    age: int = int(ask(
+        message='Enter your age:',
+        placeholder='Your age here',
+        initial_value='21',
+        validate=validate_age
+    ))
+
+    def validate_fav_food(value: str) -> str:
+        if len(value) == 0: return 'Value is required!'
+
+    favorite_food: str = ask(
+        message='Whats your favorite food?',
+        placeholder='Pizza',
+        validate=validate_fav_food
+    )
+
+    outro(f'Glad to know that your favorite food is {favorite_food} and that you are {age} years old! Goodbye, {name}! 👋')
 
 if __name__ == '__main__':
     main()

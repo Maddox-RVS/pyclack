@@ -1,6 +1,8 @@
 import sys
 import os
 
+always_use_ascii: bool = False
+
 def _is_unicode_supported() -> bool:
     '''
     Determine if the current environment supports Unicode characters. This function checks the platform
@@ -56,6 +58,7 @@ class SpinnerSymbols:
             tuple[str]: A tuple of symbols (either Unicode or ASCII).
         '''
 
+        if always_use_ascii: return self.ascii_symbols
         if _is_unicode_supported(): return self.unicode_symbols
         else: return self.ascii_symbols
 
@@ -100,6 +103,7 @@ class Symbol:
             str: The appropriate symbol (either Unicode or ASCII).
         '''
 
+        if always_use_ascii: return self.ascii_symbol
         if _is_unicode_supported(): return self.unicode_symbol
         else: return self.ascii_symbol
 

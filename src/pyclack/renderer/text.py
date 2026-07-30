@@ -1,3 +1,5 @@
+from rich.text import Text as rText
+from rich.console import Console
 from typing import Optional
 from .themes import Style
 import shutil
@@ -30,11 +32,11 @@ class Text:
         Get the number of lines covered by the raw text if printed to the terminal (including additional Text objects).
         '''
 
-        columns, lines = shutil.get_terminal_size()
-        lines = self.get_raw_text().splitlines()
+        console: Console = Console()
         total_lines: int = 0
-        for line in lines:
-            total_lines += max(1, (len(line) + columns - 1) // columns)  # Calculate how many lines this line will take up
+        for line in self.get_raw_text().splitlines():
+            wrapped = rText(line).wrap(console, console.width)
+            total_lines += max(1, len(wrapped))
         return total_lines
 
     def get_raw_isolated_text(self) -> str:

@@ -1,5 +1,6 @@
 from ..renderer import Theme, RenderFrame, Text, FrameBuilder
 from ..terminal import CursorController as cc
+from typing import override, Optional
 from ..config import get_active_theme
 from .prompt_base import PromptBase
 from ..terminal import Stdout
@@ -21,19 +22,14 @@ class Intro(PromptBase):
         Initialize an Intro prompt with the given title.
         '''
 
-        super().__init__(
-            self._handle_active,
-            self._handle_submit,
-            self._handle_error,
-            self._handle_cancel
-        )
-
         self.title: str = title
         self.render_frame: RenderFrame = RenderFrame()
 
+        super().__init__()
         super().activate()
 
-    def _handle_active(self, _: str) -> bool:
+    @override
+    def _handle_active(self, _: Optional[str]) -> bool:
         Stdout.put(cc.hide_cursor())
 
         theme: Theme = get_active_theme()
@@ -48,6 +44,7 @@ class Intro(PromptBase):
         self.render_frame.draw_frame(*frame)
         return True
 
+    @override
     def _handle_submit(self) -> bool:
         theme: Theme = get_active_theme()
         frame_builder: FrameBuilder = FrameBuilder()
@@ -62,6 +59,3 @@ class Intro(PromptBase):
 
         Stdout.put(cc.show_cursor())
         return True
-
-    def _handle_error(self, _: str) -> bool: pass
-    def _handle_cancel(self) -> None: pass

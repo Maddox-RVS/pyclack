@@ -10,70 +10,75 @@ class PromptState(Enum):
     ERROR = 'error'
 
 class PromptBase:
-    def __init__(self,
-            handle_active: callable[[str], bool],
-            handle_submit: callable[[], bool],
-            handle_error: callable[[str], bool],
-            handle_cancel: callable[[], None]):
+    def __init__(self):
         '''
         Initialize a PromptBase object with the given handlers for different prompt states.
         '''
         
         self.current_state: PromptState = PromptState.INITIAL
-
-        self.handle_active: callable[[str], bool] = handle_active
-        self.handle_submit: callable[[], bool] = handle_submit
-        self.handle_error: callable[[str], bool] = handle_error
-        self.handle_cancel: callable[[], None] = handle_cancel
+        self.propogate_key_after_error: bool = False
 
     def activate(self) -> None:
         self.current_state = PromptState.ACTIVE
         self._active()
 
-    def _active(self) -> None:
-        if self.handle_active(''): self.current_state = PromptState.SUBMIT
+    def _handle_active(self, key: Optional[str]) -> bool: True
+    def _handle_submit(self) -> bool: True
+    def _handle_error(self, key: Optional[str]) -> bool: True
+    def _handle_cancel(self) -> None: pass
+
+    def _active(self, propogation_key: Optional[str] = None) -> None:
+        if self._handle_active(None): self.current_state = PromptState.SUBMIT
 
         cancelled: bool = False
 
         while self.current_state == PromptState.ACTIVE:
-            key: str = KeyReader.readkey()
+            key: str = propogation_key
+            if not propogation_key: key = KeyReader.readkey()
             if key == 'ESC' or key == 'CTRL_C': 
                 cancelled = True
                 break
-            advance_next_state: bool = self.handle_active(key)
+            advance_next_state: bool = self._handle_active(key)
             if advance_next_state: break
+            else: propogation_key = None
 
         if cancelled:
             self.current_state = PromptState.CANCEL
-            self._handle_cancel()
+            self._cancel()
         else:
             self.current_state = PromptState.SUBMIT
-            self._handle_submit()
+            self._submit()
 
-    def _handle_submit(self) -> None:
-        advance_next_state: bool = self.handle_submit()
+    def _submit(self) -> None:
+        advance_next_state: bool = self._handle_submit()
         if advance_next_state: return
         else:
             self.current_state = PromptState.ERROR
-            self._handle_error()
+            self._error()
 
-    def _handle_error(self) -> None:
+    def _error(self) -> None:
+        if self._handle_error(None): self.current_state = PromptState.ACTIVE
+        
         cancelled: bool = False
+        propogate_key: Optional[str] = None
 
         while self.current_state == PromptState.ERROR:
             key: str = KeyReader.readkey()
             if key == 'ESC' or key == 'CTRL_C': 
                 cancelled = True
                 break
-            advance_next_state: bool = self.handle_error(key)
-            if advance_next_state: break
+            advance_next_state: bool = self._handle_error(key)
+            if advance_next_state: 
+                propogate_key = key
+                break
 
         if cancelled:
             self.current_state = PromptState.CANCEL
-            self._handle_cancel()
+            self._cancel()
         else:
             self.current_state = PromptState.ACTIVE
-            self._active()
+            if self.propogate_key_after_error: self._active(propogation_key=propogate_key)
+            else: self._active()
 
-    def _handle_cancel(self) -> None:
-        self.handle_cancel()
+    def _cancel(self) -> None:
+        self._handle_cancel()

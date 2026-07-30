@@ -1,7 +1,8 @@
 from ..terminal import CursorController as cc
+from rich.text import Text as rText
+from rich.console import Console
 from ..terminal import Stdout
 from .text import Text
-import shutil
 import rich
 
 class FrameBuilder:
@@ -58,11 +59,11 @@ class RenderFrame:
         Get the number of lines covered by the frame if printed to the terminal.
         '''
 
-        columns, lines = shutil.get_terminal_size()
-        frame_lines = self._create_raw_frame().splitlines()
+        console: Console = Console()
         total_lines: int = 0
-        for frame_line in frame_lines:
-            total_lines += max(1, (len(frame_line) + columns - 1) // columns)  # Calculate how many lines this frame line will take up
+        for frame_line in self._create_raw_frame().splitlines():
+            wrapped = rText(frame_line).wrap(console, console.width)
+            total_lines += max(1, len(wrapped))
         return total_lines
 
     def draw_frame(self, *lines: Text) -> str:

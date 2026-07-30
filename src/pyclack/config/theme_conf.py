@@ -1,4 +1,5 @@
 from ..renderer import Theme, Themes
+from ..renderer import symbols
 
 active_theme: Theme = Themes.DEFAULT
 
@@ -21,3 +22,11 @@ def get_active_theme() -> Theme:
     '''
 
     return active_theme
+
+def set_print_mode_ascii():
+    '''
+    Set the print mode to always use ASCII symbols. This function updates the global variable `always_use_ascii` to True.
+    '''
+
+    symbols.always_use_ascii = True
+    print(symbols.always_use_ascii)

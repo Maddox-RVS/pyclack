@@ -86,7 +86,7 @@ class Themes:
         info     = Style(fg_color='blue'),
         muted    = Style(fg_color='bright_black'),
         text     = Style(fg_color='white'),
-        cursor   = Style(fg_color='black', bg_color='white'),
+        cursor   = Style(fg_color='bright_black', bg_color='white'),
         symbols  = Symbols(
             step_marker_active                  = Symbol('◆', '*'),
             step_marker_cancel                  = Symbol('■', 'x'),
