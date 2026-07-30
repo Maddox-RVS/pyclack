@@ -1,4 +1,4 @@
-from ..renderer import Themes, RenderFrame, Text, FrameBuilder, Style, Theme
+from ..renderer import RenderFrame, Text, FrameBuilder, Style, Theme
 from .prompt_base import PromptBase, CancelException
 from typing import Callable, Optional, override
 from ..terminal import CursorController as cc
@@ -6,7 +6,6 @@ from .util import build_wrapped_input_lines
 from ..config import get_active_theme
 from ..terminal import Stdout
 from copy import copy
-import shutil
 
 def ask(message: str, 
         placeholder: Optional[str] = None, 

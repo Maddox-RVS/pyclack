@@ -1,5 +1,6 @@
 from ..renderer import Theme, RenderFrame, Text, FrameBuilder
 from ..terminal import CursorController as cc
+from .util import build_wrapped_input_lines
 from typing import override, Optional
 from ..config import get_active_theme
 from .prompt_base import PromptBase
@@ -29,30 +30,13 @@ class Intro(PromptBase):
         super().activate()
 
     @override
-    def handle_active(self, _: Optional[str]) -> bool:
-        Stdout.put(cc.hide_cursor())
-
-        theme: Theme = get_active_theme()
-        frame_builder: FrameBuilder = FrameBuilder()
-        title_text: Text = Text(theme.symbols.connector_bar_start.resolve(), 
-                                Text(f'  {self.title}', style=theme.text),
-                                style=theme.active)
-        connector_text: Text = Text(theme.symbols.connector_bar_vertical.resolve(), style=theme.active)
-        frame_builder.add_line(title_text)
-        frame_builder.add_line(connector_text)
-        frame: tuple[Text, ...] = frame_builder.build()
-        self.render_frame.draw_frame(*frame)
-        return True
-
-    @override
     def handle_submit(self) -> bool:
         theme: Theme = get_active_theme()
         frame_builder: FrameBuilder = FrameBuilder()
-        title_text: Text = Text(theme.symbols.connector_bar_start.resolve(), 
-                                Text(f'  {self.title}', style=theme.text),
-                                style=theme.muted)
+        title_text_lines: list[Text] = build_wrapped_input_lines(self.title, 0, theme.text, theme.muted)
+        title_text_lines[0] = Text(theme.symbols.connector_bar_start.resolve(), Text(title_text_lines[0].get_raw_text()[1:], style=theme.text), style=theme.muted)
+        for line in title_text_lines: frame_builder.add_line(line)
         connector_text: Text = Text(theme.symbols.connector_bar_vertical.resolve(), style=theme.muted)
-        frame_builder.add_line(title_text)
         frame_builder.add_line(connector_text)
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)

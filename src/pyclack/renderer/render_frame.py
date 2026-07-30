@@ -71,7 +71,7 @@ class RenderFrame:
         Draw a frame with the given Text objects. If a frame is already drawn, it will be cleared before drawing the new frame.
         '''
 
-        if self.lines: Stdout.put(cc.move_to_line_start_and_clear(self.lines_covered()))
+        if self.lines: Stdout.write(cc.move_to_line_start_and_clear(self.lines_covered()))
         self.lines = lines
         frame: str = self._create_formatted_frame()
         rich.print(frame)

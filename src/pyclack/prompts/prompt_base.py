@@ -32,6 +32,10 @@ class PromptBase:
         self.propogate_key_after_error: bool = False
 
     def activate(self) -> None:
+        '''
+        Activate the prompt by transitioning to the active state and starting the state machine.
+        '''
+
         self.current_state = PromptState.ACTIVE
         self._active()
 

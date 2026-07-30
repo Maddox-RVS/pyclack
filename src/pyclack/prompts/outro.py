@@ -1,5 +1,6 @@
 from ..renderer import Theme, RenderFrame, Text, FrameBuilder
 from ..terminal import CursorController as cc
+from .util import build_wrapped_input_lines
 from ..config import get_active_theme
 from typing import override, Optional
 from .prompt_base import PromptBase
@@ -29,31 +30,15 @@ class Outro(PromptBase):
         super().activate()
 
     @override
-    def handle_active(self, _: Optional[str]) -> bool:
-        Stdout.put(cc.hide_cursor())
-
-        theme: Theme = get_active_theme()
-        frame_builder: FrameBuilder = FrameBuilder()
-        connector_text: Text = Text(theme.symbols.connector_bar_vertical.resolve(), style=theme.active)
-        outro_text: Text = Text(theme.symbols.connector_bar_end.resolve(), 
-                                Text(f'  {self.message}', style=theme.text),
-                            style=theme.active)
-        frame_builder.add_line(connector_text)
-        frame_builder.add_line(outro_text)
-        frame: tuple[Text, ...] = frame_builder.build()
-        self.render_frame.draw_frame(*frame)
-        return True
-
-    @override
     def handle_submit(self) -> bool:
         theme: Theme = get_active_theme()
         frame_builder: FrameBuilder = FrameBuilder()
         connector_text: Text = Text(theme.symbols.connector_bar_vertical.resolve(), style=theme.muted)
-        outro_text: Text = Text(theme.symbols.connector_bar_end.resolve(), 
-                                Text(f'  {self.message}', style=theme.text),
-                            style=theme.muted)
         frame_builder.add_line(connector_text)
-        frame_builder.add_line(outro_text)
+        outro_text_lines: list[Text] = build_wrapped_input_lines(self.message, 0, theme.text, theme.muted)
+        last_index: int = len(outro_text_lines) - 1
+        outro_text_lines[last_index] = Text(theme.symbols.connector_bar_end.resolve(), Text(outro_text_lines[last_index].get_raw_text()[1:], style=theme.text), style=theme.muted)
+        for line in outro_text_lines: frame_builder.add_line(line)
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
 
