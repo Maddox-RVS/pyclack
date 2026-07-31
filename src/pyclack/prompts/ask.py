@@ -77,8 +77,9 @@ class Ask(PromptBase):
                 'SPACE': ' ',
                 'TAB': '\t'}  
             char: str = map.get(key, key) # Translate key to character (if applicable)
-            self.input_buffer = self.input_buffer[:self.input_index] + char + self.input_buffer[self.input_index:]
-            self.input_index = min(len(self.input_buffer), self.input_index + 1)
+            if key != '':
+                self.input_buffer = self.input_buffer[:self.input_index] + char + self.input_buffer[self.input_index:]
+                self.input_index = min(len(self.input_buffer), self.input_index + 1)
 
         # Create and render next frame based on the current input buffer and state
         frame_builder: FrameBuilder = FrameBuilder()
