@@ -94,8 +94,8 @@ class TextBoxController:
         self._input_buffer = input_buffer
         self.set_cursor_position(input_index)
 
-    def get_input(self) -> tuple[str, int]:
-        return self._input_buffer, self._cursor_index
+    def get_input(self) -> str:
+        return self._input_buffer
 
     def clear_input(self) -> None:
         self._input_buffer = ''
@@ -196,5 +196,26 @@ class TextBoxController:
         self.cursor_right(len(text))
 
     def delete(self, steps: int = 1) -> None:
-        self._input_buffer[:max(0, self._cursor_index - steps)] + self._input_buffer[self._cursor_index:]
+        if steps < 0: raise ValueError("steps must be a non-negative integer")
+        elif steps == 0: return
+        self._input_buffer = self._input_buffer[:max(0, self._cursor_index - steps)] + self._input_buffer[self._cursor_index:]
         self.cursor_left(steps)
+
+    def __str__(self) -> str:
+        visual_cursor_left = '>>>'
+        visual_cursor_right = '<<<'
+
+        def highlight_index(text: str, index: int) -> str:
+            if not text:
+                return ">>> <<<"
+
+            # Clamp index to a valid character position in the string
+            index = max(0, min(index, len(text) - 1))
+
+            return text[:index] + ">>>" + text[index] + "<<<" + text[index + 1 :]
+        
+        return (
+            f'Input Buffer: "{self._input_buffer}"\n'
+            f'Cursor Index: {self._cursor_index}\n'
+            f'Visual Representation: \n{highlight_index(self._input_buffer, self._cursor_index)}'
+        )
