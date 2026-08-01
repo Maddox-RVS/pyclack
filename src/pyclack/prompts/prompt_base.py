@@ -100,14 +100,18 @@ class PromptBase:
         cancelled: bool = False
 
         while self.current_state == PromptState.ACTIVE:
-            key: str = propogation_key
-            if not propogation_key: key = KeyReader.readkey()
-            if key == 'ESC' or key == 'CTRL_C': 
+            try:
+                key: str = propogation_key
+                if not propogation_key: key = KeyReader.readkey()
+                if key == 'ESC' or key == 'CTRL_C': 
+                    cancelled = True
+                    break
+                advance_next_state: bool = self.handle_active(key)
+                if advance_next_state: break
+                else: propogation_key = None
+            except KeyboardInterrupt:
                 cancelled = True
                 break
-            advance_next_state: bool = self.handle_active(key)
-            if advance_next_state: break
-            else: propogation_key = None
 
         if cancelled:
             self.current_state = PromptState.CANCEL
@@ -138,13 +142,17 @@ class PromptBase:
         propogate_key: Optional[str] = None
 
         while self.current_state == PromptState.ERROR:
-            key: str = KeyReader.readkey()
-            if key == 'ESC' or key == 'CTRL_C': 
+            try:
+                key: str = KeyReader.readkey()
+                if key == 'ESC' or key == 'CTRL_C': 
+                    cancelled = True
+                    break
+                advance_next_state: bool = self.handle_error(key)
+                if advance_next_state: 
+                    propogate_key = key
+                    break
+            except KeyboardInterrupt:
                 cancelled = True
-                break
-            advance_next_state: bool = self.handle_error(key)
-            if advance_next_state: 
-                propogate_key = key
                 break
 
         if cancelled:
