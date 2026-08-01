@@ -1,32 +1,38 @@
-from ..renderer import Theme, RenderFrame, Text, FrameBuilder
+from ..renderer import Theme, RenderFrame, Text, FrameBuilder, Style
 from ..terminal import CursorController as cc
-from .util import build_wrapped_input_lines
+from ..prompts.util import build_wrapped_input_lines
+from ..prompts.prompt_base import PromptBase
+from typing import override, Optional
 from ..config import get_active_theme
-from .prompt_base import PromptBase
 from ..terminal import Stdout
-from typing import override
 
-def intro(title: str) -> None:
+def intro(title: str, custom_style: Optional[Style] = None) -> None:
     '''
     Display an introductory message with a title.
+
+    Args:
+        title (str): The title to display to the user.
+        custom_style (Optional[Style]): The custom style to use for the intro.
     '''
     
-    Intro(title)
+    Intro(title, custom_style)
 
 class Intro(PromptBase):
     '''
     A class to display an introductory message with a title.
     '''
 
-    def __init__(self, title: str):
+    def __init__(self, title: str, custom_style: Optional[Style] = None):
         '''
         Initialize an Intro prompt with the given title.
 
         Args:
             title (str): The title to display to the user.
+            custom_style (Optional[Style]): The custom style to use for the intro.
         '''
 
         self.title: str = title
+        self.custom_style: Optional[Style] = custom_style
         self.render_frame: RenderFrame = RenderFrame()
 
         super().__init__()
@@ -35,9 +41,11 @@ class Intro(PromptBase):
     @override
     def handle_submit(self) -> bool:
         theme: Theme = get_active_theme()
+        text_style: Style = self.custom_style if self.custom_style else theme.text
         frame_builder: FrameBuilder = FrameBuilder()
         title_text_lines: list[Text] = build_wrapped_input_lines(self.title, 0, theme.text, theme.muted)
-        title_text_lines[0] = Text(theme.symbols.connector_bar_start.resolve(), Text(title_text_lines[0].get_raw_text()[1:], style=theme.text), style=theme.muted)
+        title_formatted: str = title_text_lines[0].get_raw_text()[3:] if not text_style.bg_color else f' {title_text_lines[0].get_raw_text()[3:]} '
+        title_text_lines[0] = Text(theme.symbols.connector_bar_start.resolve() + '  ', Text(title_formatted, style=text_style), style=theme.muted)
         for line in title_text_lines: frame_builder.add_line(line)
         connector_text: Text = Text(theme.symbols.connector_bar_vertical.resolve(), style=theme.muted)
         frame_builder.add_line(connector_text)

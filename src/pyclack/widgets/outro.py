@@ -1,32 +1,38 @@
-from ..renderer import Theme, RenderFrame, Text, FrameBuilder
+from ..renderer import Theme, RenderFrame, Text, FrameBuilder, Style
 from ..terminal import CursorController as cc
-from .util import build_wrapped_input_lines
+from ..prompts.util import build_wrapped_input_lines
+from ..prompts.prompt_base import PromptBase
 from ..config import get_active_theme
-from .prompt_base import PromptBase
-from .. terminal import Stdout
-from typing import override
+from typing import override, Optional
+from ..terminal import Stdout
 
-def outro(message: str) -> None:
+def outro(message: str, custom_style: Optional[Style] = None) -> None:
     '''
     Display an exit message.
+
+    Args:
+        message (str): The message to display to the user.
+        custom_style (Optional[Style]): The custom style to use for the outro.
     '''
     
-    Outro(message)
+    Outro(message, custom_style)
 
 class Outro(PromptBase):
     '''
     A class to display an exit message.
     '''
 
-    def __init__(self, message: str):
+    def __init__(self, message: str, custom_style: Optional[Style] = None):
         '''
         Initialize an Outro prompt with the given message.
 
         Args:
             message (str): The message to display to the user.
+            custom_style (Optional[Style]): The custom style to use for the outro.
         '''
 
         self.message: str = message
+        self.custom_style: Optional[Style] = custom_style
         self.render_frame: RenderFrame = RenderFrame()
 
         super().__init__()
@@ -35,12 +41,14 @@ class Outro(PromptBase):
     @override
     def handle_submit(self) -> bool:
         theme: Theme = get_active_theme()
+        text_style: Style = self.custom_style if self.custom_style else theme.text
         frame_builder: FrameBuilder = FrameBuilder()
         connector_text: Text = Text(theme.symbols.connector_bar_vertical.resolve(), style=theme.muted)
         frame_builder.add_line(connector_text)
         outro_text_lines: list[Text] = build_wrapped_input_lines(self.message, 0, theme.text, theme.muted)
+        outro_formatted: str = outro_text_lines[0].get_raw_text()[3:] if not text_style.bg_color else f' {outro_text_lines[0].get_raw_text()[3:]} '
         last_index: int = len(outro_text_lines) - 1
-        outro_text_lines[last_index] = Text(theme.symbols.connector_bar_end.resolve(), Text(outro_text_lines[last_index].get_raw_text()[1:], style=theme.text), style=theme.muted)
+        outro_text_lines[last_index] = Text(theme.symbols.connector_bar_end.resolve() + '  ', Text(outro_formatted, style=text_style), style=theme.muted)
         for line in outro_text_lines: frame_builder.add_line(line)
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
