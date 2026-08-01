@@ -72,6 +72,9 @@ class Password(PromptBase):
     def _construct_allowed_inputs(self) -> tuple[str]:
         '''
         Construct a tuple of allowed inputs for the prompt.
+
+        Returns:
+            tuple[str]: A tuple of allowed input keys.
         '''
 
         allowed_chars: tuple[str] = tuple(chr(i) for i in range(32, 127))

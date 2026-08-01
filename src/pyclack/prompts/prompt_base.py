@@ -1,5 +1,5 @@
 from ..terminal import KeyReader
-from typing import Any, Optional
+from typing import Optional
 from enum import Enum
 
 class CancelException(Exception):

@@ -5,6 +5,9 @@ class Stdout:
     def write(text: str) -> None:
         '''
         Write text to stdout without adding a newline. This is a thin wrapper around sys.stdout.write.
+
+        Args:
+            text (str): The text to write to stdout.
         '''
 
         sys.stdout.write(text)
@@ -21,6 +24,9 @@ class Stdout:
     def put(text: str) -> None:
         '''
         Convenience method to write text to stdout and flush immediately.
+
+        Args:
+            text (str): The text to write to stdout.
         '''
 
         Stdout.write(text)

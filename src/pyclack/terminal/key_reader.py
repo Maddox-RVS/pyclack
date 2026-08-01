@@ -1,4 +1,4 @@
-from readchar import readkey, readchar, key, config
+from readchar import readkey, config
 from . import base_key
 import enum
 import sys
@@ -6,14 +6,31 @@ import sys
 config.INTERRUPT_KEYS = [] # disable CTRL_C interrupt handling in readchar, allowing for manual handling
 
 class _OS(enum.Enum):
+    '''
+    An enumeration to represent the operating system type.
+    '''
+
     _POSIX = 'posix'
     _WINDOWS = 'windows'
     
 def _get_os() -> _OS:
+    '''
+    Get the current operating system as an _OS enum value. This function checks the 
+    platform and returns the appropriate enum value for POSIX or Windows systems.
+    '''
+
     if sys.platform == 'win32': return _OS._WINDOWS
     else: return _OS._POSIX
 
 def _get_labels() -> dict[str, str]:
+    '''
+    Get the appropriate key labels based on the operating system. This function returns a dictionary of key labels that are 
+    specific to either POSIX or Windows systems, overriding any conflicting or duplicate base key labels.
+
+    Returns:
+        dict[str, str]: A dictionary mapping key codes to their corresponding labels for the current operating system.
+    '''
+
     if _get_os() == _OS._POSIX:
         from .posix_keys import POSIX_LABELS
         return base_key.BASE_LABELS | POSIX_LABELS

@@ -2,9 +2,9 @@ from ..renderer import Theme, RenderFrame, Text, FrameBuilder
 from ..terminal import CursorController as cc
 from .util import build_wrapped_input_lines
 from ..config import get_active_theme
-from typing import override, Optional
 from .prompt_base import PromptBase
 from .. terminal import Stdout
+from typing import override
 
 def outro(message: str) -> None:
     '''
@@ -21,6 +21,9 @@ class Outro(PromptBase):
     def __init__(self, message: str):
         '''
         Initialize an Outro prompt with the given message.
+
+        Args:
+            message (str): The message to display to the user.
         '''
 
         self.message: str = message

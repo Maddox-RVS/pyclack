@@ -9,6 +9,9 @@ def _is_unicode_supported() -> bool:
     and environment variables to make an informed decision about Unicode support.
 
     Source: https://github.com/sindresorhus/is-unicode-supported/blob/main/index.js
+
+    Returns:
+        bool: True if Unicode is supported, False otherwise.
     '''
 
     env = os.environ

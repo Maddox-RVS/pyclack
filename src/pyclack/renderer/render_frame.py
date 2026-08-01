@@ -3,7 +3,6 @@ from rich.text import Text as rText
 from rich.console import Console
 from ..terminal import Stdout
 from .text import Text
-import rich
 
 class FrameBuilder:
     '''
@@ -20,6 +19,9 @@ class FrameBuilder:
     def add_line(self, line: Text) -> None:
         '''
         Add a line to the frame. Appends the given Text object to the list of lines in the frame.
+
+        Args:
+            line (Text): The Text object to be added as a line in the frame.
         '''
         
         self.lines.append(line)
@@ -27,6 +29,9 @@ class FrameBuilder:
     def add_lines(self, *line: Text) -> None:
         '''
         Add multiple lines to the frame. Appends the given Text objects to the list of lines in the frame.
+
+        Args:
+            *line (Text): The Text objects to be added as lines in the frame.
         '''
 
         for line in line: self.lines.append(line)
@@ -34,6 +39,9 @@ class FrameBuilder:
     def build(self) -> tuple[Text, ...]:
         '''
         Build the frame and return a tuple of Text objects representing the lines in the frame.
+
+        Returns:
+            tuple[Text, ...]: A tuple containing the Text objects that make up the frame.
         '''
         
         return tuple(self.lines)
@@ -68,6 +76,9 @@ class RenderFrame:
     def lines_covered(self) -> int:
         '''
         Get the number of lines covered by the frame if printed to the terminal.
+
+        Returns:
+            int: The number of lines covered by the frame.
         '''
 
         total_lines: int = 0
@@ -76,9 +87,12 @@ class RenderFrame:
             total_lines += max(1, len(wrapped))
         return total_lines
 
-    def draw_frame(self, *lines: Text) -> str:
+    def draw_frame(self, *lines: Text) -> None:
         '''
         Draw a frame with the given Text objects. If a frame is already drawn, it will be cleared before drawing the new frame.
+
+        Args:
+            *lines (Text): The Text objects to be drawn as lines in the frame.
         '''
 
         if self.lines: Stdout.write(cc.move_to_line_start_and_clear(self.lines_covered()))

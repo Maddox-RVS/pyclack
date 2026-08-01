@@ -1,4 +1,3 @@
-# base_labels.py
 from readchar import key as K
 
 BASE_LABELS: dict[str, str] = {

@@ -30,6 +30,9 @@ class Text:
     def lines_covered(self) -> int:
         '''
         Get the number of lines covered by the raw text if printed to the terminal (including additional Text objects).
+
+        Returns:
+            int: The number of lines covered by the text.
         '''
 
         console: Console = Console()
@@ -42,6 +45,9 @@ class Text:
     def get_raw_isolated_text(self) -> str:
         '''
         Get the raw text without any formatting or concatenation of additional Text objects.
+
+        Returns:
+            str: The raw text content.
         '''
 
         return self.text
@@ -49,6 +55,9 @@ class Text:
     def get_raw_text(self) -> str:
         '''
         Get the raw text without any formatting, but including concatenation of additional Text objects.
+
+        Returns:
+            str: The raw text content with concatenated additional Text objects.
         '''
 
         return self.text + ''.join(text.get_raw_text() for text in self.texts)

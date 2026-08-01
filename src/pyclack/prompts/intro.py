@@ -1,10 +1,10 @@
 from ..renderer import Theme, RenderFrame, Text, FrameBuilder
 from ..terminal import CursorController as cc
 from .util import build_wrapped_input_lines
-from typing import override, Optional
 from ..config import get_active_theme
 from .prompt_base import PromptBase
 from ..terminal import Stdout
+from typing import override
 
 def intro(title: str) -> None:
     '''
@@ -21,6 +21,9 @@ class Intro(PromptBase):
     def __init__(self, title: str):
         '''
         Initialize an Intro prompt with the given title.
+
+        Args:
+            title (str): The title to display to the user.
         '''
 
         self.title: str = title
