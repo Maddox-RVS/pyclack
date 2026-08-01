@@ -11,6 +11,7 @@ def set_active_theme(theme: Theme) -> None:
         theme (Theme): The theme to set as active.
     '''
 
+    global active_theme
     active_theme = theme
 
 def get_active_theme() -> Theme:
