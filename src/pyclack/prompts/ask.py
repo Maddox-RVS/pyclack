@@ -14,6 +14,9 @@ def ask(message: str,
         cancellation_message: str = 'Operation Cancelled') -> str:
     '''
     Ask the user for input with a message, placeholder, initial value, and validation function.
+    Controls are as follows:
+    - Use the arrow keys to move the cursor within the input.
+    - Press 'Enter' to submit the input.
 
     Args:
         message (str): The message to display to the user.
@@ -33,6 +36,10 @@ def ask(message: str,
     return prompt.text_box_controller.get_input()
 
 class Ask(PromptBase):
+    '''
+    A prompt for asking the user for text input.
+    '''
+
     def __init__(self,
             message: str,
             cancellation_message: str,
