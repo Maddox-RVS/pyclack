@@ -26,15 +26,20 @@ class FrameBuilder:
         
         self.lines.append(line)
 
-    def add_lines(self, *line: Text) -> None:
+    def add_lines(self, *lines: Text) -> None:
         '''
         Add multiple lines to the frame. Appends the given Text objects to the list of lines in the frame.
+        Lines can be Text objects or strings. If a string is provided, it will be converted to a Text object.
 
         Args:
-            *line (Text): The Text objects to be added as lines in the frame.
+            *line (Text): The Text objects or strings to be added as lines in the frame.
         '''
 
-        for line in line: self.lines.append(line)
+        for line in lines:
+            if not isinstance(line, str) and not isinstance(line, Text): raise TypeError(f'Expected Text or str as line, got {type(line).__name__}')
+            if isinstance(line, str): line = Text(line)
+
+        for lines in lines: self.lines.append(lines)
 
     def build(self) -> tuple[Text, ...]:
         '''

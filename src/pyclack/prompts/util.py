@@ -72,13 +72,15 @@ def build_wrapped_input_lines(text: str, cursor_index: int, text_style: Style, c
                 first = chunk[:local_idx]
                 middle = chunk[local_idx:local_idx + 1]
                 rest = chunk[local_idx + 1:]
-                if len(middle) == 0:
-                    middle = ' '
-                content = Text(first, Text(middle, Text(rest, style=text_style), style=theme.cursor if show_cursor else text_style), style=text_style)
+                if len(middle) == 0: middle = ' '
+                content = Text.assemble(
+                    (first, text_style),
+                    (middle, theme.cursor if show_cursor else text_style),
+                    (rest, text_style))
             else:
-                content = Text(chunk, style=text_style)
+                content = Text(chunk, text_style)
 
-            lines.append(Text(connector_bar_vertical, Text('  ', content, style=theme.text), style=connector_bar_vertical_style))
+            lines.append(Text(connector_bar_vertical, connector_bar_vertical_style) + '  ' + content)
 
         return lines
 

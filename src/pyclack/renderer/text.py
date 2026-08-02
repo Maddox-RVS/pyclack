@@ -1,7 +1,7 @@
 from rich.style import Style as rStyle
 from rich.text import Text as rText
 from rich.console import Console
-from typing import Optional
+from typing import Optional, Any
 from .themes import Style
 
 class Text:
@@ -12,20 +12,55 @@ class Text:
 
     def __init__(self, 
         text: str,
-        *texts: 'Text',
-        style: Optional[Style] = None):
+        style: Optional[Style] = None,
+        inner_text: Optional[Text] = None):
         '''
         Initialize a Text object.
 
         Args:
             text (str): The main text content.
-            *texts (Text): Additional Text objects to concatenate.
+            inner_text (Optional[Text]): An additional Text object to concatenate.
             style (Optional[Style]): The style to apply to the text.
         '''
 
+        if style is not None and not isinstance(style, Style):
+            raise TypeError(f'style must be an instance of Style or None, got {type(style).__name__}')
+
+        if inner_text is not None and not isinstance(inner_text, Text):
+            raise TypeError(f'inner_text must be an instance of Text or None, got {type(inner_text).__name__}')
+
         self.text: str = text
-        self.texts: tuple[Text] = texts
         self.style: Optional[Style] = style
+        self.inner_text: Optional[Text] = inner_text
+
+    @staticmethod
+    def assemble(*parts) -> Text:
+        '''
+        A static method to create a Text object by concatenating multiple parts, which can be strings, tuples of (text, style), or other Text objects.
+
+        Args:
+            *parts: A variable number of parts to concatenate. Each part can be a string, a tuple of (text, style), or another Text object.
+
+        Returns:
+            Text: A new Text object that represents the concatenation of all provided parts.
+
+        Raises:
+            TypeError: If any part is not a string, a tuple of (text, style), or a Text object.
+        '''
+
+        def coerce(obj: Any):
+            if isinstance(obj, Text): return obj
+            if isinstance(obj, tuple):
+                text, style = obj
+                return Text(text, style=style)
+            if isinstance(obj, str): return Text(obj)
+            raise TypeError(f"Unsupported part in Text.assemble: {type(obj).__name__}")
+
+        parts = [coerce(obj) for obj in parts]
+        result = parts[0]
+        for t in parts[1:]:
+            result = result + t
+        return result
 
     def lines_covered(self) -> int:
         '''
@@ -60,7 +95,7 @@ class Text:
             str: The raw text content with concatenated additional Text objects.
         '''
 
-        return self.text + ''.join(text.get_raw_text() for text in self.texts)
+        return self.text + self.inner_text.get_raw_text() if self.inner_text else self.text
 
     def get_formatted_text(self) -> rText:
         '''
@@ -82,7 +117,23 @@ class Text:
                     strike=self.style.strikethrough) if self.style else rStyle()
             formatted_text.append(self.text, style=rich_style)
 
-        for text in self.texts:
-            formatted_text.append_text(text.get_formatted_text())
+        if self.inner_text:
+            formatted_text.append_text(self.inner_text.get_formatted_text())
 
         return formatted_text
+
+    def __add__(self, other: Any):
+        if isinstance(other, str): other = Text(other)
+
+        if not isinstance(other, Text):
+            return NotImplemented
+
+        if self.inner_text is None:
+            self.inner_text = other
+        else:
+            inner_text = self.inner_text
+            while inner_text.inner_text is not None:
+                inner_text = inner_text.inner_text
+            inner_text.inner_text = other
+
+        return self

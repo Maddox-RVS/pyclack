@@ -85,10 +85,10 @@ class Confirm(PromptBase):
 
         frame_builder: FrameBuilder = FrameBuilder()
 
-        frame_builder.add_line(Text(connector_bar_vertical, style=theme.muted))
+        frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
 
         message_lines: list[Text] = build_wrapped_input_lines(self.message, 0, theme.text, theme.active)
-        message_lines[0] = Text(step_marker_active + '  ', Text(message_lines[0].get_raw_text()[3:], style=theme.text), style=theme.active)
+        message_lines[0] = Text(step_marker_active, theme.active) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
 
         yes_text_style: Style = theme.text if self.selected_confirmation else theme.muted
@@ -98,20 +98,16 @@ class Confirm(PromptBase):
         no_symbol_style: Style = theme.submit if not self.selected_confirmation else theme.muted
         no_symbol: str = selection_widget_radio_active if not self.selected_confirmation else selection_widget_radio_inactive
 
-        confirmation_line: Text = Text(connector_bar_vertical + '  ',
-                                    Text(yes_symbol + ' ', 
-                                        Text('Yes ',
-                                            Text('/ ', 
-                                                Text(no_symbol + ' ', 
-                                                    Text('No', style=no_text_style),
-                                                        style=no_symbol_style),
-                                                    style=theme.muted),
-                                                style=yes_text_style),
-                                        style=yes_symbol_style), 
-                                    style=theme.active)
+        confirmation_line: Text = Text.assemble(
+            (connector_bar_vertical, theme.active), '  ',
+            (yes_symbol, yes_symbol_style), ' ',
+            ('Yes ', yes_text_style),
+            ('/ ', theme.muted),
+            (no_symbol, no_symbol_style), ' ',
+            ('No', no_text_style))
         frame_builder.add_line(confirmation_line)
 
-        frame_builder.add_line(Text(connector_bar_end, style=theme.active))
+        frame_builder.add_line(Text(connector_bar_end, theme.active))
 
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
@@ -125,14 +121,14 @@ class Confirm(PromptBase):
 
         frame_builder: FrameBuilder = FrameBuilder()
 
-        frame_builder.add_line(Text(connector_bar_vertical, style=theme.muted))
+        frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
 
         message_lines: list[Text] = build_wrapped_input_lines(self.message, 0, theme.text, theme.muted)
-        message_lines[0] = Text(step_marker_submit + '  ', Text(message_lines[0].get_raw_text()[3:], style=theme.text), style=theme.submit)
+        message_lines[0] = Text(step_marker_submit, theme.submit) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
 
         confirmation_text: str = 'Yes' if self.selected_confirmation else 'No'
-        frame_builder.add_line(Text(connector_bar_vertical + '  ', Text(confirmation_text, style=theme.muted), style=theme.muted))
+        frame_builder.add_line(Text(connector_bar_vertical, theme.muted) + '  ' + Text(confirmation_text, theme.muted))
 
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
@@ -147,21 +143,21 @@ class Confirm(PromptBase):
 
         frame_builder: FrameBuilder = FrameBuilder()
 
-        frame_builder.add_line(Text(connector_bar_vertical, style=theme.muted))
+        frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
 
         message_lines: list[Text] = build_wrapped_input_lines(self.message, 0, theme.text, theme.muted)
-        message_lines[0] = Text(step_marker_cancel + '  ', Text(message_lines[0].get_raw_text()[3:], style=theme.text), style=theme.cancel)
+        message_lines[0] = Text(step_marker_cancel, theme.cancel) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
 
         text_style: Style = copy(theme.muted)
         text_style.strikethrough = True
         confirmation_text: str = 'Yes' if self.selected_confirmation else 'No'
-        frame_builder.add_line(Text(connector_bar_vertical + '  ', Text(confirmation_text, style=text_style), style=theme.muted))
-        frame_builder.add_line(Text(connector_bar_vertical, style=theme.muted))
+        frame_builder.add_line(Text(connector_bar_vertical, theme.muted) + '  ' + Text(confirmation_text, text_style))
+        frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
 
         cancel_lines: list[Text] = build_wrapped_input_lines(self.cancellation_message, 0, theme.cancel, theme.muted)
         last_index: int = len(cancel_lines) - 1
-        cancel_lines[last_index] = Text(connector_bar_end + '  ', Text(cancel_lines[last_index].get_raw_text()[3:], style=theme.cancel), style=theme.muted)
+        cancel_lines[last_index] = Text(connector_bar_end, theme.muted) + '  ' + Text(cancel_lines[last_index].get_raw_text()[3:], theme.cancel)
         frame_builder.add_lines(*cancel_lines)
 
         frame: tuple[Text, ...] = frame_builder.build()
