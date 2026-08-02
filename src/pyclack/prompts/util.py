@@ -29,28 +29,38 @@ def splitlines(text: str, index: int) -> tuple[list[str], int, int]:
         current_pos += line_length + 1
     return lines, line_index, char_index
 
-def build_wrapped_input_lines(text: str, cursor_index: int, text_style: Style, connector_bar_vertical_style: Style, show_cursor: bool = False) -> list[Text]:
+def build_wrapped_input_lines(
+        text: str, 
+        prefix: str,
+        cursor_index: int, 
+        text_style: Style,
+        prefix_style: Style, 
+        show_cursor: bool = False) -> list[Text]:
     '''
-    Builds the wrapped input lines based on the given text, cursor index, text style, and connector bar vertical style. It also takes into account whether to show the cursor or not.
+    Builds the wrapped input lines based on the given text, prefix, cursor index, text style, and prefix style. It also takes into account whether to show the cursor or not.
 
     Args:
         text (str): The input text to be wrapped.
+        prefix (str): The prefix to be added to each line of the wrapped input.
         cursor_index (int): The index of the cursor in the input text.
         text_style (Style): The style to be applied to the input text.
-        connector_bar_vertical_style (Style): The style to be applied to the connector bar vertical.
+        prefix_style (Style): The style to be applied to the prefix.
         show_cursor (bool): Whether to show the cursor or not. Defaults to False.
 
     Returns:
         list[Text]: A list of Text objects representing the wrapped input lines.
     '''
 
-    def wrapping_logic(text: str, cursor_index: int, text_style: Style, connector_bar_vertical_style: Style, show_cursor: bool) -> list[Text]:
+    def wrapping_logic(text: str, 
+                       prefix: str,
+                       cursor_index: int, 
+                       text_style: Style, 
+                       prefix_style: Style, 
+                       show_cursor: bool) -> list[Text]:
         theme: Theme = get_active_theme()
 
-        connector_bar_vertical = theme.symbols.connector_bar_vertical.resolve()
-        prefix_plain = f'{connector_bar_vertical}  '
         columns, _ = shutil.get_terminal_size()
-        available = max(1, columns - len(prefix_plain))
+        available = max(1, columns - len(prefix))
 
         buffer = text
         idx = cursor_index
@@ -80,15 +90,15 @@ def build_wrapped_input_lines(text: str, cursor_index: int, text_style: Style, c
             else:
                 content = Text(chunk, text_style)
 
-            lines.append(Text(connector_bar_vertical, connector_bar_vertical_style) + '  ' + content)
+            lines.append(Text(prefix, prefix_style) + content)
 
         return lines
 
     text_lines, cursor_text_line, cursor_col_index = splitlines(text, cursor_index)
     wrapped_input_lines: list[Text] = []
     for i, text_line in enumerate(text_lines):
-        if i == cursor_text_line and show_cursor: wrapped_input_lines += wrapping_logic(text_line, cursor_col_index, text_style, connector_bar_vertical_style, True)
-        else: wrapped_input_lines += wrapping_logic(text_line, 0, text_style, connector_bar_vertical_style, False)
+        if i == cursor_text_line and show_cursor: wrapped_input_lines += wrapping_logic(text_line, prefix, cursor_col_index, text_style, prefix_style, True)
+        else: wrapped_input_lines += wrapping_logic(text_line, prefix, 0, text_style, prefix_style, False)
     return wrapped_input_lines
 
 class TextBoxController:

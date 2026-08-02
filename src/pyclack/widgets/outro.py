@@ -41,14 +41,18 @@ class Outro(PromptBase):
     @override
     def handle_submit(self) -> bool:
         theme: Theme = get_active_theme()
+        connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
+        connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
+        prefix: str = f'{connector_bar_vertical}  '
+
         text_style: Style = self.custom_style if self.custom_style else theme.text
         frame_builder: FrameBuilder = FrameBuilder()
-        connector_text: Text = Text(theme.symbols.connector_bar_vertical.resolve(), theme.muted)
+        connector_text: Text = Text(connector_bar_vertical, theme.muted)
         frame_builder.add_line(connector_text)
-        outro_text_lines: list[Text] = build_wrapped_input_lines(self.message, 0, theme.text, theme.muted)
+        outro_text_lines: list[Text] = build_wrapped_input_lines(self.message, prefix, 0, theme.text, theme.muted)
         outro_formatted: str = outro_text_lines[0].get_raw_text()[3:] if not text_style.bg_color else f' {outro_text_lines[0].get_raw_text()[3:]} '
         last_index: int = len(outro_text_lines) - 1
-        outro_text_lines[last_index] = Text(theme.symbols.connector_bar_end.resolve(), theme.muted) + '  ' + Text(outro_formatted, text_style)
+        outro_text_lines[last_index] = Text(connector_bar_end, theme.muted) + '  ' + Text(outro_formatted, text_style)
         for line in outro_text_lines: frame_builder.add_line(line)
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)

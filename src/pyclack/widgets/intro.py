@@ -42,10 +42,12 @@ class Intro(PromptBase):
     def handle_submit(self) -> bool:
         theme: Theme = get_active_theme()
         connector_bar_start: str = theme.symbols.connector_bar_start.resolve()
+        connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
+        prefix: str = f'{connector_bar_vertical}  '
 
         text_style: Style = self.custom_style if self.custom_style else theme.text
         frame_builder: FrameBuilder = FrameBuilder()
-        title_text_lines: list[Text] = build_wrapped_input_lines(self.title, 0, theme.text, theme.muted)
+        title_text_lines: list[Text] = build_wrapped_input_lines(self.title, prefix, 0, theme.text, theme.muted)
         title_formatted: str = title_text_lines[0].get_raw_text()[3:] if not text_style.bg_color else f' {title_text_lines[0].get_raw_text()[3:]} '
         title_text_lines[0] = Text(connector_bar_start, theme.muted) + '  ' + Text(title_formatted, text_style)
         for line in title_text_lines: frame_builder.add_line(line)
