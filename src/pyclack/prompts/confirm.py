@@ -85,6 +85,8 @@ class Confirm(PromptBase):
 
         frame_builder: FrameBuilder = FrameBuilder()
 
+        frame_builder.add_line(Text(connector_bar_vertical, style=theme.muted))
+
         message_lines: list[Text] = build_wrapped_input_lines(self.message, 0, theme.text, theme.active)
         message_lines[0] = Text(step_marker_active + '  ', Text(message_lines[0].get_raw_text()[3:], style=theme.text), style=theme.active)
         frame_builder.add_lines(*message_lines)
@@ -123,6 +125,8 @@ class Confirm(PromptBase):
 
         frame_builder: FrameBuilder = FrameBuilder()
 
+        frame_builder.add_line(Text(connector_bar_vertical, style=theme.muted))
+
         message_lines: list[Text] = build_wrapped_input_lines(self.message, 0, theme.text, theme.muted)
         message_lines[0] = Text(step_marker_submit + '  ', Text(message_lines[0].get_raw_text()[3:], style=theme.text), style=theme.submit)
         frame_builder.add_lines(*message_lines)
@@ -142,6 +146,8 @@ class Confirm(PromptBase):
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
 
         frame_builder: FrameBuilder = FrameBuilder()
+
+        frame_builder.add_line(Text(connector_bar_vertical, style=theme.muted))
 
         message_lines: list[Text] = build_wrapped_input_lines(self.message, 0, theme.text, theme.muted)
         message_lines[0] = Text(step_marker_cancel + '  ', Text(message_lines[0].get_raw_text()[3:], style=theme.text), style=theme.cancel)

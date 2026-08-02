@@ -98,6 +98,7 @@ class Ask(PromptBase):
 
         theme: Theme = get_active_theme()
         step_marker_active: str = theme.symbols.step_marker_active.resolve()
+        connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
 
         # Update the input buffer based on the key pressed
@@ -119,6 +120,9 @@ class Ask(PromptBase):
         input_index: int = self.text_box_controller.get_cursor_position()
 
         frame_builder: FrameBuilder = FrameBuilder()
+
+        frame_builder.add_line(Text(connector_bar_vertical, style=theme.muted))
+
         message_lines: list[Text] = build_wrapped_input_lines(self.message, 0, theme.text, theme.active)
         message_lines[0] = Text(step_marker_active, Text(message_lines[0].get_raw_text()[1:], style=theme.text), style=theme.active)
         frame_builder.add_lines(*message_lines)
@@ -138,12 +142,14 @@ class Ask(PromptBase):
     def handle_submit(self) -> bool:
         theme: Theme = get_active_theme()
         step_marker_submit: str = theme.symbols.step_marker_submit.resolve()
+        connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
 
         # Create and render next frame based on the current input buffer and state
         input_buffer: str = self.text_box_controller.get_input()
         input_index: int = self.text_box_controller.get_cursor_position()
 
         frame_builder: FrameBuilder = FrameBuilder()
+        frame_builder.add_line(Text(connector_bar_vertical, style=theme.muted))
         message_lines: list[Text] =  build_wrapped_input_lines(self.message, 0, theme.text, theme.muted)
         message_lines[0] = Text(step_marker_submit, Text(message_lines[0].get_raw_text()[1:], style=theme.text), style=theme.submit)
         frame_builder.add_lines(*message_lines)
@@ -160,6 +166,7 @@ class Ask(PromptBase):
 
         theme: Theme = get_active_theme()
         step_marker_error: str = theme.symbols.step_marker_error.resolve()
+        connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
 
         # Create and render next frame based on the current input buffer and state
@@ -167,6 +174,7 @@ class Ask(PromptBase):
         input_index: int = self.text_box_controller.get_cursor_position()
 
         frame_builder: FrameBuilder = FrameBuilder()
+        frame_builder.add_line(Text(connector_bar_vertical, style=theme.muted))
         message_lines: list[Text] = build_wrapped_input_lines(self.message, 0, theme.text, theme.error)
         message_lines[0] = Text(step_marker_error, Text(message_lines[0].get_raw_text()[1:], style=theme.text), style=theme.error)
         frame_builder.add_lines(*message_lines)
@@ -199,6 +207,9 @@ class Ask(PromptBase):
         input_index: int = self.text_box_controller.get_cursor_position()
 
         frame_builder: FrameBuilder = FrameBuilder()
+
+        frame_builder.add_line(Text(connector_bar_vertical, style=theme.muted))
+
         message_lines: list[Text] =  build_wrapped_input_lines(self.message, 0, theme.text, theme.muted)
         message_lines[0] = Text(step_marker_cancel, Text(message_lines[0].get_raw_text()[1:], style=theme.text), style=theme.cancel)
         frame_builder.add_lines(*message_lines)

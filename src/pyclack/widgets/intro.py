@@ -41,14 +41,14 @@ class Intro(PromptBase):
     @override
     def handle_submit(self) -> bool:
         theme: Theme = get_active_theme()
+        connector_bar_start: str = theme.symbols.connector_bar_start.resolve()
+
         text_style: Style = self.custom_style if self.custom_style else theme.text
         frame_builder: FrameBuilder = FrameBuilder()
         title_text_lines: list[Text] = build_wrapped_input_lines(self.title, 0, theme.text, theme.muted)
         title_formatted: str = title_text_lines[0].get_raw_text()[3:] if not text_style.bg_color else f' {title_text_lines[0].get_raw_text()[3:]} '
-        title_text_lines[0] = Text(theme.symbols.connector_bar_start.resolve() + '  ', Text(title_formatted, style=text_style), style=theme.muted)
+        title_text_lines[0] = Text(connector_bar_start + '  ', Text(title_formatted, style=text_style), style=theme.muted)
         for line in title_text_lines: frame_builder.add_line(line)
-        connector_text: Text = Text(theme.symbols.connector_bar_vertical.resolve(), style=theme.muted)
-        frame_builder.add_line(connector_text)
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
 
