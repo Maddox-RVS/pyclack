@@ -136,6 +136,7 @@ class Confirm(PromptBase):
 
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
+        Stdout.put(cc.show_cursor())
         return True
 
     @override
