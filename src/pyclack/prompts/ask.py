@@ -11,6 +11,7 @@ def ask(message: str,
         placeholder: Optional[str] = None, 
         initial_value: Optional[str] = None, 
         validate: Optional[Callable[[str], Optional[str]]] = None,
+        default_value: Optional[str] = None,
         cancellation_message: str = 'Operation Cancelled') -> str:
     '''
     Ask the user for input with a message, placeholder, initial value, and validation function.
@@ -25,6 +26,7 @@ def ask(message: str,
         placeholder (str, optional): The placeholder text to display when the input is empty.
         initial_value (str, optional): The initial value of the input.
         validate (Callable[[str], Optional[str]], optional): A function to validate the input.
+        default_value (str, optional): The default value to be returned as the value in the raised `CancelException`.
         cancellation_message (str): The message to display if the user cancels the operation.
 
     Returns:
@@ -34,7 +36,7 @@ def ask(message: str,
         CancelException: If the user cancels the operation.
     '''
     
-    prompt: Ask = Ask(message, cancellation_message, placeholder, initial_value, validate)
+    prompt: Ask = Ask(message, cancellation_message, placeholder, initial_value, default_value, validate)
     return prompt.text_box_controller.get_input()
 
 class Ask(PromptBase):
@@ -47,6 +49,7 @@ class Ask(PromptBase):
             cancellation_message: str,
             placeholder: Optional[str] = None,
             initial_value: Optional[str] = None,
+            default_value: Optional[str] = None,
             validate: Optional[Callable[[str], Optional[str]]] = None):
         '''
         Initialize an Ask prompt with the given message, placeholder, initial value, and validation function.
@@ -56,6 +59,7 @@ class Ask(PromptBase):
             cancellation_message (str): The message to display if the user cancels the operation.
             placeholder (str, optional): The placeholder text to display when the input is empty.
             initial_value (str, optional): The initial value of the input.
+            default_value (str, optional): The default value to be returned as the value in the raised `CancelException`.
             validate (Callable[[str], Optional[str]], optional): A function to validate the input.
 
         Raises:
@@ -68,6 +72,7 @@ class Ask(PromptBase):
         self.cancellation_message: str = cancellation_message
         self.placeholder: Optional[str] = placeholder
         self.initial_value: Optional[str] = initial_value
+        self.default_value: Optional[str] = default_value
         self.validate: Optional[Callable[[str], Optional[str]]] = validate
 
         self.render_frame: RenderFrame = RenderFrame()
@@ -233,4 +238,4 @@ class Ask(PromptBase):
         self.render_frame.draw_frame(*frame)
 
         Stdout.put(cc.show_cursor())
-        raise CancelException(self.cancellation_message, input_buffer)
+        raise CancelException(self.cancellation_message, input_buffer if not self.default_value else self.default_value)

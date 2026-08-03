@@ -7,7 +7,9 @@ from ..config import get_active_theme
 from ..terminal import Stdout
 from copy import copy
 
-def confirm(message: str, cancellation_message: str = 'Operation Cancelled', default_option: bool = True) -> bool:
+def confirm(message: str, 
+            cancellation_message: str = 'Operation Cancelled', 
+            default_option: bool = True) -> bool:
     '''
     Prompt the user for a yes/no confirmation. Controls are as follows:
     - Use the arrow keys (or h/j/k/l) to toggle between 'Yes' and 'No'.
