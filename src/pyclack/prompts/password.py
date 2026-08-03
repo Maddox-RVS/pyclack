@@ -10,6 +10,7 @@ from copy import copy
 def password(message: str, 
         mask: Optional[Symbol] = None,
         show_nothing: bool = False,
+        clear_on_error: bool = False,
         validate: Optional[Callable[[str], Optional[str]]] = None,
         cancellation_message: str = 'Operation Cancelled') -> str:
     '''
@@ -23,6 +24,7 @@ def password(message: str,
         message (str): The message to display to the user.
         mask (Symbol, optional): The symbol to use for masking the input. Defaults to None
         show_nothing (bool, optional): If True, the input will not be displayed at all. Defaults to False.
+        clear_on_error (bool, optional): If True, the input buffer will be cleared on error. Defaults to False.
         validate (Callable[[str], Optional[str]], optional): A function to validate the input. Defaults to None.
         cancellation_message (str): The message to display if the user cancels the operation.
 
@@ -33,7 +35,7 @@ def password(message: str,
         CancelException: If the user cancels the operation.
     '''
     
-    prompt: Password = Password(message, cancellation_message, mask, show_nothing, validate)
+    prompt: Password = Password(message, cancellation_message, mask, show_nothing, clear_on_error, validate)
     return prompt.text_box_controller.get_input()
 
 class Password(PromptBase):
@@ -42,6 +44,7 @@ class Password(PromptBase):
             cancellation_message: str,
             mask: Optional[Symbol] = None,
             show_nothing: bool = False,
+            clear_on_error: bool = False,
             validate: Optional[Callable[[str], Optional[str]]] = None):
         '''
         Initialize a Password prompt with the given message, mask, and validation function.
@@ -51,6 +54,7 @@ class Password(PromptBase):
             cancellation_message (str): The message to display if the user cancels the operation.
             mask (Symbol, optional): The symbol to use for masking the input. Defaults to None.
             show_nothing (bool, optional): If True, the input will not be displayed at all. Defaults to False.
+            clear_on_error (bool, optional): If True, the input buffer will be cleared on error. Defaults to False.
             validate (Callable[[str], Optional[str]], optional): A function to validate the input. Defaults to None.
 
         Raises:
@@ -63,6 +67,7 @@ class Password(PromptBase):
         self.cancellation_message: str = cancellation_message
         self.mask: Optional[Symbol] = mask
         self.show_nothing: bool = show_nothing
+        self.clear_on_error: bool = clear_on_error
         self.validate: Optional[Callable[[str], Optional[str]]] = validate
 
         self.render_frame: RenderFrame = RenderFrame()
@@ -73,7 +78,7 @@ class Password(PromptBase):
 
         super().activate()
 
-    def _construct_allowed_inputs(self) -> tuple[str]:
+    def _construct_allowed_inputs(self) -> tuple[str, ...]:
         '''
         Construct a tuple of allowed inputs for the prompt.
 
@@ -81,7 +86,7 @@ class Password(PromptBase):
             tuple[str]: A tuple of allowed input keys.
         '''
 
-        allowed_chars: tuple[str] = tuple(chr(i) for i in range(32, 127))
+        allowed_chars: tuple[str, ...] = tuple(chr(i) for i in range(32, 127))
         return ('BACKSPACE', 'ENTER', 'TAB', 'SPACE') + allowed_chars
 
     @override
@@ -150,6 +155,9 @@ class Password(PromptBase):
     def handle_error(self, key: Optional[str]) -> bool:
         Stdout.put(cc.hide_cursor())
 
+        validation_error_message: str = self.validate(self.text_box_controller.get_input()) # self.validate must be defined if we are in the error state
+        if self.clear_on_error: self.text_box_controller.set_input('', 0)
+
         theme: Theme = get_active_theme()
         step_marker_error: str = theme.symbols.step_marker_error.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
@@ -167,7 +175,6 @@ class Password(PromptBase):
         message_lines[0] = Text(step_marker_error, theme.error) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
         frame_builder.add_lines(*build_wrapped_input_lines(input_buffer, prefix, input_index, theme.text, theme.error, not self.show_nothing))
-        validation_error_message: str = self.validate(self.text_box_controller.get_input()) # self.validate must be defined if we are in the error state
         error_lines: list[Text] = build_wrapped_input_lines(validation_error_message, prefix, 0, theme.error, theme.error)
         last_index: int = len(error_lines) - 1
         error_lines[last_index] = Text(connector_bar_end, theme.error) + '  ' + Text(error_lines[last_index].get_raw_text()[3:], theme.error)
