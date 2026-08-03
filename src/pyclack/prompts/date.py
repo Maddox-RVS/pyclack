@@ -1,9 +1,11 @@
 from ..renderer import Text, RenderFrame, FrameBuilder, Theme, Style
 from ..prompts.util import build_wrapped_input_lines
 from ..prompts import PromptBase, CancelException
+from ..terminal import CursorController as cc
 from ..config import get_active_theme
 from typing import Optional, Callable
 from datetime import date as ddate
+from ..terminal import Stdout
 from copy import copy
 import calendar
 
@@ -214,6 +216,8 @@ class Date(PromptBase):
                 'h', 'j', 'k', 'l', 'H', 'J', 'K', 'L') + allowed_chars
 
     def handle_active(self, key: Optional[str]) -> bool:
+        Stdout.put(cc.hide_cursor())
+        
         theme: Theme = get_active_theme()
         step_marker_active: str = theme.symbols.step_marker_active.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
@@ -338,9 +342,12 @@ class Date(PromptBase):
 
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
+        Stdout.put(cc.show_cursor())
         return False if self._validate() else True
 
     def handle_error(self, key: Optional[str]) -> bool:
+        Stdout.put(cc.hide_cursor())
+        
         theme: Theme = get_active_theme()
         step_marker_error: str = theme.symbols.step_marker_error.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
@@ -440,5 +447,6 @@ class Date(PromptBase):
 
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
+        Stdout.put(cc.show_cursor())
         raise CancelException(self.cancellation_message, 
             f'{year_text.get_raw_isolated_text()}-{month_text.get_raw_isolated_text()}-{day_text.get_raw_isolated_text()}' if not self.default_date else str(self.default_date))
