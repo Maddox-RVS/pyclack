@@ -17,6 +17,8 @@ def ask(message: str,
     Controls are as follows:
     - Use the arrow keys to move the cursor within the input.
     - Press 'Enter' to submit the input.
+    - Press 'Backspace' to delete the character before the cursor.
+    - Press 'Ctrl+C' to cancel the operation.
 
     Args:
         message (str): The message to display to the user.
@@ -75,11 +77,11 @@ class Ask(PromptBase):
             self.text_box_controller.cursor_end()
         
         self.propogate_key_after_error = True
-        self.allowed_inputs: tuple[str] = self._construct_allowed_inputs()
+        self.allowed_inputs: tuple[str, ...] = self._construct_allowed_inputs()
 
         super().activate()
 
-    def _construct_allowed_inputs(self) -> tuple[str]:
+    def _construct_allowed_inputs(self) -> tuple[str, ...]:
         '''
         Construct a tuple of allowed inputs for the prompt.
 
@@ -87,7 +89,7 @@ class Ask(PromptBase):
             tuple[str]: A tuple of allowed input keys.
         '''
 
-        allowed_chars: tuple[str] = tuple(chr(i) for i in range(32, 127))
+        allowed_chars: tuple[str, ...] = tuple(chr(i) for i in range(32, 127))
         return ('BACKSPACE', 'ENTER', 'LEFT', 'RIGHT', 'UP', 'DOWN', 'TAB', 'SPACE') + allowed_chars
 
     @override
@@ -122,7 +124,7 @@ class Ask(PromptBase):
 
         frame_builder: FrameBuilder = FrameBuilder()
 
-        frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
+        frame_builder.add_line(Text(prefix, theme.muted))
 
         message_lines: list[Text] = build_wrapped_input_lines(self.message, prefix, 0, theme.text, theme.active)
         message_lines[0] = Text(step_marker_active, theme.active) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
@@ -151,7 +153,7 @@ class Ask(PromptBase):
         input_index: int = self.text_box_controller.get_cursor_position()
 
         frame_builder: FrameBuilder = FrameBuilder()
-        frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
+        frame_builder.add_line(Text(prefix, theme.muted))
         message_lines: list[Text] = build_wrapped_input_lines(self.message, prefix, 0, theme.text, theme.muted)
         message_lines[0] = Text(step_marker_submit, theme.submit) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
@@ -177,7 +179,7 @@ class Ask(PromptBase):
         input_index: int = self.text_box_controller.get_cursor_position()
 
         frame_builder: FrameBuilder = FrameBuilder()
-        frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
+        frame_builder.add_line(Text(prefix, theme.muted))
         message_lines: list[Text] = build_wrapped_input_lines(self.message, prefix, 0, theme.text, theme.error)
         message_lines[0] = Text(step_marker_error, theme.error) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
@@ -186,7 +188,7 @@ class Ask(PromptBase):
         else:
             frame_builder.add_lines(*build_wrapped_input_lines(input_buffer, prefix, input_index, theme.text, theme.error, True))
 
-        validation_error_message: str = self.validate(input_buffer) # self.validate must be defined if we are in the error state
+        validation_error_message: str = self.validate(input_buffer) # self.validate must be defined if we are in the error state, and it must return something
         error_lines: list[Text] = build_wrapped_input_lines(validation_error_message, prefix, 0, theme.error, theme.error)
         last_index: int = len(error_lines) - 1
         error_lines[last_index] = Text(connector_bar_end, theme.error) + '  ' + Text(error_lines[last_index].get_raw_text()[3:], theme.error)
@@ -212,7 +214,7 @@ class Ask(PromptBase):
 
         frame_builder: FrameBuilder = FrameBuilder()
 
-        frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
+        frame_builder.add_line(Text(prefix, theme.muted))
 
         message_lines: list[Text] =  build_wrapped_input_lines(self.message, prefix, 0, theme.text, theme.muted)
         message_lines[0] = Text(step_marker_cancel, theme.cancel) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)

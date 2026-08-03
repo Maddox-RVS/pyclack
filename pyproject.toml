@@ -18,8 +18,8 @@ requires = ["uv_build>=0.11.9,<0.12.0"]
 build-backend = "uv_build"
 
 [tool.ruff]
-line-length = 120
+line-length = 200
 
 [tool.ruff.lint]
-select = ["E", "F"]  # keep only basic errors
-ignore = ["I"]       # ignore import sorting rules
+select = ["E", "F"] # keep only basic errors
+ignore = ["I", "E701"] # ignore import sorting rules, and single line if statements

@@ -14,6 +14,10 @@ def password(message: str,
         cancellation_message: str = 'Operation Cancelled') -> str:
     '''
     Ask the user for input as a password.
+    Controls are as follows:
+    - Backspace: Delete the last character in the input buffer.
+    - Enter: Submit the input as the password.
+    - Ctrl+C: Cancel the operation.
 
     Args:
         message (str): The message to display to the user.
@@ -108,7 +112,7 @@ class Password(PromptBase):
         input_index: int = self.text_box_controller.get_cursor_position()
 
         frame_builder: FrameBuilder = FrameBuilder()
-        frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
+        frame_builder.add_line(Text(prefix, theme.muted))
         message_lines: list[Text] = build_wrapped_input_lines(self.message, prefix, 0, theme.text, theme.active)
         message_lines[0] = Text(step_marker_active, theme.active) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
@@ -131,7 +135,7 @@ class Password(PromptBase):
         input_index: int = self.text_box_controller.get_cursor_position()
 
         frame_builder: FrameBuilder = FrameBuilder()
-        frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
+        frame_builder.add_line(Text(prefix, theme.muted))
         message_lines: list[Text] = build_wrapped_input_lines(self.message, prefix, 0, theme.text, theme.muted)
         message_lines[0] = Text(step_marker_submit, theme.submit) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
@@ -158,7 +162,7 @@ class Password(PromptBase):
         input_index: int = self.text_box_controller.get_cursor_position()
 
         frame_builder: FrameBuilder = FrameBuilder()
-        frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
+        frame_builder.add_line(Text(prefix, theme.muted))
         message_lines: list[Text] = build_wrapped_input_lines(self.message, prefix, 0, theme.text, theme.error)
         message_lines[0] = Text(step_marker_error, theme.error) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
@@ -190,7 +194,7 @@ class Password(PromptBase):
 
         frame_builder: FrameBuilder = FrameBuilder()
 
-        frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
+        frame_builder.add_line(Text(prefix, theme.muted))
 
         message_lines: list[Text] = build_wrapped_input_lines(self.message, prefix, 0, theme.text, theme.muted)
         message_lines[0] = Text(step_marker_cancel, theme.cancel) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
