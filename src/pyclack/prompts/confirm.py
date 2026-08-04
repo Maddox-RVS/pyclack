@@ -7,7 +7,9 @@ from ..config import get_active_theme
 from ..terminal import Stdout
 from copy import copy
 
-def confirm(message: str, 
+def confirm(message: str,
+            active: str = 'Yes',
+            inactive: str = 'No',
             cancellation_message: str = 'Operation Cancelled', 
             default_option: bool = True) -> bool:
     '''
@@ -17,6 +19,8 @@ def confirm(message: str,
 
     Args:
         message (str): The message to display to the user.
+        active (str): The text to display for the active (true) option.
+        inactive (str): The text to display for the inactive (false) option.
         cancellation_message (str): The message to display if the user cancels the operation.
         default_option (bool): The default option for the confirmation.
 
@@ -27,7 +31,7 @@ def confirm(message: str,
         CancelException: If the user cancels the operation.
     '''
 
-    prompt: Confirm = Confirm(message, cancellation_message, default_option)
+    prompt: Confirm = Confirm(message, active, inactive, cancellation_message, default_option)
     return prompt.selected_confirmation
 
 class Confirm(PromptBase):
@@ -36,7 +40,9 @@ class Confirm(PromptBase):
     '''
 
     def __init__(self, 
-                 message: str, 
+                 message: str,
+                 active: str,
+                 inactive: str,
                  cancellation_message: str,
                  default_option: bool = True):
         '''
@@ -44,6 +50,8 @@ class Confirm(PromptBase):
 
         Args:
             message (str): The message to display to the user.
+            active (str): The text to display for the active (true) option.
+            inactive (str): The text to display for the inactive (false) option.
             cancellation_message (str): The message to display if the user cancels the operation.
             default_option (bool): The default option for the confirmation.
 
@@ -54,6 +62,8 @@ class Confirm(PromptBase):
         super().__init__()
 
         self.message: str = message
+        self.active: str = active
+        self.inactive: str = inactive
         self.cancellation_message: str = cancellation_message
         self.selected_confirmation: bool = default_option
         self.render_frame: RenderFrame = RenderFrame()
@@ -61,7 +71,7 @@ class Confirm(PromptBase):
 
         super().activate()
 
-    def _construct_allowed_inputs(self) -> tuple[str]:
+    def _construct_allowed_inputs(self) -> tuple[str, ...]:
         '''
         Construct a tuple of allowed inputs for the prompt.
 
@@ -101,13 +111,15 @@ class Confirm(PromptBase):
         no_symbol_style: Style = theme.submit if not self.selected_confirmation else theme.muted
         no_symbol: str = selection_widget_radio_active if not self.selected_confirmation else selection_widget_radio_inactive
 
+        # TODO: Make yes/no text multiline... easier said than done...
+
         confirmation_line: Text = Text.assemble(
             (connector_bar_vertical, theme.active), '  ',
             (yes_symbol, yes_symbol_style), ' ',
-            ('Yes ', yes_text_style),
+            (f'{self.active} ', yes_text_style),
             ('/ ', theme.muted),
             (no_symbol, no_symbol_style), ' ',
-            ('No', no_text_style))
+            (f'{self.inactive} ', no_text_style))
         frame_builder.add_line(confirmation_line)
 
         frame_builder.add_line(Text(connector_bar_end, theme.active))
@@ -131,7 +143,7 @@ class Confirm(PromptBase):
         message_lines[0] = Text(step_marker_submit, theme.submit) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
 
-        confirmation_text: str = 'Yes' if self.selected_confirmation else 'No'
+        confirmation_text: str = self.active if self.selected_confirmation else self.inactive
         frame_builder.add_line(Text(connector_bar_vertical, theme.muted) + '  ' + Text(confirmation_text, theme.muted))
 
         frame: tuple[Text, ...] = frame_builder.build()
@@ -157,7 +169,7 @@ class Confirm(PromptBase):
 
         text_style: Style = copy(theme.muted)
         text_style.strikethrough = True
-        confirmation_text: str = 'Yes' if self.selected_confirmation else 'No'
+        confirmation_text: str = self.active if self.selected_confirmation else self.inactive
         frame_builder.add_line(Text(connector_bar_vertical, theme.muted) + '  ' + Text(confirmation_text, text_style))
         frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
 
@@ -170,4 +182,4 @@ class Confirm(PromptBase):
         self.render_frame.draw_frame(*frame)
 
         Stdout.put(cc.show_cursor())
-        raise CancelException(self.cancellation_message, self.selected_confirmation)
+        raise CancelException(self.cancellation_message, str(self.selected_confirmation))
