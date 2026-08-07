@@ -101,6 +101,80 @@ def build_wrapped_input_lines(
         else: wrapped_input_lines += wrapping_logic(text_line, prefix, 0, text_style, prefix_style, False)
     return wrapped_input_lines
 
+def build_wrapped_styled_input_lines(
+        text: Text,
+        prefix: str,
+        cursor_index: int,
+        prefix_style: Style,
+        show_cursor: bool = False) -> list[Text]:
+            
+    def flatten_runs(value: Text) -> list[tuple[str, Optional[Style]]]:
+        runs: list[tuple[str, Optional[Style]]] = []
+        current: Optional[Text] = value
+        while current is not None:
+            runs.append((current.get_raw_isolated_text(), current.style))
+            current = current.inner_text
+        return runs
+
+    def build_slice(runs: list[tuple[str, Optional[Style]]], start: int, end: int) -> Text:
+        if start >= end:
+            return Text('')
+
+        parts = []
+        current_pos = 0
+        for run_text, run_style in runs:
+            run_end = current_pos + len(run_text)
+            overlap_start = max(start, current_pos)
+            overlap_end = min(end, run_end)
+            if overlap_start < overlap_end:
+                segment = run_text[overlap_start - current_pos:overlap_end - current_pos]
+                if run_style is None:
+                    parts.append(segment)
+                else:
+                    parts.append((segment, run_style))
+            current_pos = run_end
+            if current_pos >= end:
+                break
+
+        return Text.assemble(*parts) if parts else Text('')
+
+    theme: Theme = get_active_theme()
+    raw_text = text.get_raw_text()
+    cursor_index = max(0, min(cursor_index, len(raw_text)))
+    runs = flatten_runs(text)
+    columns, _ = shutil.get_terminal_size()
+    available = max(1, columns - len(prefix))
+    wrapped: list[Text] = []
+
+    line_start = 0
+    for line in raw_text.split('\n'):
+        line_len = len(line)
+        line_end = line_start + line_len
+        line_cursor = line_start <= cursor_index <= line_end
+        local_cursor = cursor_index - line_start if line_cursor else 0
+        segments = max(1, (line_len + available - 1) // available)
+
+        for i in range(segments):
+            seg_start = i * available
+            seg_end = min(seg_start + available, line_len)
+            abs_seg_start = line_start + seg_start
+            abs_seg_end = line_start + seg_end
+            content = build_slice(runs, abs_seg_start, abs_seg_end)
+
+            if show_cursor and line_cursor and seg_start <= local_cursor <= seg_end:
+                local_idx = local_cursor - seg_start
+                first = build_slice(runs, abs_seg_start, abs_seg_start + local_idx)
+                middle_char = line[local_idx:local_idx + 1]
+                middle = Text(middle_char if middle_char else ' ', theme.cursor)
+                rest = build_slice(runs, abs_seg_start + local_idx + 1, abs_seg_end)
+                content = first + middle + rest
+
+            wrapped.append(Text(prefix, prefix_style) + content)
+
+        line_start = line_end + 1
+
+    return wrapped
+
 class TextBoxController:
     '''
     A class to manage the input buffer and cursor position for a text box. It provides methods to manipulate the 
