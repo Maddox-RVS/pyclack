@@ -1,5 +1,5 @@
+from ..prompts.util import build_wrapped_input_lines, build_wrapped_styled_input_lines
 from ..renderer import Text, RenderFrame, FrameBuilder, Theme, Style
-from ..prompts.util import build_wrapped_input_lines
 from ..prompts import PromptBase, CancelException
 from ..terminal import CursorController as cc
 from ..config import get_active_theme
@@ -9,10 +9,10 @@ from ..terminal import Stdout
 from copy import copy
 import calendar
 
-def date(message: str, 
-        initial_date: ddate, 
-        min_date: ddate, 
-        max_date: ddate, 
+def date(message: str,
+        initial_date: ddate,
+        min_date: ddate,
+        max_date: ddate,
         cancellation_message: str = 'Operation Cancelled',
         default_date: Optional[ddate] = None,
         validate: Optional[Callable[[ddate], Optional[str]]] = None) -> ddate:
@@ -42,7 +42,7 @@ def date(message: str,
     Raises:
         CancelException: If the user cancels the operation.
     '''
-            
+
     prompt: Date = Date(message, initial_date, min_date, max_date, cancellation_message, default_date, validate)
     return ddate(int(prompt.date_buffer[2]), int(prompt.date_buffer[0]), int(prompt.date_buffer[1]))
 
@@ -50,7 +50,7 @@ class Date(PromptBase):
     '''
     A prompt for selecting a date within a specified range.
     '''
-    
+
     def __init__(self,
                 message: str,
                 initial_date: ddate,
@@ -70,11 +70,11 @@ class Date(PromptBase):
             cancellation_message (str): The message to display if the user cancels the operation.
             default_date (Optional[ddate]): The default date to return in the raised `CancelException` if the user cancels the prompt.
             validate (Optional[Callable[[ddate], Optional[str]]]): A function that takes a date and returns an error message if the date is invalid, or None if the date is valid.
-            
+
         Raises:
             CancelException: If the user cancels the operation.
         '''
-                    
+
         super().__init__()
 
         self.message: str = message
@@ -85,8 +85,8 @@ class Date(PromptBase):
         self.default_date: Optional[ddate] = default_date
         self.validate: Optional[Callable[[ddate], Optional[str]]] = validate
 
-        self.date_buffer: list[str] = [str(self.initial_date.month), 
-                                        str(self.initial_date.day), 
+        self.date_buffer: list[str] = [str(self.initial_date.month),
+                                        str(self.initial_date.day),
                                         str(self.initial_date.year)]
         self.date_index: int = 0
 
@@ -103,8 +103,8 @@ class Date(PromptBase):
         Returns:
             Optional[str]: An error message if the date is invalid, or None if the date is valid.
         '''
-        
-        if not (len(self.date_buffer[0]) > 0 and len(self.date_buffer[1]) > 0 and len(self.date_buffer[2]) > 0): 
+
+        if not (len(self.date_buffer[0]) > 0 and len(self.date_buffer[1]) > 0 and len(self.date_buffer[2]) > 0):
             return 'Date must be complete'
 
         try:
@@ -118,7 +118,7 @@ class Date(PromptBase):
         '''
         Move the selection index to the left.
         '''
-        
+
         self.date_index = max(0, self.date_index - 1)
 
     def _selection_right(self) -> None:
@@ -132,7 +132,7 @@ class Date(PromptBase):
         '''
         Increase the value of the currently selected date field.
         '''
-        
+
         current_raw: str = self.date_buffer[self.date_index]
         is_blank: bool = current_raw == ''
         num: int = int(current_raw) if current_raw else 0
@@ -160,7 +160,7 @@ class Date(PromptBase):
         '''
         Decrease the value of the currently selected date field.
         '''
-        
+
         current_raw: str = self.date_buffer[self.date_index]
         is_blank: bool = current_raw == ''
         num: int = int(current_raw) if current_raw else 0
@@ -183,7 +183,7 @@ class Date(PromptBase):
 
         next_value: int = bounds_max if is_blank else max(bounds_min, min(bounds_max, num - 1))
         self.date_buffer[self.date_index] = str(next_value)
-        
+
     def _add_str(self, original: str, new: str, max_chars: int) -> str:
         '''
         Add a new string to the original string, ensuring that the total length does not exceed max_chars.
@@ -196,7 +196,7 @@ class Date(PromptBase):
         Returns:
             str: The resulting string after adding the new string, or the original string if the total length exceeds max_chars.
         '''
-        
+
         if len(original) + len(new) > max_chars: return original
         else: return original + new
 
@@ -209,24 +209,26 @@ class Date(PromptBase):
         '''
 
         allowed_chars: tuple[str, ...] = tuple(str(i) for i in range(10))
-        return ('BACKSPACE', 
-                'TAB', 
-                'ENTER', 
+        return ('BACKSPACE',
+                'TAB',
+                'ENTER',
                 'LEFT', 'RIGHT', 'UP', 'DOWN',
                 'h', 'j', 'k', 'l', 'H', 'J', 'K', 'L') + allowed_chars
 
     def handle_active(self, key: Optional[str]) -> bool:
         Stdout.put(cc.hide_cursor())
-        
+
         theme: Theme = get_active_theme()
         step_marker_active: str = theme.symbols.step_marker_active.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
-        prefix: str = f'{connector_bar_vertical}  '
+        message_text: Text = Text(self.message, theme.text)
+        prefix_active: Text = Text(f'{connector_bar_vertical}  ', theme.active)
+        prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
 
         if key not in self.allowed_inputs: key = ''
 
-        if key == 'BACKSPACE': 
+        if key == 'BACKSPACE':
             if len(self.date_buffer[self.date_index]) > 0: self.date_buffer[self.date_index] = ''
             else: self._selection_left()
         elif key == 'TAB': self._selection_right()
@@ -252,11 +254,11 @@ class Date(PromptBase):
             elif movement_key == 'RIGHT': self._selection_right()
             elif movement_key == 'UP': self._selection_increase()
             elif movement_key == 'DOWN': self._selection_decrease()
-            else: 
+            else:
                 current_input: str = self.date_buffer[self.date_index]
                 max_chars: int = 2 if (self.date_index == 0 or self.date_index == 1) else 4
                 new_buffer: str = self._add_str(current_input, key, max_chars)
-                if self.date_buffer[self.date_index] == new_buffer: 
+                if self.date_buffer[self.date_index] == new_buffer:
                     self._selection_right()
                     current_input = self.date_buffer[self.date_index]
                     max_chars = 2 if (self.date_index == 0 or self.date_index == 1) else 4
@@ -266,10 +268,10 @@ class Date(PromptBase):
 
         # Create and render next frame based on the current input buffer and state
         frame_builder: FrameBuilder = FrameBuilder()
-        
-        frame_builder.add_line(Text(prefix, theme.muted))
-        
-        message_lines: list[Text] = build_wrapped_input_lines(self.message, prefix, 0, theme.text, theme.active)
+
+        frame_builder.add_line(prefix_muted)
+
+        message_lines: list[Text] = build_wrapped_styled_input_lines(message_text, prefix_active, 0)
         message_lines[0] = Text(step_marker_active, theme.active) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
 
@@ -290,7 +292,7 @@ class Date(PromptBase):
         elif self.date_index == 2: year_text.style = theme.cursor
 
         date_selector_text: Text = Text.assemble(
-            (prefix, theme.active),
+            prefix_active,
             month_text,
             ('/', theme.muted),
             day_text,
@@ -308,14 +310,15 @@ class Date(PromptBase):
         theme: Theme = get_active_theme()
         step_marker_submit: str = theme.symbols.step_marker_submit.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
-        prefix: str = f'{connector_bar_vertical}  '
-        
+        message_text: Text = Text(self.message, theme.text)
+        prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
+
         # Create and render next frame based on the current input buffer and state
         frame_builder: FrameBuilder = FrameBuilder()
-        
-        frame_builder.add_line(Text(prefix, theme.muted))
-        
-        message_lines: list[Text] = build_wrapped_input_lines(self.message, prefix, 0, theme.text, theme.muted)
+
+        frame_builder.add_line(prefix_muted)
+
+        message_lines: list[Text] = build_wrapped_styled_input_lines(message_text, prefix_muted, 0)
         message_lines[0] = Text(step_marker_submit, theme.submit) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
 
@@ -332,7 +335,7 @@ class Date(PromptBase):
         year_text: Text = Text(year, theme.muted) if len(year) > 0 else Text('yyyy', theme.muted)
 
         date_selector_text: Text = Text.assemble(
-            (prefix, theme.muted),
+            prefix_muted,
             month_text,
             ('/', theme.muted),
             day_text,
@@ -347,19 +350,21 @@ class Date(PromptBase):
 
     def handle_error(self, key: Optional[str]) -> bool:
         Stdout.put(cc.hide_cursor())
-        
+
         theme: Theme = get_active_theme()
         step_marker_error: str = theme.symbols.step_marker_error.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
-        prefix: str = f'{connector_bar_vertical}  '
-        
+        message_text: Text = Text(self.message, theme.text)
+        prefix_error: Text = Text(f'{connector_bar_vertical}  ', theme.error)
+        prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
+
         # Create and render next frame based on the current input buffer and state
         frame_builder: FrameBuilder = FrameBuilder()
-        
-        frame_builder.add_line(Text(prefix, theme.muted))
-        
-        message_lines: list[Text] = build_wrapped_input_lines(self.message, prefix, 0, theme.text, theme.error)
+
+        frame_builder.add_line(prefix_muted)
+
+        message_lines: list[Text] = build_wrapped_styled_input_lines(message_text, prefix_error, 0)
         message_lines[0] = Text(step_marker_error, theme.error) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
 
@@ -380,7 +385,7 @@ class Date(PromptBase):
         elif self.date_index == 2: year_text.style = theme.cursor
 
         date_selector_text: Text = Text.assemble(
-            (prefix, theme.error),
+            prefix_error,
             month_text,
             ('/', theme.muted),
             day_text,
@@ -388,8 +393,8 @@ class Date(PromptBase):
             year_text)
         frame_builder.add_line(date_selector_text)
 
-        error_message: str = self._validate() # self.validate must be defined if we are in the error state, and it must return something
-        error_lines: list[Text] = build_wrapped_input_lines(error_message, prefix, 0, theme.error, theme.error)
+        error_message_text: Text = Text(self._validate(), theme.error) # self.validate must be defined if we are in the error state, and it must return something
+        error_lines: list[Text] = build_wrapped_styled_input_lines(error_message_text, prefix_error, 0)
         last_index: int = len(error_lines) - 1
         error_lines[last_index] = Text(connector_bar_end, theme.error) + '  ' + Text(error_lines[last_index].get_raw_text()[3:], theme.error)
         frame_builder.add_lines(*error_lines)
@@ -404,14 +409,16 @@ class Date(PromptBase):
         step_marker_cancel: str = theme.symbols.step_marker_cancel.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
-        prefix: str = f'{connector_bar_vertical}  '
-        
+        message_text: Text = Text(self.message, theme.text)
+        cancellation_text: Text = Text(self.cancellation_message, theme.cancel)
+        prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
+
         # Create and render next frame based on the current input buffer and state
         frame_builder: FrameBuilder = FrameBuilder()
-        
-        frame_builder.add_line(Text(prefix, theme.muted))
-        
-        message_lines: list[Text] = build_wrapped_input_lines(self.message, prefix, 0, theme.text, theme.muted)
+
+        frame_builder.add_line(prefix_muted)
+
+        message_lines: list[Text] = build_wrapped_styled_input_lines(message_text, prefix_muted, 0)
         message_lines[0] = Text(step_marker_cancel, theme.cancel) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
 
@@ -430,7 +437,7 @@ class Date(PromptBase):
         year_text: Text = Text(year, text_style) if len(year) > 0 else Text('yyyy', text_style)
 
         date_selector_text: Text = Text.assemble(
-            (prefix, theme.muted),
+            prefix_muted,
             month_text,
             ('/', text_style),
             day_text,
@@ -438,9 +445,9 @@ class Date(PromptBase):
             year_text)
         frame_builder.add_line(date_selector_text)
 
-        frame_builder.add_line(Text(prefix, theme.muted))
+        frame_builder.add_line(prefix_muted)
 
-        cancel_lines: list[Text] = build_wrapped_input_lines(self.cancellation_message, prefix, 0, theme.cancel, theme.muted)
+        cancel_lines: list[Text] = build_wrapped_styled_input_lines(cancellation_text, prefix_muted, 0)
         last_index: int = len(cancel_lines) - 1
         cancel_lines[last_index] = Text(connector_bar_end, theme.muted) + '  ' + Text(cancel_lines[last_index].get_raw_text()[3:], theme.cancel)
         frame_builder.add_lines(*cancel_lines)
@@ -448,5 +455,5 @@ class Date(PromptBase):
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
         Stdout.put(cc.show_cursor())
-        raise CancelException(self.cancellation_message, 
+        raise CancelException(self.cancellation_message,
             f'{year_text.get_raw_isolated_text()}-{month_text.get_raw_isolated_text()}-{day_text.get_raw_isolated_text()}' if not self.default_date else str(self.default_date))

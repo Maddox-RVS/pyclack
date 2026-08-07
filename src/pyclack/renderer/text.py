@@ -3,6 +3,7 @@ from rich.text import Text as rText
 from rich.console import Console
 from typing import Optional, Any
 from .themes import Style
+from copy import copy
 
 class Text:
     '''
@@ -128,12 +129,14 @@ class Text:
         if not isinstance(other, Text):
             return NotImplemented
 
+        result = Text(self.text, self.style)
         if self.inner_text is None:
-            self.inner_text = other
+            result.inner_text = other
         else:
-            inner_text = self.inner_text
+            inner_text = result.inner_text = copy(self.inner_text)
             while inner_text.inner_text is not None:
+                inner_text.inner_text = copy(inner_text.inner_text)
                 inner_text = inner_text.inner_text
             inner_text.inner_text = other
 
-        return self
+        return result

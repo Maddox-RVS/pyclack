@@ -103,9 +103,8 @@ def build_wrapped_input_lines(
 
 def build_wrapped_styled_input_lines(
         text: Text,
-        prefix: str,
+        prefix: Text,
         cursor_index: int,
-        prefix_style: Style,
         show_cursor: bool = False) -> list[Text]:
             
     def flatten_runs(value: Text) -> list[tuple[str, Optional[Style]]]:
@@ -115,6 +114,11 @@ def build_wrapped_styled_input_lines(
             runs.append((current.get_raw_isolated_text(), current.style))
             current = current.inner_text
         return runs
+
+    def clone_text(value: Text) -> Text:
+        if value.inner_text is None:
+            return Text(value.get_raw_isolated_text(), value.style)
+        return Text(value.get_raw_isolated_text(), value.style, clone_text(value.inner_text))
 
     def build_slice(runs: list[tuple[str, Optional[Style]]], start: int, end: int) -> Text:
         if start >= end:
@@ -143,7 +147,7 @@ def build_wrapped_styled_input_lines(
     cursor_index = max(0, min(cursor_index, len(raw_text)))
     runs = flatten_runs(text)
     columns, _ = shutil.get_terminal_size()
-    available = max(1, columns - len(prefix))
+    available = max(1, columns - len(prefix.get_raw_text()))
     wrapped: list[Text] = []
 
     line_start = 0
@@ -169,7 +173,7 @@ def build_wrapped_styled_input_lines(
                 rest = build_slice(runs, abs_seg_start + local_idx + 1, abs_seg_end)
                 content = first + middle + rest
 
-            wrapped.append(Text(prefix, prefix_style) + content)
+            wrapped.append(clone_text(prefix) + content)
 
         line_start = line_end + 1
 
