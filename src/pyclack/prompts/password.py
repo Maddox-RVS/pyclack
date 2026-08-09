@@ -1,4 +1,4 @@
-from .util import build_wrapped_input_lines, build_wrapped_styled_input_lines, TextBoxController
+from .util import build_wrapped_styled_input_lines, TextBoxController
 from ..renderer import RenderFrame, Text, FrameBuilder, Style, Theme, Symbol
 from .prompt_base import PromptBase, CancelException
 from typing import Callable, Optional, override

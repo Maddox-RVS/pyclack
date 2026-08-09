@@ -1,4 +1,4 @@
-from ..prompts.util import build_wrapped_input_lines, build_wrapped_styled_input_lines
+from ..prompts.util import build_wrapped_styled_input_lines
 from ..renderer import Theme, RenderFrame, Text, FrameBuilder, Style
 from ..terminal import CursorController as cc
 from ..prompts.prompt_base import PromptBase

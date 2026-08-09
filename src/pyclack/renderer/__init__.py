@@ -1,4 +1,9 @@
-from .text import Text
-from .render_frame import RenderFrame, FrameBuilder
-from .themes import Style, Theme, Themes
-from .symbols import Symbols, Symbol, SpinnerSymbols
+from .text import Text as Text
+from .render_frame import RenderFrame as RenderFrame
+from .render_frame import FrameBuilder as FrameBuilder
+from .themes import Style as Style
+from .themes import Theme as Theme
+from .themes import Themes as Themes
+from .symbols import Symbols as Symbols
+from .symbols import Symbol as Symbol
+from .symbols import SpinnerSymbols as SpinnerSymbols
