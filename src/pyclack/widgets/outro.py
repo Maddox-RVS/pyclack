@@ -1,6 +1,6 @@
+from ..prompts.util import build_wrapped_input_lines, build_wrapped_styled_input_lines
 from ..renderer import Theme, RenderFrame, Text, FrameBuilder, Style
 from ..terminal import CursorController as cc
-from ..prompts.util import build_wrapped_input_lines
 from ..prompts.prompt_base import PromptBase
 from ..config import get_active_theme
 from typing import override, Optional
@@ -43,13 +43,13 @@ class Outro(PromptBase):
         theme: Theme = get_active_theme()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
-        prefix: str = f'{connector_bar_vertical}  '
+        prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
 
         text_style: Style = self.custom_style if self.custom_style else theme.text
+        outro_text: Text = Text(self.message, text_style)
         frame_builder: FrameBuilder = FrameBuilder()
-        connector_text: Text = Text(connector_bar_vertical, theme.muted)
-        frame_builder.add_line(connector_text)
-        outro_text_lines: list[Text] = build_wrapped_input_lines(self.message, prefix, 0, theme.text, theme.muted)
+        frame_builder.add_line(prefix_muted)
+        outro_text_lines: list[Text] = build_wrapped_styled_input_lines(outro_text, prefix_muted, 0)
         outro_formatted: str = outro_text_lines[0].get_raw_text()[3:] if not text_style.bg_color else f' {outro_text_lines[0].get_raw_text()[3:]} '
         last_index: int = len(outro_text_lines) - 1
         outro_text_lines[last_index] = Text(connector_bar_end, theme.muted) + '  ' + Text(outro_formatted, text_style)
