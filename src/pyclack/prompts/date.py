@@ -1,6 +1,6 @@
-from ..prompts.util import build_wrapped_styled_input_lines
 from ..renderer import Text, RenderFrame, FrameBuilder, Theme, Style
 from ..prompts import PromptBase, CancelException
+from ..prompts.util import build_wrapped_lines
 from ..terminal import CursorController as cc
 from ..config import get_active_theme
 from typing import Optional, Callable
@@ -271,7 +271,7 @@ class Date(PromptBase):
 
         frame_builder.add_line(prefix_muted)
 
-        message_lines: list[Text] = build_wrapped_styled_input_lines(message_text, prefix_active, 0)
+        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_active)
         message_lines[0] = Text(step_marker_active, theme.active) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
 
@@ -318,7 +318,7 @@ class Date(PromptBase):
 
         frame_builder.add_line(prefix_muted)
 
-        message_lines: list[Text] = build_wrapped_styled_input_lines(message_text, prefix_muted, 0)
+        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_muted)
         message_lines[0] = Text(step_marker_submit, theme.submit) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
 
@@ -364,7 +364,7 @@ class Date(PromptBase):
 
         frame_builder.add_line(prefix_muted)
 
-        message_lines: list[Text] = build_wrapped_styled_input_lines(message_text, prefix_error, 0)
+        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_error)
         message_lines[0] = Text(step_marker_error, theme.error) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
 
@@ -394,7 +394,7 @@ class Date(PromptBase):
         frame_builder.add_line(date_selector_text)
 
         error_message_text: Text = Text(self._validate(), theme.error) # self.validate must be defined if we are in the error state, and it must return something
-        error_lines: list[Text] = build_wrapped_styled_input_lines(error_message_text, prefix_error, 0)
+        error_lines: list[Text] = build_wrapped_lines(error_message_text, prefix_error)
         last_index: int = len(error_lines) - 1
         error_lines[last_index] = Text(connector_bar_end, theme.error) + '  ' + Text(error_lines[last_index].get_raw_text()[3:], theme.error)
         frame_builder.add_lines(*error_lines)
@@ -418,7 +418,7 @@ class Date(PromptBase):
 
         frame_builder.add_line(prefix_muted)
 
-        message_lines: list[Text] = build_wrapped_styled_input_lines(message_text, prefix_muted, 0)
+        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_muted)
         message_lines[0] = Text(step_marker_cancel, theme.cancel) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
 
@@ -447,7 +447,7 @@ class Date(PromptBase):
 
         frame_builder.add_line(prefix_muted)
 
-        cancel_lines: list[Text] = build_wrapped_styled_input_lines(cancellation_text, prefix_muted, 0)
+        cancel_lines: list[Text] = build_wrapped_lines(cancellation_text, prefix_muted)
         last_index: int = len(cancel_lines) - 1
         cancel_lines[last_index] = Text(connector_bar_end, theme.muted) + '  ' + Text(cancel_lines[last_index].get_raw_text()[3:], theme.cancel)
         frame_builder.add_lines(*cancel_lines)

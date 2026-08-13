@@ -3,77 +3,102 @@ from ..config import get_active_theme
 from typing import Optional
 import shutil
 
-def splitlines(text: str, index: int) -> tuple[list[str], int, int]:
+# def build_message_header(
+#     message: str,
+#     message_style: Style,
+#     step_marker_prefix: str,
+#     step_marker_prefix_style: Style,
+#     prefix: Text) -> list[Text]:
+
+#     message = message if not message_style.bg_color else f' {message} '
+#     message_text: Text = Text(message, message_style)
+#     step_marker_prefix_text: Text = Text(step_marker_prefix, step_marker_prefix_style)
+#     message_lines: list[Text] = build_wrapped_lines(message_text, prefix, 0)
+#     message_lines[0] = step_marker_prefix_text + Text(message_lines[0].get_raw_text()[len(prefix):], message_style) 
+#     return message_lines
+
+def _flatten_runs(value: Text) -> list[tuple[str, Optional[Style]]]:
     '''
-    Splits the given text into lines and returns the line and character index of the given index.
+    Walks a (possibly deeply nested) Text object's inner_text chain and
+    returns a flat list of (raw_text, style) runs in order.
+    '''
+
+    runs: list[tuple[str, Optional[Style]]] = []
+    current: Optional[Text] = value
+    while current is not None:
+        runs.append((current.get_raw_isolated_text(), current.style))
+        current = current.inner_text
+    return runs
+
+def _build_slice(runs: list[tuple[str, Optional[Style]]], start: int, end: int) -> Text:
+    '''
+    Rebuilds a Text spanning [start, end) of a flattened raw text,
+    preserving each run's original style (or lack thereof) for whatever
+    portion of it falls inside that range.
+    '''
+
+    if start >= end: return Text('')
+
+    parts = []
+    current_pos = 0
+    for run_text, run_style in runs:
+        run_end = current_pos + len(run_text)
+        overlap_start = max(start, current_pos)
+        overlap_end = min(end, run_end)
+        if overlap_start < overlap_end:
+            segment = run_text[overlap_start - current_pos:overlap_end - current_pos]
+            if run_style is None: parts.append(segment)
+            else: parts.append((segment, run_style))
+        current_pos = run_end
+        if current_pos >= end: break
+
+    return Text.assemble(*parts) if parts else Text('')
+
+def apply_cursor_style(text: Text, index: int, style: Style) -> Text:
+    '''
+    Returns a copy of the given Text with the single character at `index`
+    restyled to `style`, leaving every other character's original styling
+    (including deeply nested styles) untouched. Works on any Text structure
+    regardless of nesting depth, since it flattens to raw runs first.
+
+    If `index` lands exactly at the end of the text (i.e. there's no
+    character there yet, as when a cursor sits past the last typed
+    character), a single styled space is inserted to represent the cursor.
 
     Args:
-        text (str): The text to split.
-        index (int): The index to find the line and character index for.
+        text (Text): The text to apply the cursor style to.
+        index (int): The character index to style (clamped to valid range).
+        style (Style): The style to apply at that index.
 
     Returns:
-        tuple[list[str], int, int]: A tuple containing the lines, line index, and character index.
+        Text: A new Text with the cursor style applied at that index.
     '''
 
-    index = max(0, min(index, len(text)))
-    lines = text.split('\n')
-    current_pos = 0
-    line_index = 0
-    char_index = 0
-    for i, line in enumerate(lines):
-        line_length = len(line)
-        if current_pos <= index <= current_pos + line_length:
-            line_index = i
-            char_index = index - current_pos
-            break
-        current_pos += line_length + 1
-    return lines, line_index, char_index
+    raw_text = text.get_raw_text()
+    index = max(0, min(index, len(raw_text)))
+    runs = _flatten_runs(text)
 
-def build_wrapped_styled_input_lines(
-        text: Text,
-        prefix: Text,
-        cursor_index: int,
-        show_cursor: bool = False) -> list[Text]:
-            
-    def flatten_runs(value: Text) -> list[tuple[str, Optional[Style]]]:
-        runs: list[tuple[str, Optional[Style]]] = []
-        current: Optional[Text] = value
-        while current is not None:
-            runs.append((current.get_raw_isolated_text(), current.style))
-            current = current.inner_text
-        return runs
+    first = _build_slice(runs, 0, index)
+    middle_char = raw_text[index:index + 1]
+    middle = Text(middle_char if middle_char else ' ', style)
+    rest = _build_slice(runs, index + 1, len(raw_text))
+
+    return first + middle + rest
+
+def build_wrapped_lines(text: Text, prefix: Text) -> list[Text]:
+    '''
+    Wraps the given Text into terminal-width-limited lines, each prefixed
+    with the given prefix Text, preserving the original styling (including
+    deeply nested styles) across wrap boundaries.
+    '''
 
     def clone_text(value: Text) -> Text:
         if value.inner_text is None:
             return Text(value.get_raw_isolated_text(), value.style)
         return Text(value.get_raw_isolated_text(), value.style, clone_text(value.inner_text))
 
-    def build_slice(runs: list[tuple[str, Optional[Style]]], start: int, end: int) -> Text:
-        if start >= end:
-            return Text('')
-
-        parts = []
-        current_pos = 0
-        for run_text, run_style in runs:
-            run_end = current_pos + len(run_text)
-            overlap_start = max(start, current_pos)
-            overlap_end = min(end, run_end)
-            if overlap_start < overlap_end:
-                segment = run_text[overlap_start - current_pos:overlap_end - current_pos]
-                if run_style is None:
-                    parts.append(segment)
-                else:
-                    parts.append((segment, run_style))
-            current_pos = run_end
-            if current_pos >= end:
-                break
-
-        return Text.assemble(*parts) if parts else Text('')
-
-    theme: Theme = get_active_theme()
     raw_text = text.get_raw_text()
-    cursor_index = max(0, min(cursor_index, len(raw_text)))
-    runs = flatten_runs(text)
+    runs = _flatten_runs(text)
     columns, _ = shutil.get_terminal_size()
     available = max(1, columns - len(prefix.get_raw_text()))
     wrapped: list[Text] = []
@@ -82,8 +107,6 @@ def build_wrapped_styled_input_lines(
     for line in raw_text.split('\n'):
         line_len = len(line)
         line_end = line_start + line_len
-        line_cursor = line_start <= cursor_index <= line_end
-        local_cursor = cursor_index - line_start if line_cursor else 0
         segments = max(1, (line_len + available - 1) // available)
 
         for i in range(segments):
@@ -91,16 +114,7 @@ def build_wrapped_styled_input_lines(
             seg_end = min(seg_start + available, line_len)
             abs_seg_start = line_start + seg_start
             abs_seg_end = line_start + seg_end
-            content = build_slice(runs, abs_seg_start, abs_seg_end)
-
-            if show_cursor and line_cursor and seg_start <= local_cursor <= seg_end:
-                local_idx = local_cursor - seg_start
-                first = build_slice(runs, abs_seg_start, abs_seg_start + local_idx)
-                middle_char = line[local_idx:local_idx + 1]
-                middle = Text(middle_char if middle_char else ' ', theme.cursor)
-                rest = build_slice(runs, abs_seg_start + local_idx + 1, abs_seg_end)
-                content = first + middle + rest
-
+            content = _build_slice(runs, abs_seg_start, abs_seg_end)
             wrapped.append(clone_text(prefix) + content)
 
         line_start = line_end + 1

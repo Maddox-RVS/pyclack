@@ -140,3 +140,6 @@ class Text:
             inner_text.inner_text = other
 
         return result
+
+    def __len__(self):
+        return len(self.get_raw_text())

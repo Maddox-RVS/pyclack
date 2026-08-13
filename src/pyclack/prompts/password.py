@@ -1,4 +1,4 @@
-from .util import build_wrapped_styled_input_lines, TextBoxController
+from .util import build_wrapped_lines, apply_cursor_style, TextBoxController
 from ..renderer import RenderFrame, Text, FrameBuilder, Style, Theme, Symbol
 from .prompt_base import PromptBase, CancelException
 from typing import Callable, Optional, override
@@ -120,11 +120,12 @@ class Password(PromptBase):
 
         frame_builder: FrameBuilder = FrameBuilder()
         frame_builder.add_line(prefix_muted)
-        message_lines: list[Text] = build_wrapped_styled_input_lines(message_text, prefix_active, 0)
+        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_active)
         message_lines[0] = Text(step_marker_active, theme.active) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
         input_buffer_text: Text = Text(input_buffer, theme.text)
-        frame_builder.add_lines(*build_wrapped_styled_input_lines(input_buffer_text, prefix_active, input_index, not self.show_nothing))
+        if not self.show_nothing: input_buffer_text = apply_cursor_style(input_buffer_text, input_index, theme.cursor)
+        frame_builder.add_lines(*build_wrapped_lines(input_buffer_text, prefix_active))
         frame_builder.add_line(Text(connector_bar_end, theme.active))
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
@@ -144,11 +145,11 @@ class Password(PromptBase):
 
         frame_builder: FrameBuilder = FrameBuilder()
         frame_builder.add_line(prefix_muted)
-        message_lines: list[Text] = build_wrapped_styled_input_lines(message_text, prefix_muted, 0)
+        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_muted)
         message_lines[0] = Text(step_marker_submit, theme.submit) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
         input_buffer_text: Text = Text(input_buffer, theme.text)
-        frame_builder.add_lines(*build_wrapped_styled_input_lines(input_buffer_text, prefix_muted, 0))
+        frame_builder.add_lines(*build_wrapped_lines(input_buffer_text, prefix_muted))
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
 
@@ -177,12 +178,13 @@ class Password(PromptBase):
 
         frame_builder: FrameBuilder = FrameBuilder()
         frame_builder.add_line(prefix_muted)
-        message_lines: list[Text] = build_wrapped_styled_input_lines(message_text, prefix_muted, 0)
+        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_muted)
         message_lines[0] = Text(step_marker_error, theme.error) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
         input_buffer_text: Text = Text(input_buffer, theme.text)
-        frame_builder.add_lines(*build_wrapped_styled_input_lines(input_buffer_text, prefix_error, input_index, not self.show_nothing))
-        error_lines: list[Text] = build_wrapped_styled_input_lines(validation_error_text, prefix_error, 0)
+        if not self.show_nothing: input_buffer_text = apply_cursor_style(input_buffer_text, input_index, theme.cursor)
+        frame_builder.add_lines(*build_wrapped_lines(input_buffer_text, prefix_error))
+        error_lines: list[Text] = build_wrapped_lines(validation_error_text, prefix_error)
         last_index: int = len(error_lines) - 1
         error_lines[last_index] = Text(connector_bar_end, theme.error) + '  ' + Text(error_lines[last_index].get_raw_text()[3:], theme.error)
         frame_builder.add_lines(*error_lines)
@@ -190,7 +192,7 @@ class Password(PromptBase):
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
 
-        if key == 'ENTER' or key == None: return False
+        if key == 'ENTER' or key is None: return False
         else: return True
 
     @override
@@ -211,7 +213,7 @@ class Password(PromptBase):
 
         frame_builder.add_line(prefix_muted)
 
-        message_lines: list[Text] = build_wrapped_styled_input_lines(message_text, prefix_muted, 0)
+        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_muted)
         message_lines[0] = Text(step_marker_cancel, theme.cancel) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
 
@@ -219,9 +221,9 @@ class Password(PromptBase):
         text_style.strikethrough = True
         if len(input_buffer) > 0:
             input_buffer_text: Text = Text(input_buffer, text_style)
-            frame_builder.add_lines(*build_wrapped_styled_input_lines(input_buffer_text, prefix_muted, 0))
+            frame_builder.add_lines(*build_wrapped_lines(input_buffer_text, prefix_muted))
         frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
-        cancel_lines: list[Text] = build_wrapped_styled_input_lines(cancellation_text, prefix_muted, 0)
+        cancel_lines: list[Text] = build_wrapped_lines(cancellation_text, prefix_muted)
         last_index: int = len(cancel_lines) - 1
         cancel_lines[last_index] = Text(connector_bar_end, theme.muted) + '  ' + Text(cancel_lines[last_index].get_raw_text()[3:], theme.cancel)
         frame_builder.add_lines(*cancel_lines)

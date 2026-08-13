@@ -1,6 +1,6 @@
-from ..prompts.util import build_wrapped_styled_input_lines
 from ..renderer import Text, RenderFrame, FrameBuilder, Theme, Style
 from ..prompts import PromptBase, CancelException
+from ..prompts.util import build_wrapped_lines
 from ..terminal import CursorController as cc
 from typing import override, Optional
 from ..config import get_active_theme
@@ -104,7 +104,7 @@ class Confirm(PromptBase):
 
         frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
 
-        message_lines: list[Text] = build_wrapped_styled_input_lines(message_text, prefix_active, 0)
+        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_active)
         message_lines[0] = Text(step_marker_active, theme.active) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
 
@@ -130,7 +130,7 @@ class Confirm(PromptBase):
                 (no_symbol, no_symbol_style), ' ',
                 (f'{self.inactive}', no_text_style)
             )
-        confirmation_lines: list[Text] = build_wrapped_styled_input_lines(confirmation_line, prefix_active, 0)
+        confirmation_lines: list[Text] = build_wrapped_lines(confirmation_line, prefix_active)
         frame_builder.add_lines(*confirmation_lines)
 
         frame_builder.add_line(Text(connector_bar_end, theme.active))
@@ -151,12 +151,12 @@ class Confirm(PromptBase):
 
         frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
 
-        message_lines: list[Text] = build_wrapped_styled_input_lines(message_text, prefix_muted, 0)
+        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_muted)
         message_lines[0] = Text(step_marker_submit, theme.submit) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
 
         confirmation_text: Text = Text(self.active if self.selected_confirmation else self.inactive, theme.muted)
-        confirmation_lines: list[Text] = build_wrapped_styled_input_lines(confirmation_text, prefix_muted, 0)
+        confirmation_lines: list[Text] = build_wrapped_lines(confirmation_text, prefix_muted)
         frame_builder.add_lines(*confirmation_lines)
 
         frame: tuple[Text, ...] = frame_builder.build()
@@ -178,19 +178,19 @@ class Confirm(PromptBase):
 
         frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
 
-        message_lines: list[Text] = build_wrapped_styled_input_lines(message_text, prefix_muted, 0)
+        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_muted)
         message_lines[0] = Text(step_marker_cancel, theme.cancel) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
         frame_builder.add_lines(*message_lines)
 
         text_style: Style = copy(theme.muted)
         text_style.strikethrough = True
         confirmation_text: Text = Text(self.active if self.selected_confirmation else self.inactive, text_style)
-        confirmation_lines: list[Text] = build_wrapped_styled_input_lines(confirmation_text, prefix_muted, 0)
+        confirmation_lines: list[Text] = build_wrapped_lines(confirmation_text, prefix_muted)
         frame_builder.add_lines(*confirmation_lines)
         
         frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
 
-        cancel_lines: list[Text] = build_wrapped_styled_input_lines(cancellation_text, prefix_muted, 0)
+        cancel_lines: list[Text] = build_wrapped_lines(cancellation_text, prefix_muted)
         last_index: int = len(cancel_lines) - 1
         cancel_lines[last_index] = Text(connector_bar_end, theme.muted) + '  ' + Text(cancel_lines[last_index].get_raw_text()[3:], theme.cancel)
         frame_builder.add_lines(*cancel_lines)

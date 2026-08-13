@@ -1,5 +1,5 @@
-from ..prompts.util import build_wrapped_styled_input_lines
 from ..renderer import Theme, RenderFrame, Text, FrameBuilder, Style
+from ..prompts.util import build_wrapped_lines
 from ..terminal import CursorController as cc
 from ..prompts.prompt_base import PromptBase
 from ..config import get_active_theme
@@ -49,7 +49,7 @@ class Outro(PromptBase):
         outro_text: Text = Text(self.message, text_style)
         frame_builder: FrameBuilder = FrameBuilder()
         frame_builder.add_line(prefix_muted)
-        outro_text_lines: list[Text] = build_wrapped_styled_input_lines(outro_text, prefix_muted, 0)
+        outro_text_lines: list[Text] = build_wrapped_lines(outro_text, prefix_muted)
         outro_formatted: str = outro_text_lines[0].get_raw_text()[3:] if not text_style.bg_color else f' {outro_text_lines[0].get_raw_text()[3:]} '
         last_index: int = len(outro_text_lines) - 1
         outro_text_lines[last_index] = Text(connector_bar_end, theme.muted) + '  ' + Text(outro_formatted, text_style)
