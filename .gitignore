@@ -1,2 +1,5 @@
 # examples
 examples/
+
+# pycache
+__pycache__/
