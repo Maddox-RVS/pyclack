@@ -1,21 +1,45 @@
-from ..renderer import Theme, Text, Style
-from ..config import get_active_theme
+from ..renderer import Text, Style
 from typing import Optional
 import shutil
 
-# def build_message_header(
-#     message: str,
-#     message_style: Style,
-#     step_marker_prefix: str,
-#     step_marker_prefix_style: Style,
-#     prefix: Text) -> list[Text]:
+def build_message_open(
+    message: str,
+    message_style: Style,
+    prefix: Text,
+    opening_prefix: Text) -> list[Text]:
 
-#     message = message if not message_style.bg_color else f' {message} '
-#     message_text: Text = Text(message, message_style)
-#     step_marker_prefix_text: Text = Text(step_marker_prefix, step_marker_prefix_style)
-#     message_lines: list[Text] = build_wrapped_lines(message_text, prefix, 0)
-#     message_lines[0] = step_marker_prefix_text + Text(message_lines[0].get_raw_text()[len(prefix):], message_style) 
-#     return message_lines
+    message = message if not message_style.bg_color else f' {message} '
+    message_text: Text = Text(message, message_style)
+    message_lines: list[Text] = build_wrapped_lines(message_text, prefix)
+    message_lines[0] = opening_prefix + Text(message_lines[0].get_raw_text()[len(prefix):], message_style)
+    return message_lines
+
+def build_message_header(
+    message: str,
+    message_style: Style,
+    step_marker_prefix: str,
+    step_marker_prefix_style: Style,
+    prefix: Text) -> list[Text]:
+
+    message = message if not message_style.bg_color else f' {message} '
+    message_text: Text = Text(message, message_style)
+    step_marker_prefix_text: Text = Text(step_marker_prefix, step_marker_prefix_style)
+    message_lines: list[Text] = build_wrapped_lines(message_text, prefix)
+    message_lines[0] = step_marker_prefix_text + Text(message_lines[0].get_raw_text()[len(prefix):], message_style) 
+    return message_lines
+
+def build_message_close(
+    message: str,
+    message_style: Style,
+    prefix: Text,
+    closing_prefix: Text) -> list[Text]:
+
+    message = message if not message_style.bg_color else f' {message} '
+    message_text: Text = Text(message, message_style)
+    message_lines: list[Text] = build_wrapped_lines(message_text, prefix)
+    last_index: int = len(message_lines) - 1
+    message_lines[last_index] = closing_prefix + Text(message_lines[last_index].get_raw_text()[len(prefix):], message_style)
+    return message_lines
 
 def _flatten_runs(value: Text) -> list[tuple[str, Optional[Style]]]:
     '''

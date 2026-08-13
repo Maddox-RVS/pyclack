@@ -1,5 +1,5 @@
 from ..renderer import Theme, RenderFrame, Text, FrameBuilder, Style
-from ..prompts.util import build_wrapped_lines
+from ..prompts.util import build_message_close
 from ..terminal import CursorController as cc
 from ..prompts.prompt_base import PromptBase
 from ..config import get_active_theme
@@ -43,17 +43,14 @@ class Outro(PromptBase):
         theme: Theme = get_active_theme()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
-        prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
+        prefix: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
+        closing_prefix: Text = Text(f'{connector_bar_end}  ', theme.muted)
 
         text_style: Style = self.custom_style if self.custom_style else theme.text
-        outro_text: Text = Text(self.message, text_style)
         frame_builder: FrameBuilder = FrameBuilder()
-        frame_builder.add_line(prefix_muted)
-        outro_text_lines: list[Text] = build_wrapped_lines(outro_text, prefix_muted)
-        outro_formatted: str = outro_text_lines[0].get_raw_text()[3:] if not text_style.bg_color else f' {outro_text_lines[0].get_raw_text()[3:]} '
-        last_index: int = len(outro_text_lines) - 1
-        outro_text_lines[last_index] = Text(connector_bar_end, theme.muted) + '  ' + Text(outro_formatted, text_style)
-        for line in outro_text_lines: frame_builder.add_line(line)
+        frame_builder.add_line(prefix)
+        outro_text_lines: list[Text] = build_message_close(self.message, text_style, prefix, closing_prefix)
+        frame_builder.add_lines(*outro_text_lines)
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
 
