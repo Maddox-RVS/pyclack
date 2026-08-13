@@ -1,6 +1,6 @@
+from ..prompts.util import build_wrapped_lines, build_message_header, build_message_close
 from ..renderer import Text, RenderFrame, FrameBuilder, Theme, Style
 from ..prompts import PromptBase, CancelException
-from ..prompts.util import build_wrapped_lines
 from ..terminal import CursorController as cc
 from ..config import get_active_theme
 from typing import Optional, Callable
@@ -222,7 +222,6 @@ class Date(PromptBase):
         step_marker_active: str = theme.symbols.step_marker_active.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
-        message_text: Text = Text(self.message, theme.text)
         prefix_active: Text = Text(f'{connector_bar_vertical}  ', theme.active)
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
 
@@ -271,8 +270,12 @@ class Date(PromptBase):
 
         frame_builder.add_line(prefix_muted)
 
-        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_active)
-        message_lines[0] = Text(step_marker_active, theme.active) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
+        message_lines: list[Text] = build_message_header(
+            self.message,
+            theme.text,
+            f'{step_marker_active}  ',
+            theme.active,
+            prefix_active)
         frame_builder.add_lines(*message_lines)
 
         month: str = self.date_buffer[0]
@@ -310,7 +313,6 @@ class Date(PromptBase):
         theme: Theme = get_active_theme()
         step_marker_submit: str = theme.symbols.step_marker_submit.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
-        message_text: Text = Text(self.message, theme.text)
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
 
         # Create and render next frame based on the current input buffer and state
@@ -318,8 +320,12 @@ class Date(PromptBase):
 
         frame_builder.add_line(prefix_muted)
 
-        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_muted)
-        message_lines[0] = Text(step_marker_submit, theme.submit) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
+        message_lines: list[Text] = build_message_header(
+            self.message,
+            theme.text,
+            f'{step_marker_submit}  ',
+            theme.submit,
+            prefix_muted)
         frame_builder.add_lines(*message_lines)
 
         month: str = self.date_buffer[0]
@@ -355,17 +361,21 @@ class Date(PromptBase):
         step_marker_error: str = theme.symbols.step_marker_error.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
-        message_text: Text = Text(self.message, theme.text)
-        prefix_error: Text = Text(f'{connector_bar_vertical}  ', theme.error)
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
+        prefix_error: Text = Text(f'{connector_bar_vertical}  ', theme.error)
+        closing_prefix_error: Text = Text(f'{connector_bar_end}  ', theme.error)
 
         # Create and render next frame based on the current input buffer and state
         frame_builder: FrameBuilder = FrameBuilder()
 
         frame_builder.add_line(prefix_muted)
 
-        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_error)
-        message_lines[0] = Text(step_marker_error, theme.error) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
+        message_lines: list[Text] = build_message_header(
+            self.message,
+            theme.text,
+            f'{step_marker_error}  ',
+            theme.error,
+            prefix_error)
         frame_builder.add_lines(*message_lines)
 
         month: str = self.date_buffer[0]
@@ -393,10 +403,12 @@ class Date(PromptBase):
             year_text)
         frame_builder.add_line(date_selector_text)
 
-        error_message_text: Text = Text(self._validate(), theme.error) # self.validate must be defined if we are in the error state, and it must return something
-        error_lines: list[Text] = build_wrapped_lines(error_message_text, prefix_error)
-        last_index: int = len(error_lines) - 1
-        error_lines[last_index] = Text(connector_bar_end, theme.error) + '  ' + Text(error_lines[last_index].get_raw_text()[3:], theme.error)
+        error_message: str = self._validate() # self.validate must be defined if we are in the error state, and it must return something
+        error_lines: list[Text] = build_message_close(
+            error_message,
+            theme.error,
+            prefix_error,
+            closing_prefix_error)
         frame_builder.add_lines(*error_lines)
 
         frame: tuple[Text, ...] = frame_builder.build()
@@ -409,17 +421,20 @@ class Date(PromptBase):
         step_marker_cancel: str = theme.symbols.step_marker_cancel.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
-        message_text: Text = Text(self.message, theme.text)
-        cancellation_text: Text = Text(self.cancellation_message, theme.cancel)
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
+        closing_prefix_muted: Text = Text(f'{connector_bar_end}  ', theme.muted)
 
         # Create and render next frame based on the current input buffer and state
         frame_builder: FrameBuilder = FrameBuilder()
 
         frame_builder.add_line(prefix_muted)
 
-        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_muted)
-        message_lines[0] = Text(step_marker_cancel, theme.cancel) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
+        message_lines: list[Text] = build_message_header(
+            self.message,
+            theme.text,
+            f'{step_marker_cancel}  ',
+            theme.cancel,
+            prefix_muted)
         frame_builder.add_lines(*message_lines)
 
         month: str = self.date_buffer[0]
@@ -447,9 +462,11 @@ class Date(PromptBase):
 
         frame_builder.add_line(prefix_muted)
 
-        cancel_lines: list[Text] = build_wrapped_lines(cancellation_text, prefix_muted)
-        last_index: int = len(cancel_lines) - 1
-        cancel_lines[last_index] = Text(connector_bar_end, theme.muted) + '  ' + Text(cancel_lines[last_index].get_raw_text()[3:], theme.cancel)
+        cancel_lines: list[Text] = build_message_close(
+            self.cancellation_message,
+            theme.cancel,
+            prefix_muted,
+            closing_prefix_muted)
         frame_builder.add_lines(*cancel_lines)
 
         frame: tuple[Text, ...] = frame_builder.build()
