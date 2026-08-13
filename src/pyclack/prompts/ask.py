@@ -1,6 +1,6 @@
-from .util import build_wrapped_lines, apply_cursor_style, TextBoxController
+from .util import build_message_close, build_wrapped_lines, build_message_header, apply_cursor_style, TextBoxController
 from ..renderer import RenderFrame, Text, FrameBuilder, Style, Theme
-from .prompt_base import PromptBase, CancelException
+from .prompt_base import PromptBase, CancelException, PromptState
 from typing import Callable, Optional, override
 from ..terminal import CursorController as cc
 from ..config import get_active_theme
@@ -97,6 +97,45 @@ class Ask(PromptBase):
         allowed_chars: tuple[str, ...] = tuple(chr(i) for i in range(32, 127))
         return ('BACKSPACE', 'ENTER', 'LEFT', 'RIGHT', 'UP', 'DOWN', 'TAB', 'SPACE') + allowed_chars
 
+    def _step_marker_prefix(self) -> Text:
+        theme: Theme = get_active_theme()
+        match self.current_state:
+            case PromptState.ACTIVE: return Text(f'{theme.symbols.step_marker_active.resolve()}  ', theme.active)
+            case PromptState.SUBMIT: return Text(f'{theme.symbols.step_marker_submit.resolve()}  ', theme.submit)
+            case PromptState.ERROR: return Text(f'{theme.symbols.step_marker_error.resolve()}  ', theme.error)
+            case PromptState.CANCEL: return Text(f'{theme.symbols.step_marker_cancel.resolve()}  ', theme.cancel)
+            case _: return Text('')
+
+    def _prefix(self) -> Text:
+        theme: Theme = get_active_theme()
+        match self.current_state:
+            case PromptState.ACTIVE: return Text(f'{theme.symbols.connector_bar_vertical.resolve()}  ', theme.active)
+            case PromptState.SUBMIT: return Text(f'{theme.symbols.connector_bar_vertical.resolve()}  ', theme.muted)
+            case PromptState.ERROR: return Text(f'{theme.symbols.connector_bar_vertical.resolve()}  ', theme.error)
+            case PromptState.CANCEL: return Text(f'{theme.symbols.connector_bar_vertical.resolve()}  ', theme.muted)
+            case _: return Text('')
+
+    def _build_prompt_body(self) -> list[Text]:
+        if self.current_state == PromptState.INITIAL:
+            raise RuntimeError('_build_prompt_body() cannot be called while current prompt state is INITIAL')
+
+        theme: Theme = get_active_theme()
+        prefix_muted: Text = Text(f'{theme.symbols.connector_bar_vertical.resolve()}  ', theme.muted)
+        frame_builder: FrameBuilder = FrameBuilder()
+        frame_builder.add_line(prefix_muted)
+        step_marker_prefix_text: Text = self._step_marker_prefix()
+        step_marker_prefix: str = step_marker_prefix_text.get_raw_text()
+        step_marker_prefix_style: Style = step_marker_prefix_text.style if step_marker_prefix_text.style else Style()
+        prefix: Text = self._prefix()
+        body_lines: list[Text] = build_message_header(
+            self.message,
+            theme.text,
+            step_marker_prefix,
+            step_marker_prefix_style,
+            prefix)
+        frame_builder.add_lines(*body_lines)
+        return list(frame_builder.build())
+
     @override
     def handle_active(self, key: Optional[str]) -> bool:
         Stdout.put(cc.hide_cursor())
@@ -104,12 +143,9 @@ class Ask(PromptBase):
         if key not in self.allowed_inputs: key = ''
 
         theme: Theme = get_active_theme()
-        step_marker_active: str = theme.symbols.step_marker_active.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
-        message_text: Text = Text(self.message, theme.text)
         prefix_active: Text = Text(f'{connector_bar_vertical}  ', theme.active)
-        prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
 
         # Update the input buffer based on the key pressed
         if key == 'BACKSPACE': self.text_box_controller.delete()
@@ -130,12 +166,7 @@ class Ask(PromptBase):
         input_index: int = self.text_box_controller.get_cursor_position()
 
         frame_builder: FrameBuilder = FrameBuilder()
-
-        frame_builder.add_line(prefix_muted)
-
-        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_active)
-        message_lines[0] = Text(step_marker_active, theme.active) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
-        frame_builder.add_lines(*message_lines)
+        frame_builder.add_lines(*self._build_prompt_body())
  
         if self.placeholder and len(input_buffer) <= 0:
             placeholder_text: Text = Text(self.placeholder, theme.muted)
@@ -155,19 +186,14 @@ class Ask(PromptBase):
     @override
     def handle_submit(self) -> bool:
         theme: Theme = get_active_theme()
-        step_marker_submit: str = theme.symbols.step_marker_submit.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
-        message_text: Text = Text(self.message, theme.text)
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
 
         # Create and render next frame based on the current input buffer and state
         input_buffer: str = self.text_box_controller.get_input()
 
         frame_builder: FrameBuilder = FrameBuilder()
-        frame_builder.add_line(prefix_muted)
-        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_muted)
-        message_lines[0] = Text(step_marker_submit, theme.submit) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
-        frame_builder.add_lines(*message_lines)
+        frame_builder.add_lines(*self._build_prompt_body())
         input_buffer_text: Text = Text(input_buffer, theme.muted)
         frame_builder.add_lines(*build_wrapped_lines(input_buffer_text, prefix_muted))
         frame: tuple[Text, ...] = frame_builder.build()
@@ -181,22 +207,18 @@ class Ask(PromptBase):
         Stdout.put(cc.hide_cursor())
 
         theme: Theme = get_active_theme()
-        step_marker_error: str = theme.symbols.step_marker_error.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
-        message_text: Text = Text(self.message, theme.text)
-        prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
         prefix_error: Text = Text(f'{connector_bar_vertical}  ', theme.error)
+        closing_prefix_error: Text = Text(f'{connector_bar_end}  ', theme.error)
 
         # Create and render next frame based on the current input buffer and state
         input_buffer: str = self.text_box_controller.get_input()
         input_index: int = self.text_box_controller.get_cursor_position()
 
         frame_builder: FrameBuilder = FrameBuilder()
-        frame_builder.add_line(prefix_muted)
-        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_error)
-        message_lines[0] = Text(step_marker_error, theme.error) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
-        frame_builder.add_lines(*message_lines)
+        frame_builder.add_lines(*self._build_prompt_body())
+   
         if self.placeholder and len(input_buffer) <= 0:
             placeholder_text: Text = Text(self.placeholder, theme.muted)
             placeholder_text = apply_cursor_style(placeholder_text, 0, theme.cursor)
@@ -206,10 +228,12 @@ class Ask(PromptBase):
             input_buffer_text = apply_cursor_style(input_buffer_text, input_index, theme.cursor)
             frame_builder.add_lines(*build_wrapped_lines(input_buffer_text, prefix_error))
 
-        validation_error_text: Text = Text(self.validate(input_buffer), theme.error) # self.validate must be defined if we are in the error state, and it must return something
-        error_lines: list[Text] = build_wrapped_lines(validation_error_text, prefix_error)
-        last_index: int = len(error_lines) - 1
-        error_lines[last_index] = Text(connector_bar_end, theme.error) + '  ' + Text(error_lines[last_index].get_raw_text()[3:], theme.error)
+        validation_error: str = self.validate(input_buffer) # self.validate must be defined if we are in the error state, and it must return something
+        error_lines: list[Text] = build_message_close(
+            validation_error, 
+            theme.error,
+            prefix_error,
+            closing_prefix_error)
         frame_builder.add_lines(*error_lines)
 
         frame: tuple[Text, ...] = frame_builder.build()
@@ -221,23 +245,16 @@ class Ask(PromptBase):
     @override
     def handle_cancel(self) -> None:
         theme: Theme = get_active_theme()
-        step_marker_cancel: str = theme.symbols.step_marker_cancel.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
-        message_text: Text = Text(self.message, theme.text)
-        cancellation_text: Text = Text(self.cancellation_message, theme.cancel)
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
+        closing_prefix_muted: Text = Text(f'{connector_bar_end}  ', theme.muted)
 
         # Create and render next frame based on the current input buffer and state
         input_buffer: str = self.text_box_controller.get_input()
 
         frame_builder: FrameBuilder = FrameBuilder()
-
-        frame_builder.add_line(prefix_muted)
-
-        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_muted)
-        message_lines[0] = Text(step_marker_cancel, theme.cancel) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
-        frame_builder.add_lines(*message_lines)
+        frame_builder.add_lines(*self._build_prompt_body())
 
         text_style: Style = copy(theme.muted)
         text_style.strikethrough = True
@@ -245,9 +262,11 @@ class Ask(PromptBase):
             input_buffer_text: Text = Text(input_buffer, text_style)
             frame_builder.add_lines(*build_wrapped_lines(input_buffer_text, prefix_muted))
         frame_builder.add_line(prefix_muted)
-        cancel_lines: list[Text] = build_wrapped_lines(cancellation_text, prefix_muted)
-        last_index: int = len(cancel_lines) - 1
-        cancel_lines[last_index] = Text(connector_bar_end, theme.muted) + '  ' + Text(cancel_lines[last_index].get_raw_text()[3:], theme.cancel)
+        cancel_lines: list[Text] = build_message_close(
+            self.cancellation_message,
+            theme.cancel,
+            prefix_muted,
+            closing_prefix_muted)
         frame_builder.add_lines(*cancel_lines)
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
