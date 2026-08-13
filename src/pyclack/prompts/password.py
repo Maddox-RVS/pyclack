@@ -1,4 +1,4 @@
-from .util import build_wrapped_lines, apply_cursor_style, TextBoxController
+from .util import build_wrapped_lines, build_message_header, build_message_close, apply_cursor_style, TextBoxController
 from ..renderer import RenderFrame, Text, FrameBuilder, Style, Theme, Symbol
 from .prompt_base import PromptBase, CancelException
 from typing import Callable, Optional, override
@@ -99,7 +99,6 @@ class Password(PromptBase):
         step_marker_active: str = theme.symbols.step_marker_active.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
-        message_text: Text = Text(self.message, theme.text)
         prefix_active: Text = Text(f'{connector_bar_vertical}  ', theme.active)
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
 
@@ -120,13 +119,20 @@ class Password(PromptBase):
 
         frame_builder: FrameBuilder = FrameBuilder()
         frame_builder.add_line(prefix_muted)
-        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_active)
-        message_lines[0] = Text(step_marker_active, theme.active) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
+        message_lines: list[Text] = build_message_header(
+            self.message,
+            theme.text,
+            f'{step_marker_active}  ',
+            theme.active,
+            prefix_active)
         frame_builder.add_lines(*message_lines)
+        
         input_buffer_text: Text = Text(input_buffer, theme.text)
         if not self.show_nothing: input_buffer_text = apply_cursor_style(input_buffer_text, input_index, theme.cursor)
         frame_builder.add_lines(*build_wrapped_lines(input_buffer_text, prefix_active))
+        
         frame_builder.add_line(Text(connector_bar_end, theme.active))
+        
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
         return False
@@ -136,7 +142,6 @@ class Password(PromptBase):
         theme: Theme = get_active_theme()
         step_marker_submit: str = theme.symbols.step_marker_submit.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
-        message_text: Text = Text(self.message, theme.text)
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
 
         # Create and render next frame based on the current input buffer and state
@@ -145,11 +150,17 @@ class Password(PromptBase):
 
         frame_builder: FrameBuilder = FrameBuilder()
         frame_builder.add_line(prefix_muted)
-        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_muted)
-        message_lines[0] = Text(step_marker_submit, theme.submit) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
+        message_lines: list[Text] = build_message_header(
+            self.message,
+            theme.text,
+            f'{step_marker_submit}  ',
+            theme.submit,
+            prefix_muted)
         frame_builder.add_lines(*message_lines)
+        
         input_buffer_text: Text = Text(input_buffer, theme.text)
         frame_builder.add_lines(*build_wrapped_lines(input_buffer_text, prefix_muted))
+        
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
 
@@ -161,15 +172,14 @@ class Password(PromptBase):
         Stdout.put(cc.hide_cursor())
 
         theme: Theme = get_active_theme()
-        validation_error_text: Text = Text(self.validate(self.text_box_controller.get_input()), theme.error) # self.validate must be defined if we are in the error state
         if self.clear_on_error: self.text_box_controller.set_input('', 0)
 
         step_marker_error: str = theme.symbols.step_marker_error.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
-        message_text: Text = Text(self.message, theme.text)
-        prefix_error: Text = Text(f'{connector_bar_vertical}  ', theme.error)
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
+        prefix_error: Text = Text(f'{connector_bar_vertical}  ', theme.error)
+        closing_prefix_error: Text = Text(f'{connector_bar_end}  ', theme.error)
 
         # Create and render next frame based on the current input buffer and state
         mask: str = self.mask.resolve() if self.mask else theme.symbols.selection_widget_password_mask.resolve()
@@ -178,15 +188,24 @@ class Password(PromptBase):
 
         frame_builder: FrameBuilder = FrameBuilder()
         frame_builder.add_line(prefix_muted)
-        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_muted)
-        message_lines[0] = Text(step_marker_error, theme.error) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
+        message_lines: list[Text] = build_message_header(
+            self.message,
+            theme.text,
+            f'{step_marker_error}  ',
+            theme.error,
+            prefix_error)
         frame_builder.add_lines(*message_lines)
+        
         input_buffer_text: Text = Text(input_buffer, theme.text)
         if not self.show_nothing: input_buffer_text = apply_cursor_style(input_buffer_text, input_index, theme.cursor)
         frame_builder.add_lines(*build_wrapped_lines(input_buffer_text, prefix_error))
-        error_lines: list[Text] = build_wrapped_lines(validation_error_text, prefix_error)
-        last_index: int = len(error_lines) - 1
-        error_lines[last_index] = Text(connector_bar_end, theme.error) + '  ' + Text(error_lines[last_index].get_raw_text()[3:], theme.error)
+        
+        validation_error_message: str = self.validate(self.text_box_controller.get_input()) # self.validate must be defined if we are in the error state
+        error_lines: list[Text] = build_message_close(
+            validation_error_message,
+            theme.error,
+            prefix_error,
+            closing_prefix_error)
         frame_builder.add_lines(*error_lines)
 
         frame: tuple[Text, ...] = frame_builder.build()
@@ -201,9 +220,8 @@ class Password(PromptBase):
         step_marker_cancel: str = theme.symbols.step_marker_cancel.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
-        message_text: Text = Text(self.message, theme.text)
-        cancellation_text: Text = Text(self.cancellation_message, theme.cancel)
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
+        closing_prefix_muted: Text = Text(f'{connector_bar_end}  ', theme.muted)
 
         # Create and render next frame based on the current input buffer and state
         mask: str = self.mask.resolve() if self.mask else theme.symbols.selection_widget_password_mask.resolve()
@@ -213,8 +231,12 @@ class Password(PromptBase):
 
         frame_builder.add_line(prefix_muted)
 
-        message_lines: list[Text] = build_wrapped_lines(message_text, prefix_muted)
-        message_lines[0] = Text(step_marker_cancel, theme.cancel) + '  ' + Text(message_lines[0].get_raw_text()[3:], theme.text)
+        message_lines: list[Text] = build_message_header(
+            self.message,
+            theme.text,
+            f'{step_marker_cancel}  ',
+            theme.cancel,
+            prefix_muted)
         frame_builder.add_lines(*message_lines)
 
         text_style: Style = copy(theme.muted)
@@ -222,11 +244,16 @@ class Password(PromptBase):
         if len(input_buffer) > 0:
             input_buffer_text: Text = Text(input_buffer, text_style)
             frame_builder.add_lines(*build_wrapped_lines(input_buffer_text, prefix_muted))
+            
         frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
-        cancel_lines: list[Text] = build_wrapped_lines(cancellation_text, prefix_muted)
-        last_index: int = len(cancel_lines) - 1
-        cancel_lines[last_index] = Text(connector_bar_end, theme.muted) + '  ' + Text(cancel_lines[last_index].get_raw_text()[3:], theme.cancel)
+        
+        cancel_lines: list[Text] = build_message_close(
+            self.cancellation_message,
+            theme.cancel,
+            prefix_muted,
+            closing_prefix_muted)
         frame_builder.add_lines(*cancel_lines)
+        
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
 
