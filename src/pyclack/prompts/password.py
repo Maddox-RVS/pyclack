@@ -12,7 +12,8 @@ def password(message: str,
         show_nothing: bool = False,
         clear_on_error: bool = False,
         validate: Optional[Callable[[str], Optional[str]]] = None,
-        cancellation_message: str = 'Operation Cancelled') -> str:
+        cancellation_message: str = 'Operation Cancelled',
+        show_cancellation_message: bool = True) -> str:
     '''
     Ask the user for input as a password.
     Controls are as follows:
@@ -27,6 +28,7 @@ def password(message: str,
         clear_on_error (bool, optional): If True, the input buffer will be cleared on error. Defaults to False.
         validate (Callable[[str], Optional[str]], optional): A function to validate the input. Defaults to None.
         cancellation_message (str): The message to display if the user cancels the operation.
+        show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
 
     Returns:
         str: The user's input as a password.
@@ -35,7 +37,7 @@ def password(message: str,
         CancelException: If the user cancels the operation.
     '''
     
-    prompt: Password = Password(message, cancellation_message, mask, show_nothing, clear_on_error, validate)
+    prompt: Password = Password(message, cancellation_message, mask, show_nothing, clear_on_error, validate, show_cancellation_message)
     return prompt.text_box_controller.get_input()
 
 class Password(PromptBase):
@@ -45,7 +47,8 @@ class Password(PromptBase):
             mask: Optional[Symbol] = None,
             show_nothing: bool = False,
             clear_on_error: bool = False,
-            validate: Optional[Callable[[str], Optional[str]]] = None):
+            validate: Optional[Callable[[str], Optional[str]]] = None,
+            show_cancellation_message: bool = True):
         '''
         Initialize a Password prompt with the given message, mask, and validation function.
 
@@ -56,6 +59,7 @@ class Password(PromptBase):
             show_nothing (bool, optional): If True, the input will not be displayed at all. Defaults to False.
             clear_on_error (bool, optional): If True, the input buffer will be cleared on error. Defaults to False.
             validate (Callable[[str], Optional[str]], optional): A function to validate the input. Defaults to None.
+            show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
 
         Raises:
             CancelException: If the user cancels the operation.
@@ -65,6 +69,7 @@ class Password(PromptBase):
 
         self.message: str = message
         self.cancellation_message: str = cancellation_message
+        self.show_cancellation_message: bool = show_cancellation_message
         self.mask: Optional[Symbol] = mask
         self.show_nothing: bool = show_nothing
         self.clear_on_error: bool = clear_on_error
@@ -244,15 +249,15 @@ class Password(PromptBase):
         if len(input_buffer) > 0:
             input_buffer_text: Text = Text(input_buffer, text_style)
             frame_builder.add_lines(*build_wrapped_lines(input_buffer_text, prefix_muted))
-            
-        frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
-        
-        cancel_lines: list[Text] = build_message_close(
-            self.cancellation_message,
-            theme.cancel,
-            prefix_muted,
-            closing_prefix_muted)
-        frame_builder.add_lines(*cancel_lines)
+
+        if self.show_cancellation_message:
+            frame_builder.add_line(prefix_muted)
+            cancel_lines: list[Text] = build_message_close(
+                self.cancellation_message,
+                theme.cancel,
+                prefix_muted,
+                closing_prefix_muted)
+            frame_builder.add_lines(*cancel_lines)
         
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)

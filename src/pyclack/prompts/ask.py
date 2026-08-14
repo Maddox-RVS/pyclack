@@ -12,7 +12,8 @@ def ask(message: str,
         initial_value: Optional[str] = None, 
         validate: Optional[Callable[[str], Optional[str]]] = None,
         default_value: Optional[str] = None,
-        cancellation_message: str = 'Operation Cancelled') -> str:
+        cancellation_message: str = 'Operation Cancelled',
+        show_cancellation_message: bool = True) -> str:
     '''
     Ask the user for input with a message, placeholder, initial value, and validation function.
     Controls are as follows:
@@ -28,6 +29,7 @@ def ask(message: str,
         validate (Callable[[str], Optional[str]], optional): A function to validate the input.
         default_value (str, optional): The default value to be returned as the value in the raised `CancelException`.
         cancellation_message (str): The message to display if the user cancels the operation.
+        show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
 
     Returns:
         str: The user's input.
@@ -36,7 +38,7 @@ def ask(message: str,
         CancelException: If the user cancels the operation.
     '''
     
-    prompt: Ask = Ask(message, cancellation_message, placeholder, initial_value, default_value, validate)
+    prompt: Ask = Ask(message, cancellation_message, placeholder, initial_value, default_value, validate, show_cancellation_message)
     return prompt.text_box_controller.get_input()
 
 class Ask(PromptBase):
@@ -50,7 +52,8 @@ class Ask(PromptBase):
             placeholder: Optional[str] = None,
             initial_value: Optional[str] = None,
             default_value: Optional[str] = None,
-            validate: Optional[Callable[[str], Optional[str]]] = None):
+            validate: Optional[Callable[[str], Optional[str]]] = None,
+            show_cancellation_message: bool = True):
         '''
         Initialize an Ask prompt with the given message, placeholder, initial value, and validation function.
 
@@ -61,6 +64,7 @@ class Ask(PromptBase):
             initial_value (str, optional): The initial value of the input.
             default_value (str, optional): The default value to be returned as the value in the raised `CancelException`.
             validate (Callable[[str], Optional[str]], optional): A function to validate the input.
+            show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
 
         Raises:
             CancelException: If the user cancels the operation.
@@ -70,6 +74,7 @@ class Ask(PromptBase):
 
         self.message: str = message
         self.cancellation_message: str = cancellation_message
+        self.show_cancellation_message: bool = show_cancellation_message
         self.placeholder: Optional[str] = placeholder
         self.initial_value: Optional[str] = initial_value
         self.default_value: Optional[str] = default_value
@@ -257,15 +262,16 @@ class Ask(PromptBase):
         text_style.strikethrough = True
         if len(input_buffer) > 0:
             input_buffer_text: Text = Text(input_buffer, text_style)
-            frame_builder.add_lines(*build_wrapped_lines(input_buffer_text, prefix_muted))
-            
-        frame_builder.add_line(prefix_muted)
-        cancel_lines: list[Text] = build_message_close(
-            self.cancellation_message,
-            theme.cancel,
-            prefix_muted,
-            closing_prefix_muted)
-        frame_builder.add_lines(*cancel_lines)
+            frame_builder.add_lines(*build_wrapped_lines(input_buffer_text, prefix_muted))  
+
+        if self.show_cancellation_message:
+            frame_builder.add_line(prefix_muted)
+            cancel_lines: list[Text] = build_message_close(
+                self.cancellation_message,
+                theme.cancel,
+                prefix_muted,
+                closing_prefix_muted)
+            frame_builder.add_lines(*cancel_lines)
         
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)

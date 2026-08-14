@@ -11,7 +11,8 @@ def confirm(message: str,
             active: str = 'Yes',
             inactive: str = 'No',
             vertical: bool = False,
-            cancellation_message: str = 'Operation Cancelled', 
+            cancellation_message: str = 'Operation Cancelled',
+            show_cancellation_message: bool = True,
             default_option: bool = True) -> bool:
     '''
     Prompt the user for a yes/no confirmation. Controls are as follows:
@@ -23,6 +24,7 @@ def confirm(message: str,
         active (str): The text to display for the active (true) option.
         inactive (str): The text to display for the inactive (false) option.
         cancellation_message (str): The message to display if the user cancels the operation.
+        show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
         default_option (bool): The default option for the confirmation.
 
     Returns:
@@ -32,7 +34,7 @@ def confirm(message: str,
         CancelException: If the user cancels the operation.
     '''
 
-    prompt: Confirm = Confirm(message, active, inactive, vertical, cancellation_message, default_option)
+    prompt: Confirm = Confirm(message, active, inactive, vertical, cancellation_message, default_option, show_cancellation_message)
     return prompt.selected_confirmation
 
 class Confirm(PromptBase):
@@ -46,7 +48,8 @@ class Confirm(PromptBase):
                  inactive: str,
                  vertical: bool,
                  cancellation_message: str,
-                 default_option: bool = True):
+                 default_option: bool = True,
+                 show_cancellation_message: bool = True):
         '''
         Initialize a Confirm prompt with the given message, cancellation message, and default option.
 
@@ -56,6 +59,7 @@ class Confirm(PromptBase):
             inactive (str): The text to display for the inactive (false) option.
             cancellation_message (str): The message to display if the user cancels the operation.
             default_option (bool): The default option for the confirmation.
+            show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
 
         Raises:
             CancelException: If the user cancels the operation.
@@ -68,6 +72,7 @@ class Confirm(PromptBase):
         self.inactive: str = inactive
         self.vertical: bool = vertical
         self.cancellation_message: str = cancellation_message
+        self.show_cancellation_message: bool = show_cancellation_message
         self.selected_confirmation: bool = default_option
         self.render_frame: RenderFrame = RenderFrame()
         self.allowed_inputs: tuple[str, ...] = self._construct_allowed_inputs()
@@ -195,15 +200,15 @@ class Confirm(PromptBase):
         confirmation_text: Text = Text(self.active if self.selected_confirmation else self.inactive, text_style)
         confirmation_lines: list[Text] = build_wrapped_lines(confirmation_text, prefix_muted)
         frame_builder.add_lines(*confirmation_lines)
-        
-        frame_builder.add_line(Text(connector_bar_vertical, theme.muted))
 
-        cancel_lines: list[Text] = build_message_close(
-            self.cancellation_message,
-            theme.cancel,
-            prefix_muted,
-            closing_prefix_muted)
-        frame_builder.add_lines(*cancel_lines)
+        if self.show_cancellation_message:
+            frame_builder.add_line(prefix_muted)
+            cancel_lines: list[Text] = build_message_close(
+                self.cancellation_message,
+                theme.cancel,
+                prefix_muted,
+                closing_prefix_muted)
+            frame_builder.add_lines(*cancel_lines)
 
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
