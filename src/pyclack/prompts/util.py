@@ -490,9 +490,6 @@ class TextBoxController:
         self.cursor_left(steps)
  
     def __str__(self) -> str:
-        visual_cursor_left = '>>>'
-        visual_cursor_right = '<<<'
- 
         def highlight_index(text: str, index: int) -> str:
             if not text:
                 return ">>> <<<"
