@@ -7,6 +7,18 @@ def build_message_open(
     message_style: Style,
     prefix: Text,
     opening_prefix: Text) -> list[Text]:
+    '''
+    Constructs a list of Text objects representing the opening section of a message.
+    
+    Args:
+        message (str): The primary content message text.
+        message_style (Style): Style applied to the main message body.
+        prefix (Text): A general prefix for wrapping the lines.
+        opening_prefix (Text): Specific prefix added to the beginning of the first line.
+
+    Returns:
+        list[Text]: List of Text objects representing the formatted opening lines.
+    '''
 
     message = message if not message_style.bg_color else f' {message} '
     message_text: Text = Text(message, message_style)
@@ -20,6 +32,19 @@ def build_message_header(
     step_marker_prefix: str,
     step_marker_prefix_style: Style,
     prefix: Text) -> list[Text]:
+    '''
+    Constructs a list of Text objects representing a step header in a message.
+    
+    Args:
+        message (str): The primary content message text.
+        message_style (Style): Style applied to the main message body.
+        step_marker_prefix (str): Static prefix string for the step marker.
+        step_marker_prefix_style (Style): Style for the static step marker prefix text.
+        prefix (Text): A general prefix for wrapping the lines.
+
+    Returns:
+        list[Text]: List of Text objects representing the formatted header lines.
+    '''
 
     message = message if not message_style.bg_color else f' {message} '
     message_text: Text = Text(message, message_style)
@@ -33,6 +58,18 @@ def build_message_close(
     message_style: Style,
     prefix: Text,
     closing_prefix: Text) -> list[Text]:
+    '''
+    Constructs a list of Text objects representing the closing section of a message.
+    
+    Args:
+        message (str): The primary content message text.
+        message_style (Style): Style applied to the main message body.
+        prefix (Text): A general prefix for wrapping the lines.
+        closing_prefix (Text): Specific prefix added to the end of the last line.
+
+    Returns:
+        list[Text]: List of Text objects representing the formatted closing lines.
+    '''
 
     message = message if not message_style.bg_color else f' {message} '
     message_text: Text = Text(message, message_style)
@@ -45,6 +82,12 @@ def _flatten_runs(value: Text) -> list[tuple[str, Optional[Style]]]:
     '''
     Walks a (possibly deeply nested) Text object's inner_text chain and
     returns a flat list of (raw_text, style) runs in order.
+
+    Args:
+        value (Text): The input Text object to flatten.
+    
+    Returns:
+        list[tuple[str, Optional[Style]]]: A list where each tuple contains the (raw text segment, applied style).
     '''
 
     runs: list[tuple[str, Optional[Style]]] = []
@@ -59,6 +102,14 @@ def _build_slice(runs: list[tuple[str, Optional[Style]]], start: int, end: int) 
     Rebuilds a Text spanning [start, end) of a flattened raw text,
     preserving each run's original style (or lack thereof) for whatever
     portion of it falls inside that range.
+
+    Args:
+        runs (list[tuple[str, Optional[Style]]]): The list of all flattened runs from _flatten_runs.
+        start (int): The starting character index (inclusive) for the slice.
+        end (int): The ending character index (exclusive) for the slice.
+
+    Returns:
+        Text: A new Text object representing the sliced portion, preserving styles.
     '''
 
     if start >= end: return Text('')
@@ -114,6 +165,13 @@ def build_wrapped_lines(text: Text, prefix: Text) -> list[Text]:
     Wraps the given Text into terminal-width-limited lines, each prefixed
     with the given prefix Text, preserving the original styling (including
     deeply nested styles) across wrap boundaries.
+
+    Args:
+        text (Text): The source text content to be wrapped.
+        prefix (Text): The text that should prepend every line.
+
+    Returns:
+        list[Text]: A list of Text objects, each representing a wrapped and prefixed line.
     '''
 
     def clone_text(value: Text) -> Text:
