@@ -8,3 +8,4 @@ from .ask import ask as ask
 from .password import password as password
 from .confirm import confirm as confirm
 from .date import date as date
+from .multiline import multiline as multiline
