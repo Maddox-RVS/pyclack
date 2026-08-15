@@ -13,7 +13,8 @@ def ask(message: str,
         validate: Optional[Callable[[str], Optional[str]]] = None,
         default_value: Optional[str] = None,
         cancellation_message: str = 'Operation Cancelled',
-        show_cancellation_message: bool = True) -> str:
+        show_cancellation_message: bool = True,
+        abort_time: Optional[float] = None) -> str:
     '''
     Ask the user for input with a message, placeholder, initial value, and validation function.
     Controls are as follows:
@@ -30,6 +31,7 @@ def ask(message: str,
         default_value (str, optional): The default value to be returned as the value in the raised `CancelException`.
         cancellation_message (str): The message to display if the user cancels the operation.
         show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
+        abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
     Returns:
         str: The user's input.
@@ -38,7 +40,7 @@ def ask(message: str,
         CancelException: If the user cancels the operation.
     '''
     
-    prompt: Ask = Ask(message, cancellation_message, placeholder, initial_value, default_value, validate, show_cancellation_message)
+    prompt: Ask = Ask(message, cancellation_message, placeholder, initial_value, default_value, validate, show_cancellation_message, abort_time)
     return prompt.text_box_controller.get_input()
 
 class Ask(PromptBase):
@@ -53,7 +55,8 @@ class Ask(PromptBase):
             initial_value: Optional[str] = None,
             default_value: Optional[str] = None,
             validate: Optional[Callable[[str], Optional[str]]] = None,
-            show_cancellation_message: bool = True):
+            show_cancellation_message: bool = True,
+            abort_time: Optional[float] = None):
         '''
         Initialize an Ask prompt with the given message, placeholder, initial value, and validation function.
 
@@ -65,6 +68,7 @@ class Ask(PromptBase):
             default_value (str, optional): The default value to be returned as the value in the raised `CancelException`.
             validate (Callable[[str], Optional[str]], optional): A function to validate the input.
             show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
+            abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
         Raises:
             CancelException: If the user cancels the operation.
@@ -87,6 +91,7 @@ class Ask(PromptBase):
             self.text_box_controller.cursor_end()
         
         self.propogate_key_after_error = True
+        self.abort_time = abort_time
         self.allowed_inputs: tuple[str, ...] = self._construct_allowed_inputs()
 
         super().activate()

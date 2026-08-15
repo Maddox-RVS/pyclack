@@ -13,7 +13,8 @@ def password(message: str,
         clear_on_error: bool = False,
         validate: Optional[Callable[[str], Optional[str]]] = None,
         cancellation_message: str = 'Operation Cancelled',
-        show_cancellation_message: bool = True) -> str:
+        show_cancellation_message: bool = True,
+        abort_time: Optional[float] = None) -> str:
     '''
     Ask the user for input as a password.
     Controls are as follows:
@@ -29,6 +30,7 @@ def password(message: str,
         validate (Callable[[str], Optional[str]], optional): A function to validate the input. Defaults to None.
         cancellation_message (str): The message to display if the user cancels the operation.
         show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
+        abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
     Returns:
         str: The user's input as a password.
@@ -37,7 +39,7 @@ def password(message: str,
         CancelException: If the user cancels the operation.
     '''
     
-    prompt: Password = Password(message, cancellation_message, mask, show_nothing, clear_on_error, validate, show_cancellation_message)
+    prompt: Password = Password(message, cancellation_message, mask, show_nothing, clear_on_error, validate, show_cancellation_message, abort_time)
     return prompt.text_box_controller.get_input()
 
 class Password(PromptBase):
@@ -48,7 +50,8 @@ class Password(PromptBase):
             show_nothing: bool = False,
             clear_on_error: bool = False,
             validate: Optional[Callable[[str], Optional[str]]] = None,
-            show_cancellation_message: bool = True):
+            show_cancellation_message: bool = True,
+            abort_time: Optional[float] = None):
         '''
         Initialize a Password prompt with the given message, mask, and validation function.
 
@@ -60,6 +63,7 @@ class Password(PromptBase):
             clear_on_error (bool, optional): If True, the input buffer will be cleared on error. Defaults to False.
             validate (Callable[[str], Optional[str]], optional): A function to validate the input. Defaults to None.
             show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
+            abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
         Raises:
             CancelException: If the user cancels the operation.
@@ -79,6 +83,7 @@ class Password(PromptBase):
         self.text_box_controller: TextBoxController = TextBoxController()
         
         self.propogate_key_after_error = True
+        self.abort_time = abort_time
         self.allowed_inputs: tuple[str] = self._construct_allowed_inputs()
 
         super().activate()

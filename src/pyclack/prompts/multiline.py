@@ -14,7 +14,8 @@ def multiline(message: str,
         default_value: Optional[str] = None,
         cancellation_message: str = 'Operation Cancelled',
         show_cancellation_message: bool = True,
-        show_submit: bool = False) -> str:
+        show_submit: bool = False,
+        abort_time: Optional[float] = None) -> str:
     '''
     Ask the user for input with a message, placeholder, initial value, and validation function.
     Controls are as follows:
@@ -35,6 +36,7 @@ def multiline(message: str,
         show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
         show_submit (bool, optional): When True it shows a ` [ submit ] ` button that can be focused with 'Tab', when False no submit button is shown and pressing 'Enter' twice will submit. 
         Defaults to False.
+        abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
     Returns:
         str: The user's input.
@@ -43,7 +45,7 @@ def multiline(message: str,
         CancelException: If the user cancels the operation.
     '''
     
-    prompt: Multiline = Multiline(message, cancellation_message, placeholder, initial_value, default_value, validate, show_cancellation_message, show_submit)
+    prompt: Multiline = Multiline(message, cancellation_message, placeholder, initial_value, default_value, validate, show_cancellation_message, show_submit, abort_time)
     return prompt.text_box_controller.get_input()
 
 class Multiline(PromptBase):
@@ -59,7 +61,8 @@ class Multiline(PromptBase):
             default_value: Optional[str] = None,
             validate: Optional[Callable[[str], Optional[str]]] = None,
             show_cancellation_message: bool = True,
-            show_submit: bool = False):
+            show_submit: bool = False,
+            abort_time: Optional[float] = None):
         '''
         Initialize an Ask prompt with the given message, placeholder, initial value, and validation function.
 
@@ -73,6 +76,7 @@ class Multiline(PromptBase):
             show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
             show_submit (bool, optional): When True it shows a ` [ submit ] ` button that can be focused with 'Tab', when False no submit button is shown and pressing 'Enter' twice will submit. 
             Defaults to False.
+            abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
         Raises:
             CancelException: If the user cancels the operation.
@@ -99,6 +103,7 @@ class Multiline(PromptBase):
             self.text_box_controller.cursor_end()
         
         self.propogate_key_after_error = True
+        self.abort_time = abort_time
         self.allowed_inputs: tuple[str, ...] = self._construct_allowed_inputs()
 
         super().activate()

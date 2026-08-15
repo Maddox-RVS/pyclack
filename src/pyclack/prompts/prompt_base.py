@@ -1,6 +1,9 @@
 from ..terminal import KeyReader
+from threading import Thread
 from typing import Optional
+from queue import Queue
 from enum import Enum
+import time
 
 class CancelException(Exception):
     '''
@@ -29,13 +32,36 @@ class PromptBase:
         '''
         
         self.current_state: PromptState = PromptState.INITIAL
+        self.abort_time: Optional[float] = None
         self.propogate_key_after_error: bool = False
+
+        self._deadline: Optional[float] = None
+
+    def _read_key(self) -> Optional[str]:
+        if not self._deadline: return KeyReader.readkey()
+
+        remaining_time: float = self._deadline - time.monotonic()
+        if remaining_time <= 0: return None
+
+        result: Queue = Queue(maxsize=1)
+
+        def _reader() -> None:
+            result.put(KeyReader.readkey())
+
+        read_key_thread: Thread = Thread(target=_reader, daemon=True)
+        read_key_thread.start()
+        read_key_thread.join(timeout=self.abort_time)
+
+        if read_key_thread.is_alive(): return None
+
+        return result.get_nowait()
 
     def activate(self) -> None:
         '''
         Activate the prompt by transitioning to the active state and starting the state machine.
         '''
 
+        if self.abort_time: self._deadline = time.monotonic() + self.abort_time
         self.current_state = PromptState.ACTIVE
         self._active()
 
@@ -101,9 +127,9 @@ class PromptBase:
 
         while self.current_state == PromptState.ACTIVE:
             try:
-                key: str = propogation_key
-                if not propogation_key: key = KeyReader.readkey()
-                if key == 'ESC' or key == 'CTRL_C': 
+                key: Optional[str] = propogation_key
+                if not propogation_key: key = self._read_key()
+                if key is None or key == 'ESC' or key == 'CTRL_C': 
                     cancelled = True
                     break
                 advance_next_state: bool = self.handle_active(key)
@@ -143,8 +169,8 @@ class PromptBase:
 
         while self.current_state == PromptState.ERROR:
             try:
-                key: str = KeyReader.readkey()
-                if key == 'ESC' or key == 'CTRL_C': 
+                key: Optional[str] = self._read_key()
+                if key is None or key == 'ESC' or key == 'CTRL_C': 
                     cancelled = True
                     break
                 advance_next_state: bool = self.handle_error(key)

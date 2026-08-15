@@ -16,7 +16,8 @@ def date(message: str,
         cancellation_message: str = 'Operation Cancelled',
         show_cancellation_message: bool = True,
         default_date: Optional[ddate] = None,
-        validate: Optional[Callable[[ddate], Optional[str]]] = None) -> ddate:
+        validate: Optional[Callable[[ddate], Optional[str]]] = None,
+        abort_time: Optional[float] = None) -> ddate:
     '''
     Ask the user to select a date within a specified range.
     Controls are as follows:
@@ -37,6 +38,7 @@ def date(message: str,
         show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
         default_date (Optional[ddate]): The default date to return in the raised `CancelException` if the user cancels the prompt.
         validate (Optional[Callable[[ddate], Optional[str]]]): A function that takes a date and returns an error message if the date is invalid, or None if the date is valid.
+        abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
     Returns:
         ddate: The date selected by the user.
@@ -45,7 +47,7 @@ def date(message: str,
         CancelException: If the user cancels the operation.
     '''
 
-    prompt: Date = Date(message, initial_date, min_date, max_date, cancellation_message, default_date, validate, show_cancellation_message)
+    prompt: Date = Date(message, initial_date, min_date, max_date, cancellation_message, default_date, validate, show_cancellation_message, abort_time)
     return ddate(int(prompt.date_buffer[2]), int(prompt.date_buffer[0]), int(prompt.date_buffer[1]))
 
 class Date(PromptBase):
@@ -61,7 +63,8 @@ class Date(PromptBase):
                 cancellation_message: str = 'Operation Cancelled',
                 default_date: Optional[ddate] = None,
                 validate: Optional[Callable[[ddate], Optional[str]]] = None,
-                show_cancellation_message: bool = True):
+                show_cancellation_message: bool = True,
+                abort_time: Optional[float] = None):
         '''
         Initialize a Date prompt with the given message, initial date, minimum date, maximum date, cancellation message, default date, and validation function.
 
@@ -74,6 +77,7 @@ class Date(PromptBase):
             default_date (Optional[ddate]): The default date to return in the raised `CancelException` if the user cancels the prompt.
             validate (Optional[Callable[[ddate], Optional[str]]]): A function that takes a date and returns an error message if the date is invalid, or None if the date is valid.
             show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
+            abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
         Raises:
             CancelException: If the user cancels the operation.
@@ -96,6 +100,7 @@ class Date(PromptBase):
         self.date_index: int = 0
 
         self.propogate_key_after_error = True
+        self.abort_time = abort_time
         self.allowed_inputs: tuple[str, ...] = self._construct_allowed_inputs()
         self.render_frame: RenderFrame = RenderFrame()
 

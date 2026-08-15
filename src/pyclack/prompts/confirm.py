@@ -13,7 +13,8 @@ def confirm(message: str,
             vertical: bool = False,
             cancellation_message: str = 'Operation Cancelled',
             show_cancellation_message: bool = True,
-            default_option: bool = True) -> bool:
+            default_option: bool = True,
+            abort_time: Optional[float] = None) -> bool:
     '''
     Prompt the user for a yes/no confirmation. Controls are as follows:
     - Use the arrow keys (or h/j/k/l) to toggle between 'Yes' and 'No'.
@@ -26,6 +27,7 @@ def confirm(message: str,
         cancellation_message (str): The message to display if the user cancels the operation.
         show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
         default_option (bool): The default option for the confirmation.
+        abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
     Returns:
         bool: The user's confirmation.
@@ -34,7 +36,7 @@ def confirm(message: str,
         CancelException: If the user cancels the operation.
     '''
 
-    prompt: Confirm = Confirm(message, active, inactive, vertical, cancellation_message, default_option, show_cancellation_message)
+    prompt: Confirm = Confirm(message, active, inactive, vertical, cancellation_message, default_option, show_cancellation_message, abort_time)
     return prompt.selected_confirmation
 
 class Confirm(PromptBase):
@@ -49,7 +51,8 @@ class Confirm(PromptBase):
                  vertical: bool,
                  cancellation_message: str,
                  default_option: bool = True,
-                 show_cancellation_message: bool = True):
+                 show_cancellation_message: bool = True,
+                 abort_time: Optional[float] = None):
         '''
         Initialize a Confirm prompt with the given message, cancellation message, and default option.
 
@@ -60,6 +63,7 @@ class Confirm(PromptBase):
             cancellation_message (str): The message to display if the user cancels the operation.
             default_option (bool): The default option for the confirmation.
             show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
+            abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
         Raises:
             CancelException: If the user cancels the operation.
@@ -76,6 +80,8 @@ class Confirm(PromptBase):
         self.selected_confirmation: bool = default_option
         self.render_frame: RenderFrame = RenderFrame()
         self.allowed_inputs: tuple[str, ...] = self._construct_allowed_inputs()
+
+        self.abort_time = abort_time
 
         super().activate()
 
