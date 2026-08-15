@@ -115,7 +115,8 @@ class Text:
                     bold=self.style.bold,
                     underline=self.style.underline,
                     italic=self.style.italic,
-                    strike=self.style.strikethrough) if self.style else rStyle()
+                    strike=self.style.strikethrough,
+                    dim=self.style.dim) if self.style else rStyle()
             formatted_text.append(self.text, style=rich_style)
 
         if self.inner_text:

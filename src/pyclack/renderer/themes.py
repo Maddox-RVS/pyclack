@@ -13,18 +13,20 @@ class Style:
         bold: bool = False,
         underline: bool = False,
         italic: bool = False,
-        strikethrough: bool = False):
+        strikethrough: bool = False,
+        dim: bool = False):
         '''
         Initialize a Style object with the given attributes.
         All color attributes can either be a string representing a color name, a hexadecimal color code, or None for default terminal colors.
 
         Args:
-            bg_color (Optional[str]): Background color of the theme.
-            fg_color (Optional[str]): Foreground color of the theme.
-            bold (bool): Whether the text is bold.
-            underline (bool): Whether the text is underlined.
-            italic (bool): Whether the text is italicized.
-            strikethrough (bool): Whether the text has a strikethrough.
+            bg_color (str, optional): Background color of the theme.
+            fg_color (str, optional): Foreground color of the theme.
+            bold (bool, optional): Whether the text is bold.
+            underline (bool, optional): Whether the text is underlined.
+            italic (bool, optional): Whether the text is italicized.
+            strikethrough (bool, optional): Whether the text has a strikethrough.
+            dim (bool, optional): Whether to dim the text color
         '''
 
         self.bg_color: Optional[str] = bg_color
@@ -33,6 +35,7 @@ class Style:
         self.underline: bool = underline
         self.italic: bool = italic
         self.strikethrough: bool = strikethrough
+        self.dim = dim
 
 class Theme:
     '''
