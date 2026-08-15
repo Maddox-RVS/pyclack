@@ -220,4 +220,4 @@ class Confirm(PromptBase):
         self.render_frame.draw_frame(*frame)
 
         Stdout.put(cc.show_cursor())
-        raise CancelException(self.cancellation_message, str(self.selected_confirmation))
+        raise CancelException(self.cancellation_message, self.selected_confirmation)

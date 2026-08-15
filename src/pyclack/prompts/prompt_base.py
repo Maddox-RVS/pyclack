@@ -5,18 +5,18 @@ from queue import Queue
 from enum import Enum
 import time
 
-class CancelException(Exception):
+class CancelException[T](Exception):
     '''
     Exception raised when a prompt is cancelled.
     '''
 
-    def __init__(self, message: str, value: Optional[str] = None):
+    def __init__(self, message: str, value: Optional[T] = None):
         '''
         Initialize a CancelException with the given message.
         '''
 
         super().__init__(message)
-        self.value: Optional[str] = value
+        self.value: Optional[T] = value
 
 class PromptState(Enum):
     INITIAL = 'initial'
