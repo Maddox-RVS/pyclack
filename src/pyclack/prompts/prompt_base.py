@@ -1,9 +1,17 @@
+from dataclasses import dataclass
 from ..terminal import KeyReader
 from threading import Thread
 from typing import Optional
 from queue import Queue
 from enum import Enum
 import time
+
+@dataclass
+class ClackOption[V]:
+    value: V
+    label: str
+    hint: str
+    disabled: bool = False
 
 class CancelException[T](Exception):
     '''

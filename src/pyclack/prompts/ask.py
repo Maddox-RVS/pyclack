@@ -92,6 +92,7 @@ class Ask(PromptBase):
         
         self.propogate_key_after_error = True
         self.abort_time = abort_time
+        
         self.allowed_inputs: tuple[str, ...] = self._construct_allowed_inputs()
 
         super().activate()

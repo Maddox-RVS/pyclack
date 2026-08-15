@@ -79,15 +79,15 @@ class Confirm(PromptBase):
         self.show_cancellation_message: bool = show_cancellation_message
         self.selected_confirmation: bool = default_option
         self.render_frame: RenderFrame = RenderFrame()
-        self.allowed_inputs: tuple[str, ...] = self._construct_allowed_inputs()
+        self.control_inputs: tuple[str, ...] = self._construct_control_inputs()
 
         self.abort_time = abort_time
 
         super().activate()
 
-    def _construct_allowed_inputs(self) -> tuple[str, ...]:
+    def _construct_control_inputs(self) -> tuple[str, ...]:
         '''
-        Construct a tuple of allowed inputs for the prompt.
+        Construct a tuple of control inputs for the prompt.
 
         Returns:
             tuple[str]: A tuple of allowed input keys.
@@ -108,7 +108,7 @@ class Confirm(PromptBase):
         prefix_active: Text = Text(f'{connector_bar_vertical}  ', theme.active)
 
         if key == 'ENTER': return True # Advance to the next state (submit)
-        elif key in self.allowed_inputs: self.selected_confirmation = not self.selected_confirmation
+        elif key in self.control_inputs: self.selected_confirmation = not self.selected_confirmation
 
         frame_builder: FrameBuilder = FrameBuilder()
 
