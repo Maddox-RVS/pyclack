@@ -14,9 +14,10 @@ def select(
     max_items: int = 7,
     cancellation_message: str = 'Operation Cancelled',
     show_cancellation_message: bool = True,
-    abort_time: Optional[float] = None) -> ClackOption:
+    abort_time: Optional[float] = None,
+    default_value: Optional[ClackOption] = None) -> ClackOption:
 
-    prompt: Select = Select(message, cancellation_message, options, show_instructions, max_items, show_cancellation_message, abort_time)
+    prompt: Select = Select(message, cancellation_message, options, show_instructions, max_items, show_cancellation_message, abort_time, default_value)
     return prompt.options[prompt.selected_option_index]
 
 class Select(PromptBase):
@@ -27,7 +28,8 @@ class Select(PromptBase):
         show_instructions: bool, 
         max_items: int,
         show_cancellation_message: bool,
-        abort_time: Optional[float]):
+        abort_time: Optional[float],
+        default_value: Optional[ClackOption]):
 
         super().__init__()
             
@@ -37,6 +39,7 @@ class Select(PromptBase):
         self.show_instructions: bool = show_instructions
         self.max_items: int = max(5, max_items)
         self.show_cancellation_message: bool = show_cancellation_message
+        self.default_value: Optional[ClackOption] = default_value
 
         if len(self.options) == 0:
             raise RuntimeError('Options cannot be empty')
@@ -286,4 +289,5 @@ class Select(PromptBase):
         self.render_frame.draw_frame(*frame)
 
         Stdout.put(cc.show_cursor())
-        raise CancelException[ClackOption](self.cancellation_message, self.options[self.selected_option_index])
+        value: ClackOption = self.default_value if self.default_value else self.options[self.selected_option_index]
+        raise CancelException[ClackOption](self.cancellation_message, value)
