@@ -1,0 +1,372 @@
+from .util import TextBoxController, build_wrapped_lines, build_message_header, build_message_close, apply_cursor_style
+from ..renderer import RenderFrame, Text, FrameBuilder, Style, Theme
+from .prompt_base import PromptBase, CancelException, ClackOption
+from ..terminal import CursorController as cc
+from typing import Optional, override
+from ..config import get_active_theme
+from ..terminal import Stdout
+from copy import copy
+
+def autocomplete(
+    message: str,
+    options: list[ClackOption], 
+    placeholder: str = 'Type to search...',
+    show_instructions: bool = True,
+    max_items: int = 7,
+    cancellation_message: str = 'Operation Cancelled',
+    show_cancellation_message: bool = True,
+    abort_time: Optional[float] = None) -> ClackOption:
+
+    prompt: Autocomplete = Autocomplete(message, placeholder, cancellation_message, options, show_instructions, max_items, show_cancellation_message, abort_time)
+    return prompt.searched_options[prompt.selected_option_index]
+
+class Autocomplete(PromptBase):
+    def __init__(self, 
+        message: str,
+        placeholder: str,
+        cancellation_message: str,
+        options: list[ClackOption], 
+        show_instructions: bool, 
+        max_items: int,
+        show_cancellation_message: bool,
+        abort_time: Optional[float]):
+
+        super().__init__()
+            
+        self.message: str = message
+        self.placeholder: str = placeholder
+        self.cancellation_message: str = cancellation_message
+        self.options: list[ClackOption] = options
+        self.show_instructions: bool = show_instructions
+        self.max_items: int = max(5, max_items)
+        self.show_cancellation_message: bool = show_cancellation_message
+
+        self.render_frame: RenderFrame = RenderFrame()
+        self.text_inputs: tuple[str, ...] = self._construct_text_inputs()
+        self.view_start_index: int = 0
+        self.view_window: list[int] = []
+        self.view_has_top_ellipsis: bool = False
+        self.view_has_bottom_ellipsis: bool = False
+        self.searched_options: list[ClackOption] = copy(self.options)
+        self.text_box_controller: TextBoxController = TextBoxController()
+
+        if len(self.options) == 0:
+            raise RuntimeError('Options cannot be empty')
+
+        if self._all_options_disabled():
+            raise RuntimeError('At least one option must be enabled')
+            
+        self.selected_option_index: int = 0
+        if self.searched_options[self.selected_option_index].disabled:
+            self._move_selection_down()
+        
+        self._update_view_window()
+
+        self.abort_time = abort_time
+        
+        self.activate()
+
+    def _update_view_window(self) -> None:
+        '''
+        Recompute the visible window from scratch, given the current
+        selection. Declarative rather than incremental: every call derives
+        the unique correct window directly from (selected_option_index,
+        total, max_items, and the previous view_start_index as a
+        minimal-movement hint).
+    
+        `view_window` contains only indexes into self.searched_options.
+        The ellipsis flags indicate whether an ellipsis should be
+        rendered above and/or below the visible options.
+        '''
+    
+        total: int = len(self.searched_options)
+    
+        if total <= self.max_items:
+            self.view_start_index = 0
+            self.view_window = list(range(total))
+            self.view_has_top_ellipsis = False
+            self.view_has_bottom_ellipsis = False
+            return
+    
+        capacity: int = self.max_items
+        start: int = self.view_start_index
+    
+        for _ in range(4):
+            if self.selected_option_index < start:
+                start = self.selected_option_index
+            elif self.selected_option_index > start + capacity - 1:
+                start = self.selected_option_index - capacity + 1
+    
+            start = max(0, min(start, total - capacity))
+    
+            top_ellipsis: bool = start > 0
+            bottom_ellipsis: bool = (start + capacity) < total
+            new_capacity: int = max(1, self.max_items - int(top_ellipsis) - int(bottom_ellipsis))
+    
+            if new_capacity == capacity: break
+            capacity = new_capacity
+    
+        start = max(0, min(start, total - capacity))
+        self.view_start_index = start
+        self.view_window = list(range(start, start + capacity))
+        self.view_has_top_ellipsis = start > 0
+        self.view_has_bottom_ellipsis = (start + capacity) < total
+        self.show_cursor: bool = False
+
+    def _construct_text_inputs(self) -> tuple[str, ...]:
+        '''
+        Construct a tuple of text inputs for the prompt.
+
+        Returns:
+            tuple[str]: A tuple of text input keys.
+        '''
+
+        allowed_chars: tuple[str, ...] = tuple(chr(i) for i in range(32, 127))
+        return ('SPACE',) + allowed_chars
+
+    def _all_options_disabled(self) -> bool:
+        return all(option.disabled for option in self.searched_options)
+
+    def _increment_wrap(self) -> None:
+        new_index: int = self.selected_option_index - 1
+        if new_index < 0: new_index = len(self.searched_options) - 1
+        self.selected_option_index = new_index
+
+    def _decrement_wrap(self) -> None:
+        new_index: int = self.selected_option_index + 1
+        if new_index >= len(self.searched_options): new_index = 0
+        self.selected_option_index = new_index
+
+    def _move_selection_up(self) -> None:
+        self._increment_wrap()
+        while self.searched_options[self.selected_option_index].disabled:
+            self._increment_wrap()
+
+    def _move_selection_down(self) -> None:
+        self._decrement_wrap()
+        while self.searched_options[self.selected_option_index].disabled:
+            self._decrement_wrap()
+
+    def _build_option_line(self, option: ClackOption, selected: bool) -> Text:
+        theme: Theme = get_active_theme()
+        selection_widget_radio_active: str = theme.symbols.selection_widget_radio_active.resolve()
+        selection_widget_radio_inactive: str = theme.symbols.selection_widget_radio_inactive.resolve()
+
+        disabled_style: Style = copy(theme.muted)
+        disabled_style.strikethrough = True
+        disabled_style.dim = True
+
+        widget: str = selection_widget_radio_inactive if (not selected or option.disabled) else selection_widget_radio_active
+        widget_style = theme.submit if selected else theme.muted
+        if option.disabled:
+            widget_style = copy(theme.muted)
+            widget_style.dim = True
+
+        if option.disabled: label_style: Style = disabled_style
+        elif not selected: label_style = theme.muted
+        else: label_style = theme.text
+       
+        option_text: Text = Text(widget, widget_style) + ' ' + Text(option.label, label_style)
+        if selected or option.disabled: option_text += Text(f' ({option.hint})', theme.muted)
+        return option_text
+
+    def _update_search(self) -> None:
+        search: str = self.text_box_controller.get_input().lower().strip()
+        if len(search) == 0:
+            self.searched_options = copy(self.options)
+            self.selected_option_index = 0
+            return
+        results: list[ClackOption] = [result for result in self.options if search in result.label.lower().strip()]
+        results = sorted(results, key=lambda r: r.label.lower().strip().index(search))
+        self.searched_options = results
+        self.selected_option_index = 0
+
+    @override
+    def handle_active(self, key: Optional[str]) -> bool:
+        Stdout.put(cc.hide_cursor())
+        search: str = self.text_box_controller.get_input()
+
+        match key:
+            case 'ENTER': 
+                if len(self.searched_options) != 0 and not self.searched_options[self.selected_option_index].disabled: 
+                    return True # Advance to the next state (submit)
+            case 'UP': 
+                if len(self.searched_options) != 0:
+                    self._move_selection_up()
+                    self._update_view_window()
+                    self.show_cursor = False
+            case 'DOWN': 
+                if len(self.searched_options) != 0:
+                    self._move_selection_down()
+                    self._update_view_window()
+                    self.show_cursor = False
+            case 'LEFT':
+                self.text_box_controller.cursor_left()
+                self.show_cursor = True
+            case 'RIGHT':
+                self.text_box_controller.cursor_right()
+                self.show_cursor = True
+            case 'BACKSPACE':
+                self.text_box_controller.delete()
+                self._update_search()
+                self._update_view_window()
+                self.show_cursor = True
+            case _:
+                map: dict[str, str] = {'SPACE': ' '}
+
+                if key not in self.text_inputs: key = ''
+                else: key = map.get(key, key)
+
+                self.text_box_controller.insert(key)
+                self._update_search()
+                self._update_view_window()
+                self.show_cursor = True
+
+        # Create and render next frame based on the current input buffer and state
+        theme: Theme = get_active_theme()
+        step_marker_active: str = theme.symbols.step_marker_active.resolve()
+        connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
+        connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
+        prefix_active: Text = Text(f'{connector_bar_vertical}  ', theme.active)
+        prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
+        
+        search = self.text_box_controller.get_input()
+
+        frame_builder: FrameBuilder = FrameBuilder()
+
+        frame_builder.add_line(prefix_muted)
+
+        message_lines: list[Text] = build_message_header(
+            self.message,
+            theme.text,
+            f'{step_marker_active}  ',
+            theme.active,
+            prefix_active)
+        frame_builder.add_lines(*message_lines)
+
+        frame_builder.add_line(prefix_active)
+
+        search_text_parts: list[tuple[str, Style] | Text | str] = []
+        search_text_parts.append(('Search: ', theme.muted))
+        if len(search) == 0:
+            self.show_cursor = False
+            search_text_parts.append((self.placeholder, theme.muted))
+        else:
+            search_input_text: Text = Text(search, theme.muted)
+            search_input_text = apply_cursor_style(
+                search_input_text,
+                self.text_box_controller.get_cursor_position(),
+                theme.cursor)
+            search_text_parts.append(search_input_text)
+            search_text_parts.append((f' ({len(self.searched_options)} matches)'))
+        search_text: Text = Text.assemble(*search_text_parts)
+        search_lines: list[Text] = build_wrapped_lines(
+            search_text,
+            prefix_active)
+        frame_builder.add_lines(*search_lines)
+
+        if self.view_has_top_ellipsis:
+            frame_builder.add_line(prefix_active + Text('...', theme.muted))
+
+        for index in self.view_window:
+            option_text: Text = self._build_option_line(
+                self.searched_options[index],
+                True if self.selected_option_index == index else False)
+            option_text_lines: list[Text] = build_wrapped_lines(
+                option_text,
+                prefix_active)
+            frame_builder.add_lines(*option_text_lines)
+
+        if self.view_has_bottom_ellipsis:
+            frame_builder.add_line(prefix_active + Text('...', theme.muted))
+
+        if self.show_instructions:
+            instructions_text: Text = Text('↑/↓ ', theme.muted) + Text('to navigate • ', theme.text) + Text('Enter: ', theme.muted) + Text('confirm', theme.text)
+            instructions_text_lines: list[Text] = build_wrapped_lines(
+                instructions_text,
+                prefix_active)
+            frame_builder.add_lines(*instructions_text_lines)
+
+        frame_builder.add_line(Text(f'{connector_bar_end}  ', theme.active))
+
+        frame: tuple[Text, ...] = frame_builder.build()
+        self.render_frame.draw_frame(*frame)
+
+        return False
+
+    @override
+    def handle_submit(self) -> bool:
+        theme: Theme = get_active_theme()
+        step_marker_submit: str = theme.symbols.step_marker_submit.resolve()
+        connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
+        prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
+
+        frame_builder: FrameBuilder = FrameBuilder()
+
+        frame_builder.add_line(prefix_muted)
+
+        message_lines: list[Text] = build_message_header(
+            self.message,
+            theme.text,
+            f'{step_marker_submit}  ',
+            theme.submit,
+            prefix_muted)
+        frame_builder.add_lines(*message_lines)
+
+        option_lines: list[Text] = build_wrapped_lines(
+            Text(self.searched_options[self.selected_option_index].label, theme.muted),
+            prefix_muted)
+        frame_builder.add_lines(*option_lines)
+
+        frame: tuple[Text, ...] = frame_builder.build()
+        self.render_frame.draw_frame(*frame)
+
+        Stdout.put(cc.show_cursor())
+        return True
+
+    @override
+    def handle_cancel(self) -> None:
+        theme: Theme = get_active_theme()
+        step_marker_cancel: str = theme.symbols.step_marker_cancel.resolve()
+        connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
+        connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
+        prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
+        closing_prefix_muted: Text = Text(f'{connector_bar_end}  ', theme.muted)
+
+        frame_builder: FrameBuilder = FrameBuilder()
+
+        frame_builder.add_line(prefix_muted)
+
+        message_lines: list[Text] = build_message_header(
+            self.message,
+            theme.text,
+            f'{step_marker_cancel}  ',
+            theme.cancel,
+            prefix_muted)
+        frame_builder.add_lines(*message_lines)
+
+        if len(self.searched_options) != 0:
+            strikethrough_style: Style = copy(theme.muted)
+            strikethrough_style.strikethrough = True
+            option_lines: list[Text] = build_wrapped_lines(
+                Text(self.searched_options[self.selected_option_index].label, strikethrough_style),
+                prefix_muted)
+            frame_builder.add_lines(*option_lines)
+        
+        if self.show_cancellation_message:
+            frame_builder.add_line(prefix_muted)
+            cancel_lines: list[Text] = build_message_close(
+                self.cancellation_message,
+                theme.cancel,
+                prefix_muted,
+                closing_prefix_muted)
+            frame_builder.add_lines(*cancel_lines)
+
+        frame: tuple[Text, ...] = frame_builder.build()
+        self.render_frame.draw_frame(*frame)
+
+        Stdout.put(cc.show_cursor())
+        value: Optional[ClackOption] = None
+        if len(self.searched_options) != 0:
+            value = self.searched_options[self.selected_option_index]
+        raise CancelException[ClackOption](self.cancellation_message, value)
