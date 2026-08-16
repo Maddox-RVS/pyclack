@@ -189,7 +189,7 @@ class Autocomplete(PromptBase):
         results = sorted(results, key=lambda r: r.label.lower().strip().index(search))
         self.searched_options = results
         self.selected_option_index = 0
-        if self.searched_options[self.selected_option_index].disabled:
+        if self.searched_options and self.searched_options[self.selected_option_index].disabled:
             self._move_selection_down()
 
     @override
@@ -279,14 +279,18 @@ class Autocomplete(PromptBase):
         if self.view_has_top_ellipsis:
             frame_builder.add_line(prefix_active + Text('...', theme.muted))
 
-        for index in self.view_window:
-            option_text: Text = self._build_option_line(
-                self.searched_options[index],
-                True if self.selected_option_index == index else False)
-            option_text_lines: list[Text] = build_wrapped_lines(
-                option_text,
-                prefix_active)
-            frame_builder.add_lines(*option_text_lines)
+        if self.view_window:
+            for index in self.view_window:
+                option_text: Text = self._build_option_line(
+                    self.searched_options[index],
+                    True if self.selected_option_index == index else False)
+                option_text_lines: list[Text] = build_wrapped_lines(
+                    option_text,
+                    prefix_active)
+                frame_builder.add_lines(*option_text_lines)
+        else:
+            no_matches_text: Text = prefix_active + Text('No matches found', theme.error)
+            frame_builder.add_line(no_matches_text)
 
         if self.view_has_bottom_ellipsis:
             frame_builder.add_line(prefix_active + Text('...', theme.muted))
