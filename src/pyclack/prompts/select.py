@@ -49,7 +49,6 @@ class Select(PromptBase):
             self._move_selection_down()
 
         self.render_frame: RenderFrame = RenderFrame()
-        self.control_inputs: tuple[str, ...] = self._construct_control_inputs()
         self.view_start_index: int = 0
         self.view_window: list[int] = []
         self.view_has_top_ellipsis: bool = False
@@ -106,16 +105,6 @@ class Select(PromptBase):
         self.view_window = list(range(start, start + capacity))
         self.view_has_top_ellipsis = start > 0
         self.view_has_bottom_ellipsis = (start + capacity) < total
-
-    def _construct_control_inputs(self) -> tuple[str, ...]:
-        '''
-        Construct a tuple of control inputs for the prompt.
-
-        Returns:
-            tuple[str]: A tuple of allowed input keys.
-        '''
-
-        return ('LEFT', 'RIGHT', 'UP', 'DOWN', 'h', 'j', 'k', 'l', 'H', 'J', 'K', 'L')
 
     def _all_options_disabled(self) -> bool:
         return all(option.disabled for option in self.options)
@@ -223,6 +212,8 @@ class Select(PromptBase):
 
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
+
+        return False
 
     @override
     def handle_submit(self) -> bool:
