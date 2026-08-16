@@ -38,6 +38,9 @@ class Select(PromptBase):
         self.max_items: int = max(5, max_items)
         self.show_cancellation_message: bool = show_cancellation_message
 
+        if len(self.options) == 0:
+            raise RuntimeError('Options cannot be empty')
+
         if self._all_options_disabled():
             raise RuntimeError('At least one option must be enabled')
             
@@ -95,8 +98,7 @@ class Select(PromptBase):
             bottom_ellipsis: bool = (start + capacity) < total
             new_capacity: int = max(1, self.max_items - int(top_ellipsis) - int(bottom_ellipsis))
     
-            if new_capacity == capacity:
-                break
+            if new_capacity == capacity: break
             capacity = new_capacity
     
         start = max(0, min(start, total - capacity))
@@ -149,6 +151,9 @@ class Select(PromptBase):
 
         widget: str = selection_widget_radio_inactive if (not selected or option.disabled) else selection_widget_radio_active
         widget_style = theme.submit if selected else theme.muted
+        if option.disabled:
+            widget_style = copy(theme.muted)
+            widget_style.dim = True
 
         if option.disabled: label_style: Style = disabled_style
         elif not selected: label_style = theme.muted
