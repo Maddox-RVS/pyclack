@@ -15,9 +15,10 @@ def autocomplete(
     max_items: int = 7,
     cancellation_message: str = 'Operation Cancelled',
     show_cancellation_message: bool = True,
-    abort_time: Optional[float] = None) -> ClackOption:
+    abort_time: Optional[float] = None,
+    default_value: Optional[ClackOption] = None) -> ClackOption:
 
-    prompt: Autocomplete = Autocomplete(message, placeholder, cancellation_message, options, show_instructions, max_items, show_cancellation_message, abort_time)
+    prompt: Autocomplete = Autocomplete(message, placeholder, cancellation_message, options, show_instructions, max_items, show_cancellation_message, abort_time, default_value)
     return prompt.searched_options[prompt.selected_option_index]
 
 class Autocomplete(PromptBase):
@@ -29,7 +30,8 @@ class Autocomplete(PromptBase):
         show_instructions: bool, 
         max_items: int,
         show_cancellation_message: bool,
-        abort_time: Optional[float]):
+        abort_time: Optional[float],
+        default_value: Optional[ClackOption]):
 
         super().__init__()
             
@@ -40,6 +42,7 @@ class Autocomplete(PromptBase):
         self.show_instructions: bool = show_instructions
         self.max_items: int = max(5, max_items)
         self.show_cancellation_message: bool = show_cancellation_message
+        self.default_value: Optional[ClackOption] = default_value
 
         self.render_frame: RenderFrame = RenderFrame()
         self.text_inputs: tuple[str, ...] = self._construct_text_inputs()
@@ -139,13 +142,19 @@ class Autocomplete(PromptBase):
 
     def _move_selection_up(self) -> None:
         self._increment_wrap()
+        total: int = 0
         while self.searched_options[self.selected_option_index].disabled:
             self._increment_wrap()
+            total += 1
+            if total >= len(self.searched_options) - 1: break
 
     def _move_selection_down(self) -> None:
         self._decrement_wrap()
+        total: int = 0
         while self.searched_options[self.selected_option_index].disabled:
             self._decrement_wrap()
+            total += 1
+            if total >= len(self.searched_options) - 1: break
 
     def _build_option_line(self, option: ClackOption, selected: bool) -> Text:
         theme: Theme = get_active_theme()
@@ -180,6 +189,8 @@ class Autocomplete(PromptBase):
         results = sorted(results, key=lambda r: r.label.lower().strip().index(search))
         self.searched_options = results
         self.selected_option_index = 0
+        if self.searched_options[self.selected_option_index].disabled:
+            self._move_selection_down()
 
     @override
     def handle_active(self, key: Optional[str]) -> bool:
@@ -345,7 +356,7 @@ class Autocomplete(PromptBase):
             prefix_muted)
         frame_builder.add_lines(*message_lines)
 
-        if len(self.searched_options) != 0:
+        if len(self.searched_options) != 0 and not self.searched_options[self.selected_option_index].disabled:
             strikethrough_style: Style = copy(theme.muted)
             strikethrough_style.strikethrough = True
             option_lines: list[Text] = build_wrapped_lines(
@@ -367,6 +378,8 @@ class Autocomplete(PromptBase):
 
         Stdout.put(cc.show_cursor())
         value: Optional[ClackOption] = None
-        if len(self.searched_options) != 0:
+        if len(self.searched_options) != 0 and not self.searched_options[self.selected_option_index].disabled:
             value = self.searched_options[self.selected_option_index]
+        if self.default_value:
+            value = self.default_value
         raise CancelException[ClackOption](self.cancellation_message, value)
