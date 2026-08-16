@@ -113,14 +113,15 @@ class Password(PromptBase):
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
 
         # Update the input buffer based on the key pressed
-        if key == 'BACKSPACE': self.text_box_controller.delete()
-        elif key == 'ENTER': return True # Advance to the next state (submit)
-        else:
-            map: dict[str, str] = {
-                'SPACE': ' ',
-                'TAB': '\t'}  
-            char: str = map.get(key, key) # Translate key to character (if applicable)
-            if key != '': self.text_box_controller.insert(char)
+        match key:
+            case 'BACKSPACE': self.text_box_controller.delete()
+            case 'ENTER': return True # Advance to the next state (submit)
+            case _:
+                map: dict[str, str] = {
+                    'SPACE': ' ',
+                    'TAB': '\t'}  
+                char: str = map.get(key, key) # Translate key to character (if applicable)
+                if key != '': self.text_box_controller.insert(char)
 
         # Create and render next frame based on the current input buffer and state
         mask: str = self.mask.resolve() if self.mask else theme.symbols.selection_widget_password_mask.resolve()

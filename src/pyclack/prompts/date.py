@@ -232,33 +232,18 @@ class Date(PromptBase):
 
         if key not in self.allowed_inputs: key = ''
 
-        if key == 'BACKSPACE':
-            if len(self.date_buffer[self.date_index]) > 0: self.date_buffer[self.date_index] = ''
-            else: self._selection_left()
-        elif key == 'TAB': self._selection_right()
-        elif key == 'ENTER': return True # Advance to the next state (submit)
-        else:
-            map: dict[str, str] = {
-                'LEFT': 'LEFT',
-                'h': 'LEFT',
-                'H': 'LEFT',
-                'RIGHT': 'RIGHT',
-                'l': 'RIGHT',
-                'L': 'RIGHT',
-                'UP': 'UP',
-                'k': 'UP',
-                'K': 'UP',
-                'DOWN': 'DOWN',
-                'j': 'DOWN',
-                'J': 'DOWN'
-            }
-
-            movement_key: str = map.get(key, key) # Translate key to movement direction
-            if movement_key == 'LEFT': self._selection_left()
-            elif movement_key == 'RIGHT': self._selection_right()
-            elif movement_key == 'UP': self._selection_increase()
-            elif movement_key == 'DOWN': self._selection_decrease()
-            else:
+        match key:
+            case 'BACKSPACE':
+                if len(self.date_buffer[self.date_index]) > 0: self.date_buffer[self.date_index] = ''
+                else: self._selection_left() 
+            case 'TAB': self._selection_right()
+            case 'ENTER': return True # Advance to the next state (submit)
+            case 'LEFT' | 'h' | 'H': self._selection_left()
+            case 'RIGHT' | 'l' | 'L': self._selection_right()
+            case 'UP' | 'k' | 'K': self._selection_increase()
+            case 'DOWN' | 'j' | 'J': self._selection_decrease()
+            case '': pass
+            case _:
                 current_input: str = self.date_buffer[self.date_index]
                 max_chars: int = 2 if (self.date_index == 0 or self.date_index == 1) else 4
                 new_buffer: str = self._add_str(current_input, key, max_chars)

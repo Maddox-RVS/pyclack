@@ -101,7 +101,7 @@ class Ask(PromptBase):
         '''
 
         allowed_chars: tuple[str, ...] = tuple(chr(i) for i in range(32, 127))
-        return ('BACKSPACE', 'ENTER', 'LEFT', 'RIGHT', 'UP', 'DOWN', 'TAB', 'SPACE') + allowed_chars
+        return ('BACKSPACE', 'ENTER', 'LEFT', 'RIGHT', 'TAB', 'SPACE') + allowed_chars
 
     @override
     def handle_active(self, key: Optional[str]) -> bool:
@@ -116,19 +116,17 @@ class Ask(PromptBase):
         prefix_active: Text = Text(f'{connector_bar_vertical}  ', theme.active)
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
 
-        # Update the input buffer based on the key pressed
-        if key == 'BACKSPACE': self.text_box_controller.delete()
-        elif key == 'ENTER': return True # Advance to the next state (submit)
-        elif key == 'LEFT': self.text_box_controller.cursor_left()
-        elif key == 'RIGHT': self.text_box_controller.cursor_right()
-        elif key == 'UP': self.text_box_controller.cursor_up()
-        elif key == 'DOWN': self.text_box_controller.cursor_down()
-        else:
-            map: dict[str, str] = {
-                'SPACE': ' ',
-                'TAB': '\t'}  
-            char: str = map.get(key, key) # Translate key to character (if applicable)
-            if key != '': self.text_box_controller.insert(char)
+        match key:
+            case 'BACKSPACE': self.text_box_controller.delete()
+            case 'ENTER': return True # Advance to the next state (submit)
+            case 'LEFT': self.text_box_controller.cursor_left()
+            case 'RIGHT': self.text_box_controller.cursor_right()
+            case _:
+                map: dict[str, str] = {
+                    'SPACE': ' ',
+                    'TAB': '\t'}  
+                char: str = map.get(key, key) # Translate key to character (if applicable)
+                if key != '': self.text_box_controller.insert(char)
 
         # Create and render next frame based on the current input buffer and state
         input_buffer: str = self.text_box_controller.get_input()
