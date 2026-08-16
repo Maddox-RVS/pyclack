@@ -11,3 +11,4 @@ from .confirm import confirm as confirm
 from .date import date as date
 from .multiline import multiline as multiline
 from .select import select as select
+from .multiselect import multiselect as multiselect

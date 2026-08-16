@@ -23,3 +23,6 @@ line-length = 200
 [tool.ruff.lint]
 select = ["E", "F"] # keep only basic errors
 ignore = ["I", "E701"] # ignore import sorting rules, and single line if statements
+
+[tool.pyright]
+typeCheckingMode = "basic"
