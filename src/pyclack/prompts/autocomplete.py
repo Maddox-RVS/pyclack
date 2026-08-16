@@ -50,6 +50,7 @@ class Autocomplete(PromptBase):
         self.view_window: list[int] = []
         self.view_has_top_ellipsis: bool = False
         self.view_has_bottom_ellipsis: bool = False
+        self.show_cursor: bool = False
         self.searched_options: list[ClackOption] = copy(self.options)
         self.text_box_controller: TextBoxController = TextBoxController()
 
@@ -114,7 +115,6 @@ class Autocomplete(PromptBase):
         self.view_window = list(range(start, start + capacity))
         self.view_has_top_ellipsis = start > 0
         self.view_has_bottom_ellipsis = (start + capacity) < total
-        self.show_cursor: bool = False
 
     def _construct_text_inputs(self) -> tuple[str, ...]:
         '''
