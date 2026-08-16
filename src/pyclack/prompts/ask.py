@@ -49,11 +49,11 @@ class Ask(PromptBase):
     def __init__(self,
             message: str,
             cancellation_message: str,
-            placeholder: Optional[str] = None,
-            initial_value: Optional[str] = None,
-            validate: Optional[Callable[[str], Optional[str]]] = None,
-            show_cancellation_message: bool = True,
-            abort_time: Optional[float] = None):
+            placeholder: Optional[str],
+            initial_value: Optional[str],
+            validate: Optional[Callable[[str], Optional[str]]],
+            show_cancellation_message: bool,
+            abort_time: Optional[float]):
         '''
         Initialize an Ask prompt with the given message, placeholder, initial value, and validation function.
 

@@ -46,12 +46,12 @@ class Password(PromptBase):
     def __init__(self,
             message: str,
             cancellation_message: str,
-            mask: Optional[Symbol] = None,
-            show_nothing: bool = False,
-            clear_on_error: bool = False,
-            validate: Optional[Callable[[str], Optional[str]]] = None,
-            show_cancellation_message: bool = True,
-            abort_time: Optional[float] = None):
+            mask: Optional[Symbol],
+            show_nothing: bool,
+            clear_on_error: bool,
+            validate: Optional[Callable[[str], Optional[str]]],
+            show_cancellation_message: bool,
+            abort_time: Optional[float]):
         '''
         Initialize a Password prompt with the given message, mask, and validation function.
 

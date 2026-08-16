@@ -50,9 +50,9 @@ class Confirm(PromptBase):
                  inactive: str,
                  vertical: bool,
                  cancellation_message: str,
-                 default_option: bool = True,
-                 show_cancellation_message: bool = True,
-                 abort_time: Optional[float] = None):
+                 default_option: bool,
+                 show_cancellation_message: bool,
+                 abort_time: Optional[float]):
         '''
         Initialize a Confirm prompt with the given message, cancellation message, and default option.
 

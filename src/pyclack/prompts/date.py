@@ -58,10 +58,10 @@ class Date(PromptBase):
                 initial_date: ddate,
                 min_date: ddate,
                 max_date: ddate,
-                cancellation_message: str = 'Operation Cancelled',
-                validate: Optional[Callable[[ddate], Optional[str]]] = None,
-                show_cancellation_message: bool = True,
-                abort_time: Optional[float] = None):
+                cancellation_message: str,
+                validate: Optional[Callable[[ddate], Optional[str]]],
+                show_cancellation_message: bool,
+                abort_time: Optional[float]):
         '''
         Initialize a Date prompt with the given message, initial date, minimum date, maximum date, cancellation message, default date, and validation function.
 
