@@ -338,7 +338,7 @@ class Multiselect(PromptBase):
         frame_builder.add_lines(*error_lines)
 
         highlight_style: Style = copy(theme.text)
-        highlight_style.bg_color = 'bright_black'
+        highlight_style.bg_color = theme.muted.fg_color
         error_instructions_text: Text = Text.assemble(
             ('Press ', theme.text),
             (' space ', highlight_style),
