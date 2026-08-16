@@ -15,10 +15,9 @@ def autocomplete(
     max_items: int = 7,
     cancellation_message: str = 'Operation Cancelled',
     show_cancellation_message: bool = True,
-    abort_time: Optional[float] = None,
-    default_value: Optional[ClackOption] = None) -> ClackOption:
+    abort_time: Optional[float] = None) -> ClackOption:
 
-    prompt: Autocomplete = Autocomplete(message, placeholder, cancellation_message, options, show_instructions, max_items, show_cancellation_message, abort_time, default_value)
+    prompt: Autocomplete = Autocomplete(message, placeholder, cancellation_message, options, show_instructions, max_items, show_cancellation_message, abort_time)
     return prompt.searched_options[prompt.selected_option_index]
 
 class Autocomplete(PromptBase):
@@ -30,8 +29,7 @@ class Autocomplete(PromptBase):
         show_instructions: bool, 
         max_items: int,
         show_cancellation_message: bool,
-        abort_time: Optional[float],
-        default_value: Optional[ClackOption]):
+        abort_time: Optional[float]):
 
         super().__init__()
             
@@ -42,7 +40,6 @@ class Autocomplete(PromptBase):
         self.show_instructions: bool = show_instructions
         self.max_items: int = max(5, max_items)
         self.show_cancellation_message: bool = show_cancellation_message
-        self.default_value: Optional[ClackOption] = default_value
 
         self.render_frame: RenderFrame = RenderFrame()
         self.text_inputs: tuple[str, ...] = self._construct_text_inputs()
@@ -384,6 +381,4 @@ class Autocomplete(PromptBase):
         value: Optional[ClackOption] = None
         if len(self.searched_options) != 0 and not self.searched_options[self.selected_option_index].disabled:
             value = self.searched_options[self.selected_option_index]
-        if self.default_value:
-            value = self.default_value
         raise CancelException[ClackOption](self.cancellation_message, value)

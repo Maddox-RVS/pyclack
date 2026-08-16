@@ -11,7 +11,6 @@ def multiline(message: str,
         placeholder: Optional[str] = None, 
         initial_value: Optional[str] = None, 
         validate: Optional[Callable[[str], Optional[str]]] = None,
-        default_value: Optional[str] = None,
         cancellation_message: str = 'Operation Cancelled',
         show_cancellation_message: bool = True,
         show_submit: bool = False,
@@ -31,7 +30,6 @@ def multiline(message: str,
         placeholder (str, optional): The placeholder text to display when the input is empty.
         initial_value (str, optional): The initial value of the input.
         validate (Callable[[str], Optional[str]], optional): A function to validate the input.
-        default_value (str, optional): The default value to be returned as the value in the raised `CancelException`.
         cancellation_message (str): The message to display if the user cancels the operation.
         show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
         show_submit (bool, optional): When True it shows a ` [ submit ] ` button that can be focused with 'Tab', when False no submit button is shown and pressing 'Enter' twice will submit. 
@@ -45,7 +43,7 @@ def multiline(message: str,
         CancelException: If the user cancels the operation.
     '''
     
-    prompt: Multiline = Multiline(message, cancellation_message, placeholder, initial_value, default_value, validate, show_cancellation_message, show_submit, abort_time)
+    prompt: Multiline = Multiline(message, cancellation_message, placeholder, initial_value, validate, show_cancellation_message, show_submit, abort_time)
     return prompt.text_box_controller.get_input()
 
 class Multiline(PromptBase):
@@ -58,7 +56,6 @@ class Multiline(PromptBase):
             cancellation_message: str,
             placeholder: Optional[str] = None,
             initial_value: Optional[str] = None,
-            default_value: Optional[str] = None,
             validate: Optional[Callable[[str], Optional[str]]] = None,
             show_cancellation_message: bool = True,
             show_submit: bool = False,
@@ -71,7 +68,6 @@ class Multiline(PromptBase):
             cancellation_message (str): The message to display if the user cancels the operation.
             placeholder (str, optional): The placeholder text to display when the input is empty.
             initial_value (str, optional): The initial value of the input.
-            default_value (str, optional): The default value to be returned as the value in the raised `CancelException`.
             validate (Callable[[str], Optional[str]], optional): A function to validate the input.
             show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
             show_submit (bool, optional): When True it shows a ` [ submit ] ` button that can be focused with 'Tab', when False no submit button is shown and pressing 'Enter' twice will submit. 
@@ -90,7 +86,6 @@ class Multiline(PromptBase):
         self.show_submit: bool = show_submit
         self.placeholder: Optional[str] = placeholder
         self.initial_value: Optional[str] = initial_value
-        self.default_value: Optional[str] = default_value
         self.validate: Optional[Callable[[str], Optional[str]]] = validate
 
         self.last_key: str = ''
@@ -302,4 +297,4 @@ class Multiline(PromptBase):
         self.render_frame.draw_frame(*frame)
 
         Stdout.put(cc.show_cursor())
-        raise CancelException(self.cancellation_message, input_buffer if not self.default_value else self.default_value)
+        raise CancelException(self.cancellation_message, input_buffer)

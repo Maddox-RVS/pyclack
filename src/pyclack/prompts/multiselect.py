@@ -14,10 +14,9 @@ def multiselect(
     max_items: int = 7,
     cancellation_message: str = 'Operation Cancelled',
     show_cancellation_message: bool = True,
-    abort_time: Optional[float] = None,
-    default_values: Optional[list[ClackOption]] = None) -> list[ClackOption]:
+    abort_time: Optional[float] = None) -> list[ClackOption]:
 
-    prompt: Multiselect = Multiselect(message, cancellation_message, options, show_instructions, max_items, show_cancellation_message, abort_time, default_values)
+    prompt: Multiselect = Multiselect(message, cancellation_message, options, show_instructions, max_items, show_cancellation_message, abort_time)
     selected_options: list[ClackOption] = [prompt.options[index] for index in prompt.selected_options]
     return selected_options
 
@@ -29,8 +28,7 @@ class Multiselect(PromptBase):
         show_instructions: bool, 
         max_items: int,
         show_cancellation_message: bool,
-        abort_time: Optional[float],
-        default_values: Optional[list[ClackOption]]):
+        abort_time: Optional[float]):
 
         super().__init__()
             
@@ -40,7 +38,6 @@ class Multiselect(PromptBase):
         self.show_instructions: bool = show_instructions
         self.max_items: int = max(5, max_items)
         self.show_cancellation_message: bool = show_cancellation_message
-        self.default_values: Optional[list[ClackOption]] = default_values
 
         if len(self.options) == 0:
             raise RuntimeError('Options cannot be empty')
@@ -400,5 +397,5 @@ class Multiselect(PromptBase):
         self.render_frame.draw_frame(*frame)
 
         Stdout.put(cc.show_cursor())
-        selected_options: list[ClackOption] = [self.options[index] for index in self.selected_options] if not self.default_values else self.default_values
+        selected_options: list[ClackOption] = [self.options[index] for index in self.selected_options]
         raise CancelException[list[ClackOption]](self.cancellation_message, selected_options)
