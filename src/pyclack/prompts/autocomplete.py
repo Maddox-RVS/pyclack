@@ -3,8 +3,8 @@ from ..renderer import RenderFrame, Text, FrameBuilder, Style, Theme
 from .prompt_base import PromptBase, CancelException, ClackOption
 from ..terminal import CursorController as cc
 from ..config import get_active_theme
+from typing import override, Callable
 from ..terminal import Stdout
-from typing import override
 from copy import copy
 
 def autocomplete(
@@ -15,6 +15,7 @@ def autocomplete(
     max_items: int = 7,
     cancellation_message: str = 'Operation Cancelled',
     show_cancellation_message: bool = True,
+    filter: Callable[[str, list[ClackOption]], list[ClackOption]] | None = None,
     abort_time: float | None = None) -> ClackOption:
     '''
     Ask the user to select an option from a list of options, with autocomplete functionality.
@@ -33,6 +34,7 @@ def autocomplete(
         max_items (int, optional): The maximum number of items to display in the list. Defaults to 7.
         cancellation_message (str, optional): The message to display if the user cancels the operation. Defaults to 'Operation Cancelled'.
         show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
+        filter (Callable[[str, list[ClackOption]], list[ClackOption]] | None, optional): A callable that takes the current search string and the list of options, and returns a filtered list of options. If None, the default filtering behavior is used. Defaults to None.
         abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
     Returns:
@@ -43,7 +45,7 @@ def autocomplete(
         CancelException[ClackOption]: If the user cancels the operation.
     '''
 
-    prompt: Autocomplete = Autocomplete(message, placeholder, cancellation_message, options, show_instructions, max_items, show_cancellation_message, abort_time)
+    prompt: Autocomplete = Autocomplete(message, placeholder, cancellation_message, options, show_instructions, max_items, show_cancellation_message, filter, abort_time)
     return prompt.searched_options[prompt.selected_option_index]
 
 class Autocomplete(PromptBase):
@@ -59,6 +61,7 @@ class Autocomplete(PromptBase):
         show_instructions: bool, 
         max_items: int,
         show_cancellation_message: bool,
+        filter: Callable[[str, list[ClackOption]], list[ClackOption]] | None,
         abort_time: float | None):
         '''
         Initialize the Autocomplete prompt.
@@ -71,6 +74,7 @@ class Autocomplete(PromptBase):
             show_instructions (bool): If True, shows the instructions for the prompt.
             max_items (int): The maximum number of items to display in the list.
             show_cancellation_message (bool): If True shows cancellation message, shows no cancellation message if False.
+            filter (Callable[[str, list[ClackOption]], list[ClackOption]] | None): A callable that takes the current search string and the list of options, and returns a filtered list of options. If None, the default filtering behavior is used. Defaults to None.
             abort_time (float | None): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel.
 
         Raises:
@@ -87,6 +91,7 @@ class Autocomplete(PromptBase):
         self.show_instructions: bool = show_instructions
         self.max_items: int = max(5, max_items)
         self.show_cancellation_message: bool = show_cancellation_message
+        self.filter: Callable[[str, list[ClackOption]], list[ClackOption]] | None = filter
 
         self.render_frame: RenderFrame = RenderFrame()
         self.text_inputs: tuple[str, ...] = self._construct_text_inputs()
@@ -268,9 +273,13 @@ class Autocomplete(PromptBase):
             self.searched_options = copy(self.options)
             self.selected_option_index = 0
             return
-        results: list[ClackOption] = [result for result in self.options if search in result.label.lower().strip()]
-        results = sorted(results, key=lambda r: r.label.lower().strip().index(search))
-        self.searched_options = results
+
+        def _default_search(search: str, options: list[ClackOption]) -> list[ClackOption]:
+            results: list[ClackOption] = [result for result in options if search in result.label.lower().strip()]
+            results = sorted(results, key=lambda r: r.label.lower().strip().index(search))
+            return results
+
+        self.searched_options = _default_search(search, self.options) if not self.filter else self.filter(search, self.options)
         self.selected_option_index = 0
         if self.searched_options and self.searched_options[self.selected_option_index].disabled:
             self._move_selection_down()
