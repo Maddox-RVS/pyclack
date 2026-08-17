@@ -2,17 +2,17 @@ from ..renderer import Theme, RenderFrame, Text, FrameBuilder, Style
 from ..prompts.util import build_message_open
 from ..terminal import CursorController as cc
 from ..prompts.prompt_base import PromptBase
-from typing import override, Optional
 from ..config import get_active_theme
 from ..terminal import Stdout
+from typing import override
 
-def intro(title: str, custom_style: Optional[Style] = None) -> None:
+def intro(title: str, custom_style: Style | None = None) -> None:
     '''
     Display an introductory message with a title.
 
     Args:
         title (str): The title to display to the user.
-        custom_style (Optional[Style]): The custom style to use for the intro.
+        custom_style (Style | None, optional): The custom style to use for the intro.
     '''
     
     Intro(title, custom_style)
@@ -22,17 +22,17 @@ class Intro(PromptBase):
     A class to display an introductory message with a title.
     '''
 
-    def __init__(self, title: str, custom_style: Optional[Style] = None):
+    def __init__(self, title: str, custom_style: Style | None):
         '''
         Initialize an Intro prompt with the given title.
 
         Args:
             title (str): The title to display to the user.
-            custom_style (Optional[Style]): The custom style to use for the intro.
+            custom_style (Style | None): The custom style to use for the intro.
         '''
 
         self.title: str = title
-        self.custom_style: Optional[Style] = custom_style
+        self.custom_style: Style | None = custom_style
         self.render_frame: RenderFrame = RenderFrame()
 
         super().__init__()

@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from ..terminal import KeyReader
 from threading import Thread
-from typing import Optional
 from queue import Queue
 from enum import Enum
 import time
@@ -18,13 +17,13 @@ class CancelException[T](Exception):
     Exception raised when a prompt is cancelled.
     '''
 
-    def __init__(self, message: str, value: Optional[T] = None):
+    def __init__(self, message: str, value: T | None = None):
         '''
         Initialize a CancelException with the given message.
         '''
 
         super().__init__(message)
-        self.value: Optional[T] = value
+        self.value: T | None = value
 
 class PromptState(Enum):
     INITIAL = 'initial'
@@ -40,12 +39,12 @@ class PromptBase:
         '''
         
         self.current_state: PromptState = PromptState.INITIAL
-        self.abort_time: Optional[float] = None
+        self.abort_time: float | None = None
         self.propogate_key_after_error: bool = False
 
-        self._deadline: Optional[float] = None
+        self._deadline: float | None = None
 
-    def _read_key(self) -> Optional[str]:
+    def _read_key(self) -> str | None:
         if not self._deadline: return KeyReader.readkey()
 
         remaining_time: float = self._deadline - time.monotonic()
@@ -73,12 +72,12 @@ class PromptBase:
         self.current_state = PromptState.ACTIVE
         self._active()
 
-    def handle_active(self, key: Optional[str]) -> bool: 
+    def handle_active(self, key: str | None) -> bool: 
         '''
         Handle the active state of the prompt. This method should be overridden by subclasses to implement custom behavior for the active state.
 
         Args:
-            key (Optional[str]): The key pressed by the user, or None if no key was pressed. The first key pressed will always be None when entering the active state, and subsequent keys will be passed to this method.
+            key (str | None): The key pressed by the user, or None if no key was pressed. The first key pressed will always be None when entering the active state, and subsequent keys will be passed to this method.
 
         Returns:
             bool: True if the prompt should advance to the next state, False otherwise. (`True -> Submit state`, `False -> Active state`)
@@ -96,12 +95,12 @@ class PromptBase:
 
         return True
 
-    def handle_error(self, key: Optional[str]) -> bool: 
+    def handle_error(self, key: str | None) -> bool: 
         '''
         Handle the error state of the prompt. This method should be overridden by subclasses to implement custom behavior for the error state.
 
         Args:
-            key (Optional[str]): The key pressed by the user, or None if no key was pressed. The first key pressed will always be None when entering the error state, and subsequent keys will be passed to this method.
+            key (str | None): The key pressed by the user, or None if no key was pressed. The first key pressed will always be None when entering the error state, and subsequent keys will be passed to this method.
 
         Returns:
             bool: True if the prompt should advance to the next state, False otherwise. (`True -> Active state`, `False -> Error state`)
@@ -121,12 +120,12 @@ class PromptBase:
 
         raise CancelException('Operation cancelled.')
 
-    def _active(self, propogation_key: Optional[str] = None) -> None:
+    def _active(self, propogation_key: str | None = None) -> None:
         '''
         State machine for the active state of the prompt. This method handles user input and transitions between states based on the user's actions.
 
         Args:
-            propogation_key (Optional[str]): A key propogated from the error state to the active state. This key will be passed to the `_handle_active` method as the first key pressed in the active state. None indicates that no key was propogated from the error state.
+            propogation_key (str | None): A key propogated from the error state to the active state. This key will be passed to the `_handle_active` method as the first key pressed in the active state. None indicates that no key was propogated from the error state.
         '''
 
         if self.handle_active(None): self.current_state = PromptState.SUBMIT
@@ -135,7 +134,7 @@ class PromptBase:
 
         while self.current_state == PromptState.ACTIVE:
             try:
-                key: Optional[str] = propogation_key
+                key: str | None = propogation_key
                 if not propogation_key: key = self._read_key()
                 if key is None or key == 'ESC' or key == 'CTRL_C': 
                     cancelled = True
@@ -173,11 +172,11 @@ class PromptBase:
         if self.handle_error(None): self.current_state = PromptState.ACTIVE
         
         cancelled: bool = False
-        propogate_key: Optional[str] = None
+        propogate_key: str | None = None
 
         while self.current_state == PromptState.ERROR:
             try:
-                key: Optional[str] = self._read_key()
+                key: str | None = self._read_key()
                 if key is None or key == 'ESC' or key == 'CTRL_C': 
                     cancelled = True
                     break

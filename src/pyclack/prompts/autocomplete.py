@@ -2,9 +2,9 @@ from .util import TextBoxController, build_wrapped_lines, build_message_header, 
 from ..renderer import RenderFrame, Text, FrameBuilder, Style, Theme
 from .prompt_base import PromptBase, CancelException, ClackOption
 from ..terminal import CursorController as cc
-from typing import Optional, override
 from ..config import get_active_theme
 from ..terminal import Stdout
+from typing import override
 from copy import copy
 
 def autocomplete(
@@ -15,7 +15,7 @@ def autocomplete(
     max_items: int = 7,
     cancellation_message: str = 'Operation Cancelled',
     show_cancellation_message: bool = True,
-    abort_time: Optional[float] = None) -> ClackOption:
+    abort_time: float | None = None) -> ClackOption:
 
     prompt: Autocomplete = Autocomplete(message, placeholder, cancellation_message, options, show_instructions, max_items, show_cancellation_message, abort_time)
     return prompt.searched_options[prompt.selected_option_index]
@@ -29,7 +29,7 @@ class Autocomplete(PromptBase):
         show_instructions: bool, 
         max_items: int,
         show_cancellation_message: bool,
-        abort_time: Optional[float]):
+        abort_time: float | None):
 
         super().__init__()
             
@@ -190,7 +190,7 @@ class Autocomplete(PromptBase):
             self._move_selection_down()
 
     @override
-    def handle_active(self, key: Optional[str]) -> bool:
+    def handle_active(self, key: str | None) -> bool:
         Stdout.put(cc.hide_cursor())
         search: str = self.text_box_controller.get_input()
 
@@ -378,7 +378,7 @@ class Autocomplete(PromptBase):
         self.render_frame.draw_frame(*frame)
 
         Stdout.put(cc.show_cursor())
-        value: Optional[ClackOption] = None
+        value: ClackOption | None = None
         if len(self.searched_options) != 0 and not self.searched_options[self.selected_option_index].disabled:
             value = self.searched_options[self.selected_option_index]
         raise CancelException[ClackOption](self.cancellation_message, value)

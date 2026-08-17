@@ -2,9 +2,9 @@ from ..prompts.util import build_wrapped_lines, build_message_header, build_mess
 from ..renderer import Text, RenderFrame, FrameBuilder, Theme, Style
 from ..prompts import PromptBase, CancelException
 from ..terminal import CursorController as cc
-from typing import override, Optional
 from ..config import get_active_theme
 from ..terminal import Stdout
+from typing import override
 from copy import copy
 
 def confirm(message: str,
@@ -14,7 +14,7 @@ def confirm(message: str,
             cancellation_message: str = 'Operation Cancelled',
             show_cancellation_message: bool = True,
             default_option: bool = True,
-            abort_time: Optional[float] = None) -> bool:
+            abort_time: float | None = None) -> bool:
     '''
     Prompt the user for a yes/no confirmation. Controls are as follows:
     - Use the arrow keys (or h/j/k/l) to toggle between 'Yes' and 'No'.
@@ -52,7 +52,7 @@ class Confirm(PromptBase):
                  cancellation_message: str,
                  default_option: bool,
                  show_cancellation_message: bool,
-                 abort_time: Optional[float]):
+                 abort_time: float | None):
         '''
         Initialize a Confirm prompt with the given message, cancellation message, and default option.
 
@@ -96,7 +96,7 @@ class Confirm(PromptBase):
         return ('LEFT', 'RIGHT', 'UP', 'DOWN', 'h', 'j', 'k', 'l', 'H', 'J', 'K', 'L')
 
     @override
-    def handle_active(self, key: Optional[str]):
+    def handle_active(self, key: str | None):
         Stdout.put(cc.hide_cursor())
 
         theme: Theme = get_active_theme()

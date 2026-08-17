@@ -1,5 +1,4 @@
 from ..renderer import Text, Style
-from typing import Optional
 import shutil
 
 def build_message_open(
@@ -78,7 +77,7 @@ def build_message_close(
     message_lines[last_index] = closing_prefix + Text(message_lines[last_index].get_raw_text()[len(prefix):], message_style)
     return message_lines
 
-def _flatten_runs(value: Text) -> list[tuple[str, Optional[Style]]]:
+def _flatten_runs(value: Text) -> list[tuple[str, Style | None]]:
     '''
     Walks a (possibly deeply nested) Text object's inner_text chain and
     returns a flat list of (raw_text, style) runs in order.
@@ -87,24 +86,24 @@ def _flatten_runs(value: Text) -> list[tuple[str, Optional[Style]]]:
         value (Text): The input Text object to flatten.
     
     Returns:
-        list[tuple[str, Optional[Style]]]: A list where each tuple contains the (raw text segment, applied style).
+        list[tuple[str, Style | None]]: A list where each tuple contains the (raw text segment, applied style).
     '''
 
-    runs: list[tuple[str, Optional[Style]]] = []
-    current: Optional[Text] = value
+    runs: list[tuple[str, Style | None]] = []
+    current: Text | None = value
     while current is not None:
         runs.append((current.get_raw_isolated_text(), current.style))
         current = current.inner_text
     return runs
 
-def _build_slice(runs: list[tuple[str, Optional[Style]]], start: int, end: int) -> Text:
+def _build_slice(runs: list[tuple[str, Style | None]], start: int, end: int) -> Text:
     '''
     Rebuilds a Text spanning [start, end) of a flattened raw text,
     preserving each run's original style (or lack thereof) for whatever
     portion of it falls inside that range.
 
     Args:
-        runs (list[tuple[str, Optional[Style]]]): The list of all flattened runs from _flatten_runs.
+        runs (list[tuple[str, Style | None]]): The list of all flattened runs from _flatten_runs.
         start (int): The starting character index (inclusive) for the slice.
         end (int): The ending character index (exclusive) for the slice.
 
@@ -224,7 +223,7 @@ class TextBoxController:
  
         self._input_buffer: str = ''
         self._cursor_index: int = 0
-        self._desired_line_position: Optional[int] = None
+        self._desired_line_position: int | None = None
  
     def _get_cursor_line_position(self) -> int:
         '''

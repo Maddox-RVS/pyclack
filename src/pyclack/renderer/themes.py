@@ -1,5 +1,4 @@
 from .symbols import Symbols, Symbol, SpinnerSymbols
-from typing import Optional
 
 class Style:
     '''
@@ -8,8 +7,8 @@ class Style:
     '''
 
     def __init__(self, 
-        bg_color: Optional[str] = None,
-        fg_color: Optional[str] = None,
+        bg_color: str | None = None,
+        fg_color: str | None = None,
         bold: bool = False,
         underline: bool = False,
         italic: bool = False,
@@ -29,13 +28,13 @@ class Style:
             dim (bool, optional): Whether to dim the text color
         '''
 
-        self.bg_color: Optional[str] = bg_color
-        self.fg_color: Optional[str] = fg_color
+        self.bg_color: str | None = bg_color
+        self.fg_color: str | None = fg_color
         self.bold: bool = bold
         self.underline: bool = underline
         self.italic: bool = italic
         self.strikethrough: bool = strikethrough
-        self.dim = dim
+        self.dim: bool = dim
 
 class Theme:
     '''

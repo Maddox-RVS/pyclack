@@ -1,8 +1,8 @@
 from rich.style import Style as rStyle
 from rich.text import Text as rText
 from rich.console import Console
-from typing import Optional, Any
 from .themes import Style
+from typing import Any
 from copy import copy
 
 class Text:
@@ -13,15 +13,15 @@ class Text:
 
     def __init__(self, 
         text: str,
-        style: Optional[Style] = None,
-        inner_text: Optional[Text] = None):
+        style: Style | None = None,
+        inner_text: Text | None = None):
         '''
         Initialize a Text object.
 
         Args:
             text (str): The main text content.
-            inner_text (Optional[Text]): An additional Text object to concatenate.
-            style (Optional[Style]): The style to apply to the text.
+            inner_text (Text, optional): An additional Text object to concatenate.
+            style (Style, optional): The style to apply to the text.
         '''
 
         if style is not None and not isinstance(style, Style):
@@ -31,8 +31,8 @@ class Text:
             raise TypeError(f'inner_text must be an instance of Text or None, got {type(inner_text).__name__}')
 
         self.text: str = text
-        self.style: Optional[Style] = style
-        self.inner_text: Optional[Text] = inner_text
+        self.style: Style | None = style
+        self.inner_text: Text | None = inner_text
 
     @staticmethod
     def assemble(*parts) -> Text:

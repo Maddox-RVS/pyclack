@@ -1,20 +1,20 @@
 from .util import build_wrapped_lines, build_message_header, build_message_close, apply_cursor_style, TextBoxController
 from ..renderer import RenderFrame, Text, FrameBuilder, Style, Theme
 from .prompt_base import PromptBase, CancelException
-from typing import Callable, Optional, override
 from ..terminal import CursorController as cc
+from typing import Callable, override
 from ..config import get_active_theme
 from ..terminal import Stdout
 from copy import copy
 
 def multiline(message: str, 
-        placeholder: Optional[str] = None, 
-        initial_value: Optional[str] = None, 
-        validate: Optional[Callable[[str], Optional[str]]] = None,
+        placeholder: str | None = None, 
+        initial_value: str | None = None, 
+        validate: Callable[[str], str | None] | None = None,
         cancellation_message: str = 'Operation Cancelled',
         show_cancellation_message: bool = True,
         show_submit: bool = False,
-        abort_time: Optional[float] = None) -> str:
+        abort_time: float | None = None) -> str:
     '''
     Ask the user for input with a message, placeholder, initial value, and validation function.
     Controls are as follows:
@@ -29,8 +29,8 @@ def multiline(message: str,
         message (str): The message to display to the user.
         placeholder (str, optional): The placeholder text to display when the input is empty.
         initial_value (str, optional): The initial value of the input.
-        validate (Callable[[str], Optional[str]], optional): A function to validate the input.
-        cancellation_message (str): The message to display if the user cancels the operation.
+        validate (Callable[[str], str | None], optional): A function to validate the input.
+        cancellation_message (str, optional): The message to display if the user cancels the operation.
         show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
         show_submit (bool, optional): When True it shows a ` [ submit ] ` button that can be focused with 'Tab', when False no submit button is shown and pressing 'Enter' twice will submit. 
         Defaults to False.
@@ -54,25 +54,25 @@ class Multiline(PromptBase):
     def __init__(self,
             message: str,
             cancellation_message: str,
-            placeholder: Optional[str],
-            initial_value: Optional[str],
-            validate: Optional[Callable[[str], Optional[str]]],
+            placeholder: str | None,
+            initial_value: str | None,
+            validate: Callable[[str], str | None] | None,
             show_cancellation_message: bool,
             show_submit: bool,
-            abort_time: Optional[float]):
+            abort_time: float | None):
         '''
         Initialize an Ask prompt with the given message, placeholder, initial value, and validation function.
 
         Args:
             message (str): The message to display to the user.
             cancellation_message (str): The message to display if the user cancels the operation.
-            placeholder (str, optional): The placeholder text to display when the input is empty.
-            initial_value (str, optional): The initial value of the input.
-            validate (Callable[[str], Optional[str]], optional): A function to validate the input.
-            show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
-            show_submit (bool, optional): When True it shows a ` [ submit ] ` button that can be focused with 'Tab', when False no submit button is shown and pressing 'Enter' twice will submit. 
+            placeholder (str): The placeholder text to display when the input is empty.
+            initial_value (str): The initial value of the input.
+            validate (Callable[[str], str | None]): A function to validate the input.
+            show_cancellation_message (bool): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
+            show_submit (bool): When True it shows a ` [ submit ] ` button that can be focused with 'Tab', when False no submit button is shown and pressing 'Enter' twice will submit. 
             Defaults to False.
-            abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
+            abort_time (float): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
         Raises:
             CancelException: If the user cancels the operation.
@@ -84,9 +84,9 @@ class Multiline(PromptBase):
         self.cancellation_message: str = cancellation_message
         self.show_cancellation_message: bool = show_cancellation_message
         self.show_submit: bool = show_submit
-        self.placeholder: Optional[str] = placeholder
-        self.initial_value: Optional[str] = initial_value
-        self.validate: Optional[Callable[[str], Optional[str]]] = validate
+        self.placeholder: str | None = placeholder
+        self.initial_value: str | None = initial_value
+        self.validate: Callable[[str], str | None] | None = validate
 
         self.last_key: str = ''
         self.submit_focused: bool = False
@@ -115,7 +115,7 @@ class Multiline(PromptBase):
         return ('BACKSPACE', 'ENTER', 'LEFT', 'RIGHT', 'UP', 'DOWN', 'TAB', 'SPACE') + allowed_chars
 
     @override
-    def handle_active(self, key: Optional[str]) -> bool:
+    def handle_active(self, key: str | None) -> bool:
         Stdout.put(cc.hide_cursor())
 
         if key not in self.allowed_inputs: key = ''
@@ -208,7 +208,7 @@ class Multiline(PromptBase):
         return False if self.validate and self.validate(input_buffer) else True
 
     @override
-    def handle_error(self, key: Optional[str]) -> bool:
+    def handle_error(self, key: str | None) -> bool:
         Stdout.put(cc.hide_cursor())
 
         theme: Theme = get_active_theme()

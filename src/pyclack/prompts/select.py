@@ -2,9 +2,9 @@ from .util import build_wrapped_lines, build_message_header, build_message_close
 from ..renderer import RenderFrame, Text, FrameBuilder, Style, Theme
 from .prompt_base import PromptBase, CancelException, ClackOption
 from ..terminal import CursorController as cc
-from typing import Optional, override
 from ..config import get_active_theme
 from ..terminal import Stdout
+from typing import override
 from copy import copy
 
 def select(
@@ -14,7 +14,7 @@ def select(
     max_items: int = 7,
     cancellation_message: str = 'Operation Cancelled',
     show_cancellation_message: bool = True,
-    abort_time: Optional[float] = None) -> ClackOption:
+    abort_time: float | None = None) -> ClackOption:
 
     prompt: Select = Select(message, cancellation_message, options, show_instructions, max_items, show_cancellation_message, abort_time)
     return prompt.options[prompt.selected_option_index]
@@ -27,7 +27,7 @@ class Select(PromptBase):
         show_instructions: bool, 
         max_items: int,
         show_cancellation_message: bool,
-        abort_time: Optional[float]):
+        abort_time: float | None):
 
         super().__init__()
             
@@ -153,7 +153,7 @@ class Select(PromptBase):
         return option_text
 
     @override
-    def handle_active(self, key: Optional[str]) -> bool:
+    def handle_active(self, key: str | None) -> bool:
         Stdout.put(cc.hide_cursor())
 
         match key:

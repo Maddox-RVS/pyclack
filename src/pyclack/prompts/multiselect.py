@@ -2,9 +2,9 @@ from .util import build_wrapped_lines, build_message_header, build_message_close
 from ..renderer import RenderFrame, Text, FrameBuilder, Style, Theme
 from .prompt_base import PromptBase, CancelException, ClackOption
 from ..terminal import CursorController as cc
-from typing import override, Optional
 from ..config import get_active_theme
 from ..terminal import Stdout
+from typing import override
 from copy import copy
 
 def multiselect(
@@ -14,7 +14,7 @@ def multiselect(
     max_items: int = 7,
     cancellation_message: str = 'Operation Cancelled',
     show_cancellation_message: bool = True,
-    abort_time: Optional[float] = None) -> list[ClackOption]:
+    abort_time: float | None = None) -> list[ClackOption]:
 
     prompt: Multiselect = Multiselect(message, cancellation_message, options, show_instructions, max_items, show_cancellation_message, abort_time)
     selected_options: list[ClackOption] = [prompt.options[index] for index in prompt.selected_options]
@@ -28,7 +28,7 @@ class Multiselect(PromptBase):
         show_instructions: bool, 
         max_items: int,
         show_cancellation_message: bool,
-        abort_time: Optional[float]):
+        abort_time: float | None):
 
         super().__init__()
             
@@ -187,7 +187,7 @@ class Multiselect(PromptBase):
         return option_text
 
     @override
-    def handle_active(self, key: Optional[str]) -> bool:
+    def handle_active(self, key: str | None) -> bool:
         Stdout.put(cc.hide_cursor())
 
         match key:
@@ -286,7 +286,7 @@ class Multiselect(PromptBase):
         return True
 
     @override
-    def handle_error(self, key: Optional[str]) -> bool:
+    def handle_error(self, key: str | None) -> bool:
         theme: Theme = get_active_theme()
         step_marker_error: str = theme.symbols.step_marker_error.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()

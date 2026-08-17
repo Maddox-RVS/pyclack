@@ -3,16 +3,16 @@ from ..prompts.util import build_message_close
 from ..terminal import CursorController as cc
 from ..prompts.prompt_base import PromptBase
 from ..config import get_active_theme
-from typing import override, Optional
 from ..terminal import Stdout
+from typing import override
 
-def outro(message: str, custom_style: Optional[Style] = None) -> None:
+def outro(message: str, custom_style: Style | None = None) -> None:
     '''
     Display an exit message.
 
     Args:
         message (str): The message to display to the user.
-        custom_style (Optional[Style]): The custom style to use for the outro.
+        custom_style (Style | None, optional): The custom style to use for the outro.
     '''
     
     Outro(message, custom_style)
@@ -22,17 +22,17 @@ class Outro(PromptBase):
     A class to display an exit message.
     '''
 
-    def __init__(self, message: str, custom_style: Optional[Style] = None):
+    def __init__(self, message: str, custom_style: Style | None):
         '''
         Initialize an Outro prompt with the given message.
 
         Args:
             message (str): The message to display to the user.
-            custom_style (Optional[Style]): The custom style to use for the outro.
+            custom_style (Style | None): The custom style to use for the outro.
         '''
 
         self.message: str = message
-        self.custom_style: Optional[Style] = custom_style
+        self.custom_style: Style | None = custom_style
         self.render_frame: RenderFrame = RenderFrame()
 
         super().__init__()
