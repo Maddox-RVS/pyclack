@@ -23,7 +23,7 @@ def multiline(message: str,
     - Press 'Tab' to toggle focus on the submit button (if shown)
     - Press 'Enter' on submit button to submit (if shown), else press 'Enter' twice to submit.
     - Press 'Backspace' to delete the character before the cursor.
-    - Press 'Ctrl+C' to cancel the operation.
+    - Press 'Ctrl+C' or 'esc' to cancel the operation.
 
     Args:
         message (str): The message to display to the user.
@@ -61,7 +61,7 @@ class Multiline(PromptBase):
             show_submit: bool,
             abort_time: float | None):
         '''
-        Initialize an Ask prompt with the given message, placeholder, initial value, and validation function.
+        Initialize an Ask prompt.
 
         Args:
             message (str): The message to display to the user.

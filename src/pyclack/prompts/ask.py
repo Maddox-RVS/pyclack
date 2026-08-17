@@ -20,7 +20,7 @@ def ask(message: str,
     - Use the arrow keys to move the cursor within the input.
     - Press 'Enter' to submit the input.
     - Press 'Backspace' to delete the character before the cursor.
-    - Press 'Ctrl+C' to cancel the operation.
+    - Press 'Ctrl+C' or 'esc' to cancel the operation.
 
     Args:
         message (str): The message to display to the user.
@@ -55,7 +55,7 @@ class Ask(PromptBase):
             show_cancellation_message: bool,
             abort_time: float | None):
         '''
-        Initialize an Ask prompt with the given message, placeholder, initial value, and validation function.
+        Initialize an Ask prompt.
 
         Args:
             message (str): The message to display to the user.

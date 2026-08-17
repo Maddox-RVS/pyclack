@@ -15,11 +15,34 @@ def select(
     cancellation_message: str = 'Operation Cancelled',
     show_cancellation_message: bool = True,
     abort_time: float | None = None) -> ClackOption:
+    '''
+    Ask the user to select one option from a list of options.
+
+    Args:
+        message (str): The message to display to the user.
+        options (list[ClackOption]): The list of options to choose from.
+        show_instructions (bool, optional): If True, show instructions. Defaults to True.
+        max_items (int, optional): The maximum number of items to display. Defaults to 7.
+        cancellation_message (str, optional): The message to display if the user cancels the operation. Defaults to 'Operation Cancelled'.
+        show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
+        abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
+
+    Returns:
+        ClackOption: The selected option.
+
+    Raises:
+        RuntimeError: If the options list is empty or if all options are disabled.
+        CancelException: If the user cancels the operation.
+    '''
 
     prompt: Select = Select(message, cancellation_message, options, show_instructions, max_items, show_cancellation_message, abort_time)
     return prompt.options[prompt.selected_option_index]
 
 class Select(PromptBase):
+    '''
+    A prompt that allows the user to select one option from a list of options.
+    '''
+
     def __init__(self, 
         message: str,
         cancellation_message: str,
@@ -28,6 +51,22 @@ class Select(PromptBase):
         max_items: int,
         show_cancellation_message: bool,
         abort_time: float | None):
+        '''
+        Initialize a Select prompt.
+
+        Args:
+            message (str): The message to display to the user.
+            cancellation_message (str): The message to display if the user cancels the operation.
+            options (list[ClackOption]): The list of options to choose from.
+            show_instructions (bool): If True, show instructions.
+            max_items (int): The maximum number of items to display.
+            show_cancellation_message (bool): If True shows cancellation message, shows no cancellation message if False.
+            abort_time (float | None): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel.
+
+        Raises:
+            RuntimeError: If the options list is empty or if all options are disabled.
+            CancelException: If the user cancels the operation.
+        '''
 
         super().__init__()
             
@@ -107,29 +146,63 @@ class Select(PromptBase):
         self.view_has_bottom_ellipsis = (start + capacity) < total
 
     def _all_options_disabled(self) -> bool:
+        '''
+        Check if all options are disabled.
+
+        Returns:
+            bool: True if all options are disabled, False otherwise.
+        '''
+
         return all(option.disabled for option in self.options)
 
     def _increment_wrap(self) -> None:
+        '''
+        Increment the selected option index, wrapping around to the beginning if necessary.
+        '''
+
         new_index: int = self.selected_option_index - 1
         if new_index < 0: new_index = len(self.options) - 1
         self.selected_option_index = new_index
 
     def _decrement_wrap(self) -> None:
+        '''
+        Decrement the selected option index, wrapping around to the end if necessary.
+        '''
+
         new_index: int = self.selected_option_index + 1
         if new_index >= len(self.options): new_index = 0
         self.selected_option_index = new_index
 
     def _move_selection_up(self) -> None:
+        '''
+        Move the selection up to the previous enabled option, wrapping around if necessary.
+        '''
+
         self._increment_wrap()
         while self.options[self.selected_option_index].disabled:
             self._increment_wrap()
 
     def _move_selection_down(self) -> None:
+        '''
+        Move the selection down to the next enabled option, wrapping around if necessary.
+        '''
+
         self._decrement_wrap()
         while self.options[self.selected_option_index].disabled:
             self._decrement_wrap()
 
     def _build_option_line(self, option: ClackOption, selected: bool) -> Text:
+        '''
+        Build a line of text representing an option, with appropriate styling based on whether it is selected or disabled.
+
+        Args:
+            option (ClackOption): The option to build the line for.
+            selected (bool): Whether the option is currently selected.
+
+        Returns:
+            Text: A Text object representing the option line.
+        '''
+
         theme: Theme = get_active_theme()
         selection_widget_radio_active: str = theme.symbols.selection_widget_radio_active.resolve()
         selection_widget_radio_inactive: str = theme.symbols.selection_widget_radio_inactive.resolve()

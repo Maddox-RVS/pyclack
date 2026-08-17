@@ -16,11 +16,41 @@ def autocomplete(
     cancellation_message: str = 'Operation Cancelled',
     show_cancellation_message: bool = True,
     abort_time: float | None = None) -> ClackOption:
+    '''
+    Ask the user to select an option from a list of options, with autocomplete functionality.
+    Controls are as follows:
+    - Up/Down arrows to navigate the list of options
+    - Backspace to delete the last character in the search input
+    - Type to filter the list of options
+    - Enter to select the currently highlighted option
+    - Press 'Ctrl+C' or 'esc' to cancel the operation
+    
+    Args:
+        message (str): The message to display to the user.
+        options (list[ClackOption]): The list of options to display.
+        placeholder (str, optional): The placeholder text to display in the search input. Defaults to 'Type to search...'.
+        show_instructions (bool, optional): If True, shows the instructions for the prompt. Defaults to True.
+        max_items (int, optional): The maximum number of items to display in the list. Defaults to 7.
+        cancellation_message (str, optional): The message to display if the user cancels the operation. Defaults to 'Operation Cancelled'.
+        show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
+        abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
+
+    Returns:
+        ClackOption: The option selected by the user.
+
+    Raises:
+        RuntimeError: If the options list is empty or if all options are disabled.
+        CancelException[ClackOption]: If the user cancels the operation.
+    '''
 
     prompt: Autocomplete = Autocomplete(message, placeholder, cancellation_message, options, show_instructions, max_items, show_cancellation_message, abort_time)
     return prompt.searched_options[prompt.selected_option_index]
 
 class Autocomplete(PromptBase):
+    '''
+    A prompt that allows the user to select an option from a list of options, with autocomplete functionality.
+    '''
+
     def __init__(self, 
         message: str,
         placeholder: str,
@@ -30,6 +60,23 @@ class Autocomplete(PromptBase):
         max_items: int,
         show_cancellation_message: bool,
         abort_time: float | None):
+        '''
+        Initialize the Autocomplete prompt.
+
+        Args:
+            message (str): The message to display to the user.
+            placeholder (str): The placeholder text to display in the search input.
+            cancellation_message (str): The message to display if the user cancels the operation.
+            options (list[ClackOption]): The list of options to display.
+            show_instructions (bool): If True, shows the instructions for the prompt.
+            max_items (int): The maximum number of items to display in the list.
+            show_cancellation_message (bool): If True shows cancellation message, shows no cancellation message if False.
+            abort_time (float | None): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel.
+
+        Raises:
+            RuntimeError: If the options list is empty or if all options are disabled.
+            CancelException: If the user cancels the operation.
+        '''
 
         super().__init__()
             
@@ -125,19 +172,38 @@ class Autocomplete(PromptBase):
         return ('SPACE',) + allowed_chars
 
     def _all_options_disabled(self) -> bool:
+        '''
+        Check if all options are disabled.
+
+        Returns:
+            bool: True if all options are disabled, False otherwise.
+        '''
+
         return all(option.disabled for option in self.searched_options)
 
     def _increment_wrap(self) -> None:
+        '''
+        Increment the selected option index, wrapping around to the end if necessary.
+        '''
+
         new_index: int = self.selected_option_index - 1
         if new_index < 0: new_index = len(self.searched_options) - 1
         self.selected_option_index = new_index
 
     def _decrement_wrap(self) -> None:
+        '''
+        Decrement the selected option index, wrapping around to the beginning if necessary.
+        '''
+
         new_index: int = self.selected_option_index + 1
         if new_index >= len(self.searched_options): new_index = 0
         self.selected_option_index = new_index
 
     def _move_selection_up(self) -> None:
+        '''
+        Move the selection up to the next enabled option, wrapping around if necessary.
+        '''
+
         self._increment_wrap()
         total: int = 0
         while self.searched_options[self.selected_option_index].disabled:
@@ -146,6 +212,10 @@ class Autocomplete(PromptBase):
             if total >= len(self.searched_options) - 1: break
 
     def _move_selection_down(self) -> None:
+        '''
+        Move the selection down to the next enabled option, wrapping around if necessary.
+        '''
+
         self._decrement_wrap()
         total: int = 0
         while self.searched_options[self.selected_option_index].disabled:
@@ -154,6 +224,17 @@ class Autocomplete(PromptBase):
             if total >= len(self.searched_options) - 1: break
 
     def _build_option_line(self, option: ClackOption, selected: bool) -> Text:
+        '''
+        Build a line of text for the given option, with the appropriate styling based on whether it is selected or disabled.
+
+        Args:
+            option (ClackOption): The option to build the line for.
+            selected (bool): Whether the option is currently selected.
+
+        Returns:
+            Text: The styled text for the option line.
+        '''
+
         theme: Theme = get_active_theme()
         selection_widget_radio_active: str = theme.symbols.selection_widget_radio_active.resolve()
         selection_widget_radio_inactive: str = theme.symbols.selection_widget_radio_inactive.resolve()
@@ -177,6 +258,11 @@ class Autocomplete(PromptBase):
         return option_text
 
     def _update_search(self) -> None:
+        '''
+        Update the list of searched options based on the current input in the text box controller. 
+        Resets the selected option index to 0 and updates the view window accordingly.
+        '''
+
         search: str = self.text_box_controller.get_input().lower().strip()
         if len(search) == 0:
             self.searched_options = copy(self.options)

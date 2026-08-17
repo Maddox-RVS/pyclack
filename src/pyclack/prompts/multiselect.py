@@ -15,12 +15,35 @@ def multiselect(
     cancellation_message: str = 'Operation Cancelled',
     show_cancellation_message: bool = True,
     abort_time: float | None = None) -> list[ClackOption]:
+    '''
+    Ask the user to select multiple options from a list of options.
+
+    Args:
+        message (str): The message to display to the user.
+        options (list[ClackOption]): The list of options to display to the user.
+        show_instructions (bool, optional): Whether to show instructions for the user. Defaults to True.
+        max_items (int, optional): The maximum number of items to display at once. Defaults to 7.
+        cancellation_message (str, optional): The message to display if the user cancels the operation. Defaults to 'Operation Cancelled'.
+        show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
+        abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
+
+    Returns:
+        list[ClackOption]: The list of selected options.
+
+    Raises:
+        RuntimeError: If the options list is empty or if all options are disabled.
+        CancelException: If the user cancels the operation.
+    '''
 
     prompt: Multiselect = Multiselect(message, cancellation_message, options, show_instructions, max_items, show_cancellation_message, abort_time)
     selected_options: list[ClackOption] = [prompt.options[index] for index in prompt.selected_options]
     return selected_options
 
 class Multiselect(PromptBase):
+    '''
+    A prompt that allows the user to select multiple options from a list of options.
+    '''
+
     def __init__(self, 
         message: str,
         cancellation_message: str,
@@ -29,6 +52,22 @@ class Multiselect(PromptBase):
         max_items: int,
         show_cancellation_message: bool,
         abort_time: float | None):
+        '''
+        Initialize a Multiselect prompt.
+
+        Args:
+            message (str): The message to display to the user.
+            cancellation_message (str): The message to display if the user cancels the operation.
+            options (list[ClackOption]): The list of options to display to the user.
+            show_instructions (bool): Whether to show instructions for the user.
+            max_items (int): The maximum number of items to display at once.
+            show_cancellation_message (bool): If True shows cancellation message, shows no cancellation message if False.
+            abort_time (float | None): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel.
+
+        Raises:
+            RuntimeError: If the options list is empty or if all options are disabled.
+            CancelException: If the user cancels the operation.
+        '''
 
         super().__init__()
             
@@ -121,29 +160,62 @@ class Multiselect(PromptBase):
         return ('LEFT', 'RIGHT', 'UP', 'DOWN', 'h', 'j', 'k', 'l', 'H', 'J', 'K', 'L')
 
     def _all_options_disabled(self) -> bool:
+        '''
+        Check if all options are disabled.
+
+        Returns:
+            bool: True if all options are disabled, False otherwise.
+        '''
+
         return all(option.disabled for option in self.options)
 
     def _increment_wrap(self) -> None:
+        '''
+        Increment the focused option index, wrapping around to the end if necessary.
+        '''
+
         new_index: int = self.focused_option_index - 1
         if new_index < 0: new_index = len(self.options) - 1
         self.focused_option_index = new_index
 
     def _decrement_wrap(self) -> None:
+        '''
+        Decrement the focused option index, wrapping around to the beginning if necessary.
+        '''
+
         new_index: int = self.focused_option_index + 1
         if new_index >= len(self.options): new_index = 0
         self.focused_option_index = new_index
 
     def _move_selection_up(self) -> None:
+        '''
+        Move the selection up to the previous enabled option, wrapping around if necessary.
+        '''
+        
         self._increment_wrap()
         while self.options[self.focused_option_index].disabled:
             self._increment_wrap()
 
     def _move_selection_down(self) -> None:
+        '''
+        Move the selection down to the next enabled option, wrapping around if necessary.
+        '''
+
         self._decrement_wrap()
         while self.options[self.focused_option_index].disabled:
             self._decrement_wrap()
 
     def _build_selected_options_line(self, strikethrough: bool = False) -> Text:
+        '''
+        Build a line of text representing the selected options.
+
+        Args:
+            strikethrough (bool, optional): If True, the text will be strikethrough. Defaults to False.
+
+        Returns:
+            Text: A Text object representing the selected options.
+        '''
+
         theme: Theme = get_active_theme()
 
         selected_options_text: Text = Text('')
@@ -161,6 +233,18 @@ class Multiselect(PromptBase):
         return selected_options_text
 
     def _build_option_line(self, option: ClackOption, selected: bool, active: bool) -> Text:
+        '''
+        Build a line of text representing an option.
+
+        Args:
+            option (ClackOption): The option to build the line for.
+            selected (bool): Whether the option is selected.
+            active (bool): Whether the option is active.
+
+        Returns:
+            Text: A Text object representing the option.
+        '''
+
         theme: Theme = get_active_theme()
         selection_widget_checkbox_active: str = theme.symbols.selection_widget_checkbox_active.resolve()
         selection_widget_checkbox_inactive: str = theme.symbols.selection_widget_checkbox_inactive.resolve()
@@ -251,6 +335,8 @@ class Multiselect(PromptBase):
 
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
+
+        return False
 
     @override
     def handle_submit(self) -> bool:

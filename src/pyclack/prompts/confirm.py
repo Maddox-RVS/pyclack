@@ -19,6 +19,7 @@ def confirm(message: str,
     Prompt the user for a yes/no confirmation. Controls are as follows:
     - Use the arrow keys (or h/j/k/l) to toggle between 'Yes' and 'No'.
     - Press 'Enter' to submit the selection.
+    - Press 'Ctrl+C' or 'esc' to cancel the operation.
 
     Args:
         message (str): The message to display to the user.
@@ -54,7 +55,7 @@ class Confirm(PromptBase):
                  show_cancellation_message: bool,
                  abort_time: float | None):
         '''
-        Initialize a Confirm prompt with the given message, cancellation message, and default option.
+        Initialize a Confirm prompt.
 
         Args:
             message (str): The message to display to the user.

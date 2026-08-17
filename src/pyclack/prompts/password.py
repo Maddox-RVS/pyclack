@@ -20,7 +20,7 @@ def password(message: str,
     Controls are as follows:
     - Backspace: Delete the last character in the input buffer.
     - Enter: Submit the input as the password.
-    - Ctrl+C: Cancel the operation.
+    - Ctrl+C or esc: Cancel the operation.
 
     Args:
         message (str): The message to display to the user.
@@ -53,7 +53,7 @@ class Password(PromptBase):
             show_cancellation_message: bool,
             abort_time: float | None):
         '''
-        Initialize a Password prompt with the given message, mask, and validation function.
+        Initialize a Password prompt.
 
         Args:
             message (str): The message to display to the user.
@@ -84,7 +84,7 @@ class Password(PromptBase):
         
         self.propogate_key_after_error = True
         self.abort_time = abort_time
-        self.allowed_inputs: tuple[str] = self._construct_allowed_inputs()
+        self.allowed_inputs: tuple[str, ...] = self._construct_allowed_inputs()
 
         super().activate()
 

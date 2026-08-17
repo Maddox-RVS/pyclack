@@ -26,7 +26,7 @@ def date(message: str,
     - Press 'Enter' to submit the selected date.
     - Press 'Tab' to move to the next field.
     - Press 'Backspace' to clear the selected field or move to the previous field if it is already empty.
-    - Press 'Ctrl+C' to cancel the prompt.
+    - Press 'Ctrl+C' or 'esc' to cancel the prompt.
 
     Args:
         message (str): The message to display to the user.
@@ -63,7 +63,7 @@ class Date(PromptBase):
                 show_cancellation_message: bool,
                 abort_time: float | None):
         '''
-        Initialize a Date prompt with the given message, initial date, minimum date, maximum date, cancellation message, default date, and validation function.
+        Initialize a Date prompt.
 
         Args:
             message (str): The message to display to the user.
