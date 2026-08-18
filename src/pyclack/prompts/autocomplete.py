@@ -19,6 +19,7 @@ def autocomplete(
     abort_time: float | None = None) -> ClackOption:
     '''
     Ask the user to select an option from a list of options, with autocomplete functionality.
+    
     Controls are as follows:
     - Up/Down arrows to navigate the list of options
     - Backspace to delete the last character in the search input

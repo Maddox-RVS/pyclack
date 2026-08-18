@@ -18,6 +18,11 @@ def select(
     '''
     Ask the user to select one option from a list of options.
 
+    Controls are as follows:
+    - Up/Down arrows or k/j to navigate the options.
+    - Enter to submit the selected option.
+    - Press 'Ctrl+C' or 'esc' to cancel the operation.
+
     Args:
         message (str): The message to display to the user.
         options (list[ClackOption]): The list of options to choose from.

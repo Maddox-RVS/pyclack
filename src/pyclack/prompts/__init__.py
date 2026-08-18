@@ -13,3 +13,4 @@ from .multiline import multiline as multiline
 from .select import select as select
 from .multiselect import multiselect as multiselect
 from .autocomplete import autocomplete as autocomplete
+from .autocomplete_multiselect import autocomplete_multiselect as autocomplete_multiselect
