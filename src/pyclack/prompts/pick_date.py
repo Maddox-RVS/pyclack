@@ -1,22 +1,22 @@
-from ..prompts.util import build_wrapped_lines, build_message_header, build_message_close
+from .util import build_wrapped_lines, build_message_header, build_message_close
 from ..renderer import Text, RenderFrame, FrameBuilder, Theme, Style
-from ..prompts import PromptBase, CancelException
 from ..terminal import CursorController as cc
+from . import PromptBase, CancelException
 from ..config import get_active_theme
-from datetime import date as ddate
 from ..terminal import Stdout
 from typing import Callable
+from datetime import date
 from copy import copy
 import calendar
 
-def date(message: str,
-        initial_date: ddate,
-        min_date: ddate,
-        max_date: ddate,
+def pick_date(message: str,
+        initial_date: date,
+        min_date: date,
+        max_date: date,
         cancellation_message: str = 'Operation Cancelled',
         show_cancellation_message: bool = True,
-        validate: Callable[[ddate], str | None] | None = None,
-        abort_time: float | None = None) -> ddate:
+        validate: Callable[[date], str | None] | None = None,
+        abort_time: float | None = None) -> date:
     '''
     Ask the user to select a date within a specified range.
     Controls are as follows:
@@ -30,36 +30,36 @@ def date(message: str,
 
     Args:
         message (str): The message to display to the user.
-        initial_date (ddate): The initial date to display in the prompt.
-        min_date (ddate): The minimum date that can be selected.
-        max_date (ddate): The maximum date that can be selected.
+        initial_date (date): The initial date to display in the prompt.
+        min_date (date): The minimum date that can be selected.
+        max_date (date): The maximum date that can be selected.
         cancellation_message (str, optional): The message to display if the user cancels the operation.
         show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
-        validate (Callable[[ddate], str | None], optional): A function that takes a date and returns an error message if the date is invalid, or None if the date is valid.
+        validate (Callable[[date], str | None], optional): A function that takes a date and returns an error message if the date is invalid, or None if the date is valid.
         abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
     Returns:
-        ddate: The date selected by the user.
+        date: The date selected by the user.
 
     Raises:
         CancelException: If the user cancels the operation.
     '''
 
-    prompt: Date = Date(message, initial_date, min_date, max_date, cancellation_message, validate, show_cancellation_message, abort_time)
-    return ddate(int(prompt.date_buffer[2]), int(prompt.date_buffer[0]), int(prompt.date_buffer[1]))
+    prompt: PickDate = PickDate(message, initial_date, min_date, max_date, cancellation_message, validate, show_cancellation_message, abort_time)
+    return date(int(prompt.date_buffer[2]), int(prompt.date_buffer[0]), int(prompt.date_buffer[1]))
 
-class Date(PromptBase):
+class PickDate(PromptBase):
     '''
     A prompt for selecting a date within a specified range.
     '''
 
     def __init__(self,
                 message: str,
-                initial_date: ddate,
-                min_date: ddate,
-                max_date: ddate,
+                initial_date: date,
+                min_date: date,
+                max_date: date,
                 cancellation_message: str,
-                validate: Callable[[ddate], str | None] | None,
+                validate: Callable[[date], str | None] | None,
                 show_cancellation_message: bool,
                 abort_time: float | None):
         '''
@@ -67,11 +67,11 @@ class Date(PromptBase):
 
         Args:
             message (str): The message to display to the user.
-            initial_date (ddate): The initial date to display in the prompt.
-            min_date (ddate): The minimum date that can be selected.
-            max_date (ddate): The maximum date that can be selected.
+            initial_date (date): The initial date to display in the prompt.
+            min_date (date): The minimum date that can be selected.
+            max_date (date): The maximum date that can be selected.
             cancellation_message (str): The message to display if the user cancels the operation.
-            validate (Callable[[ddate], str | None]): A function that takes a date and returns an error message if the date is invalid, or None if the date is valid.
+            validate (Callable[[date], str | None]): A function that takes a date and returns an error message if the date is invalid, or None if the date is valid.
             show_cancellation_message (bool): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
             abort_time (float): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
@@ -82,12 +82,12 @@ class Date(PromptBase):
         super().__init__()
 
         self.message: str = message
-        self.initial_date: ddate = initial_date
-        self.min_date: ddate = min_date
-        self.max_date: ddate = max_date
+        self.initial_date: date = initial_date
+        self.min_date: date = min_date
+        self.max_date: date = max_date
         self.cancellation_message: str = cancellation_message
         self.show_cancellation_message: bool = show_cancellation_message
-        self.validate: Callable[[ddate], str | None] | None = validate
+        self.validate: Callable[[date], str | None] | None = validate
 
         self.date_buffer: list[str] = [str(self.initial_date.month),
                                         str(self.initial_date.day),
@@ -113,7 +113,7 @@ class Date(PromptBase):
             return 'Date must be complete'
 
         try:
-            inputted_date: ddate = ddate(int(self.date_buffer[2]), int(self.date_buffer[0]), int(self.date_buffer[1]))
+            inputted_date: date = date(int(self.date_buffer[2]), int(self.date_buffer[0]), int(self.date_buffer[1]))
             if inputted_date < self.min_date: return f'Date must be on or after {self.min_date.strftime('%Y-%m-%d')}'
             elif inputted_date > self.max_date: return f'Date must be on or before {self.max_date.strftime('%Y-%m-%d')}'
             else: return self.validate(inputted_date) if self.validate else None

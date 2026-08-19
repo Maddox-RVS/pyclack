@@ -8,7 +8,7 @@ from . import util as util
 from .ask import ask as ask
 from .password import password as password
 from .confirm import confirm as confirm
-from .date import date as date
+from .pick_date import pick_date as pick_date
 from .multiline import multiline as multiline
 from .select import select as select
 from .multiselect import multiselect as multiselect
