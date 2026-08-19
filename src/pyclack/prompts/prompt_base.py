@@ -9,7 +9,7 @@ import time
 class ClackOption[V]:
     value: V
     label: str
-    hint: str
+    hint: str | None = None
     disabled: bool = False
 
 class CancelException[T](Exception):

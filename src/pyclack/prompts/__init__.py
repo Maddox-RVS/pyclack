@@ -14,3 +14,4 @@ from .select import select as select
 from .multiselect import multiselect as multiselect
 from .autocomplete import autocomplete as autocomplete
 from .autocomplete_multiselect import autocomplete_multiselect as autocomplete_multiselect
+from .select_key import select_key as select_key
