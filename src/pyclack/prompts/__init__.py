@@ -15,3 +15,4 @@ from .multiselect import multiselect as multiselect
 from .autocomplete import autocomplete as autocomplete
 from .autocomplete_multiselect import autocomplete_multiselect as autocomplete_multiselect
 from .select_key import select_key as select_key
+from .select_path import select_path as select_path
