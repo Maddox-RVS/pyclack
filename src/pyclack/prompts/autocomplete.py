@@ -389,7 +389,13 @@ class Autocomplete(PromptBase):
             frame_builder.add_line(prefix_active + Text('...', theme.muted))
 
         if self.show_instructions:
-            instructions_text: Text = Text('↑/↓ ', theme.muted) + Text('to navigate • ', theme.text) + Text('Enter: ', theme.muted) + Text('confirm', theme.text)
+            instructions_text: Text = Text.assemble(
+                ('↑/↓ ', theme.muted),
+                ('to navigate • ', theme.text),
+                ('Enter: ', theme.muted),
+                ('confirm • ', theme.text),
+                ('Type:', theme.muted),
+                (' to search', theme.text))
             instructions_text_lines: list[Text] = build_wrapped_lines(
                 instructions_text,
                 prefix_active)
