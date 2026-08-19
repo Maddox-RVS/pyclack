@@ -84,7 +84,7 @@ class Multiselect(PromptBase):
         self.max_items: int = max(5, max_items)
         self.show_cancellation_message: bool = show_cancellation_message
 
-        if len(self.options) == 0:
+        if not self.options:
             raise RuntimeError('Options cannot be empty')
 
         if self._all_options_disabled():
@@ -346,7 +346,7 @@ class Multiselect(PromptBase):
 
     @override
     def handle_submit(self) -> bool:
-        if len(self.selected_options) == 0: return False # Nothing selected go to next state (error)
+        if not self.selected_options: return False # Nothing selected go to next state (error)
         
         theme: Theme = get_active_theme()
         step_marker_submit: str = theme.symbols.step_marker_submit.resolve()
@@ -476,7 +476,7 @@ class Multiselect(PromptBase):
         frame_builder.add_lines(*selected_options_lines)
         
         if self.show_cancellation_message:
-            if len(self.selected_options) != 0:
+            if self.selected_options:
                 frame_builder.add_line(prefix_muted)
             cancel_lines: list[Text] = build_message_close(
                 self.cancellation_message,

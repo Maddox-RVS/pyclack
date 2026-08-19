@@ -106,7 +106,7 @@ class AutocompleteMultiselect(PromptBase):
         self.text_box_controller: TextBoxController = TextBoxController()
         self.selected_options: list[ClackOption] = []
 
-        if len(self.options) == 0:
+        if not self.options:
             raise RuntimeError('Options cannot be empty')
 
         if self._all_options_disabled():
@@ -277,7 +277,7 @@ class AutocompleteMultiselect(PromptBase):
         '''
 
         search: str = self.text_box_controller.get_input().lower().strip()
-        if len(search) == 0:
+        if not search:
             self.searched_options = copy(self.options)
             self.active_option_index = 0
             return
@@ -362,7 +362,7 @@ class AutocompleteMultiselect(PromptBase):
 
         search_text_parts: list[tuple[str, Style] | Text | str] = []
         search_text_parts.append(('Search: ', theme.muted))
-        if len(search) == 0:
+        if not search:
             self.show_cursor = False
             search_text_parts.append((self.placeholder, theme.muted))
         else:
@@ -471,7 +471,7 @@ class AutocompleteMultiselect(PromptBase):
 
         search_text_parts: list[tuple[str, Style] | Text | str] = []
         search_text_parts.append(('Search: ', theme.muted))
-        if len(search) == 0:
+        if not search:
             self.show_cursor = False
             search_text_parts.append((self.placeholder, theme.muted))
         else:

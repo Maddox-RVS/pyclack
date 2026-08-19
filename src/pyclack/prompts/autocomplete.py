@@ -104,7 +104,7 @@ class Autocomplete(PromptBase):
         self.searched_options: list[ClackOption] = copy(self.options)
         self.text_box_controller: TextBoxController = TextBoxController()
 
-        if len(self.options) == 0:
+        if not self.options:
             raise RuntimeError('Options cannot be empty')
 
         if self._all_options_disabled():
@@ -270,7 +270,7 @@ class Autocomplete(PromptBase):
         '''
 
         search: str = self.text_box_controller.get_input().lower().strip()
-        if len(search) == 0:
+        if not search:
             self.searched_options = copy(self.options)
             self.selected_option_index = 0
             return
@@ -292,15 +292,15 @@ class Autocomplete(PromptBase):
 
         match key:
             case 'ENTER': 
-                if len(self.searched_options) != 0 and not self.searched_options[self.selected_option_index].disabled: 
+                if self.searched_options and not self.searched_options[self.selected_option_index].disabled: 
                     return True # Advance to the next state (submit)
             case 'UP': 
-                if len(self.searched_options) != 0:
+                if self.searched_options:
                     self._move_selection_up()
                     self._update_view_window()
                     self.show_cursor = False
             case 'DOWN': 
-                if len(self.searched_options) != 0:
+                if self.searched_options:
                     self._move_selection_down()
                     self._update_view_window()
                     self.show_cursor = False
@@ -352,7 +352,7 @@ class Autocomplete(PromptBase):
 
         search_text_parts: list[tuple[str, Style] | Text | str] = []
         search_text_parts.append(('Search: ', theme.muted))
-        if len(search) == 0:
+        if not search:
             self.show_cursor = False
             search_text_parts.append((self.placeholder, theme.muted))
         else:
@@ -453,7 +453,7 @@ class Autocomplete(PromptBase):
             prefix_muted)
         frame_builder.add_lines(*message_lines)
 
-        if len(self.searched_options) != 0 and not self.searched_options[self.selected_option_index].disabled:
+        if self.searched_options and not self.searched_options[self.selected_option_index].disabled:
             strikethrough_style: Style = copy(theme.muted)
             strikethrough_style.strikethrough = True
             option_lines: list[Text] = build_wrapped_lines(
@@ -475,6 +475,6 @@ class Autocomplete(PromptBase):
 
         Stdout.put(cc.show_cursor())
         value: ClackOption | None = None
-        if len(self.searched_options) != 0 and not self.searched_options[self.selected_option_index].disabled:
+        if self.searched_options and not self.searched_options[self.selected_option_index].disabled:
             value = self.searched_options[self.selected_option_index]
         raise CancelException[ClackOption](self.cancellation_message, value)

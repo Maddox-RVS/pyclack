@@ -82,7 +82,7 @@ class Select(PromptBase):
         self.max_items: int = max(5, max_items)
         self.show_cancellation_message: bool = show_cancellation_message
 
-        if len(self.options) == 0:
+        if not self.options:
             raise RuntimeError('Options cannot be empty')
 
         if self._all_options_disabled():
