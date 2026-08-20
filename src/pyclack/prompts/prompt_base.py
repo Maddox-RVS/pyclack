@@ -17,12 +17,12 @@ class CancelException[T](Exception):
     Exception raised when a prompt is cancelled.
     '''
 
-    def __init__(self, message: str, value: T | None = None):
+    def __init__(self, value: T | None = None):
         '''
-        Initialize a CancelException with the given message.
+        Initialize a CancelException.
         '''
 
-        super().__init__(message)
+        super().__init__()
         self.value: T | None = value
 
 class PromptState(Enum):

@@ -11,8 +11,6 @@ def confirm(message: str,
             active: str = 'Yes',
             inactive: str = 'No',
             vertical: bool = False,
-            cancellation_message: str = 'Operation Cancelled',
-            show_cancellation_message: bool = True,
             default_option: bool = True,
             abort_time: float | None = None) -> bool:
     '''
@@ -25,8 +23,6 @@ def confirm(message: str,
         message (str): The message to display to the user.
         active (str): The text to display for the active (true) option.
         inactive (str): The text to display for the inactive (false) option.
-        cancellation_message (str): The message to display if the user cancels the operation.
-        show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
         default_option (bool): The default option for the confirmation.
         abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
@@ -37,7 +33,7 @@ def confirm(message: str,
         CancelException: If the user cancels the operation.
     '''
 
-    prompt: Confirm = Confirm(message, active, inactive, vertical, cancellation_message, default_option, show_cancellation_message, abort_time)
+    prompt: Confirm = Confirm(message, active, inactive, vertical, default_option, abort_time)
     return prompt.selected_confirmation
 
 class Confirm(PromptBase):
@@ -50,9 +46,7 @@ class Confirm(PromptBase):
                  active: str,
                  inactive: str,
                  vertical: bool,
-                 cancellation_message: str,
                  default_option: bool,
-                 show_cancellation_message: bool,
                  abort_time: float | None):
         '''
         Initialize a Confirm prompt.
@@ -61,9 +55,7 @@ class Confirm(PromptBase):
             message (str): The message to display to the user.
             active (str): The text to display for the active (true) option.
             inactive (str): The text to display for the inactive (false) option.
-            cancellation_message (str): The message to display if the user cancels the operation.
             default_option (bool): The default option for the confirmation.
-            show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
             abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
         Raises:
@@ -76,8 +68,6 @@ class Confirm(PromptBase):
         self.active: str = active
         self.inactive: str = inactive
         self.vertical: bool = vertical
-        self.cancellation_message: str = cancellation_message
-        self.show_cancellation_message: bool = show_cancellation_message
         self.selected_confirmation: bool = default_option
         self.render_frame: RenderFrame = RenderFrame()
         self.control_inputs: tuple[str, ...] = self._construct_control_inputs()
@@ -186,9 +176,7 @@ class Confirm(PromptBase):
         theme: Theme = get_active_theme()
         step_marker_cancel: str = theme.symbols.step_marker_cancel.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
-        connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
-        closing_prefix_muted: Text = Text(f'{connector_bar_end}  ', theme.muted)
 
         frame_builder: FrameBuilder = FrameBuilder()
 
@@ -208,17 +196,8 @@ class Confirm(PromptBase):
         confirmation_lines: list[Text] = build_wrapped_lines(confirmation_text, prefix_muted)
         frame_builder.add_lines(*confirmation_lines)
 
-        if self.show_cancellation_message:
-            frame_builder.add_line(prefix_muted)
-            cancel_lines: list[Text] = build_message_close(
-                self.cancellation_message,
-                theme.cancel,
-                prefix_muted,
-                closing_prefix_muted)
-            frame_builder.add_lines(*cancel_lines)
-
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
 
         Stdout.put(cc.show_cursor())
-        raise CancelException(self.cancellation_message, self.selected_confirmation)
+        raise CancelException(self.selected_confirmation)

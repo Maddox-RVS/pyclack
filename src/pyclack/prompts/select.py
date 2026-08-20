@@ -12,8 +12,6 @@ def select(
     options: list[ClackOption], 
     show_instructions: bool = True,
     max_items: int = 7,
-    cancellation_message: str = 'Operation Cancelled',
-    show_cancellation_message: bool = True,
     abort_time: float | None = None) -> ClackOption:
     '''
     Ask the user to select one option from a list of options.
@@ -28,8 +26,6 @@ def select(
         options (list[ClackOption]): The list of options to choose from.
         show_instructions (bool, optional): If True, show instructions. Defaults to True.
         max_items (int, optional): The maximum number of items to display. Defaults to 7.
-        cancellation_message (str, optional): The message to display if the user cancels the operation. Defaults to 'Operation Cancelled'.
-        show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
         abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
     Returns:
@@ -40,7 +36,7 @@ def select(
         CancelException: If the user cancels the operation.
     '''
 
-    prompt: Select = Select(message, cancellation_message, options, show_instructions, max_items, show_cancellation_message, abort_time)
+    prompt: Select = Select(message, options, show_instructions, max_items, abort_time)
     return prompt.options[prompt.selected_option_index]
 
 class Select(PromptBase):
@@ -50,22 +46,18 @@ class Select(PromptBase):
 
     def __init__(self, 
         message: str,
-        cancellation_message: str,
         options: list[ClackOption], 
         show_instructions: bool, 
         max_items: int,
-        show_cancellation_message: bool,
         abort_time: float | None):
         '''
         Initialize a Select prompt.
 
         Args:
             message (str): The message to display to the user.
-            cancellation_message (str): The message to display if the user cancels the operation.
             options (list[ClackOption]): The list of options to choose from.
             show_instructions (bool): If True, show instructions.
             max_items (int): The maximum number of items to display.
-            show_cancellation_message (bool): If True shows cancellation message, shows no cancellation message if False.
             abort_time (float | None): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel.
 
         Raises:
@@ -76,11 +68,9 @@ class Select(PromptBase):
         super().__init__()
             
         self.message: str = message
-        self.cancellation_message: str = cancellation_message
         self.options: list[ClackOption] = options
         self.show_instructions: bool = show_instructions
         self.max_items: int = max(5, max_items)
-        self.show_cancellation_message: bool = show_cancellation_message
 
         if not self.options:
             raise RuntimeError('Options cannot be empty')
@@ -328,9 +318,7 @@ class Select(PromptBase):
         theme: Theme = get_active_theme()
         step_marker_cancel: str = theme.symbols.step_marker_cancel.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
-        connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
-        closing_prefix_muted: Text = Text(f'{connector_bar_end}  ', theme.muted)
 
         frame_builder: FrameBuilder = FrameBuilder()
 
@@ -350,18 +338,9 @@ class Select(PromptBase):
             Text(self.options[self.selected_option_index].label, strikethrough_style),
             prefix_muted)
         frame_builder.add_lines(*option_lines)
-        
-        if self.show_cancellation_message:
-            frame_builder.add_line(prefix_muted)
-            cancel_lines: list[Text] = build_message_close(
-                self.cancellation_message,
-                theme.cancel,
-                prefix_muted,
-                closing_prefix_muted)
-            frame_builder.add_lines(*cancel_lines)
 
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
 
         Stdout.put(cc.show_cursor())
-        raise CancelException[ClackOption](self.cancellation_message, self.options[self.selected_option_index])
+        raise CancelException[ClackOption](self.options[self.selected_option_index])

@@ -11,8 +11,6 @@ def select_key(
     message: str,
     options: list[ClackOption[str]],
     case_sensitive: bool = True,
-    cancellation_message: str = 'Operation Cancelled',
-    show_cancellation_message: bool = True,
     abort_time: float | None = None) -> ClackOption[str]:
     '''
     Prompt the user to select an option by pressing a key.
@@ -26,8 +24,6 @@ def select_key(
         message (str): The message to display to the user.
         options (list[ClackOption[str]]): A list of ClackOption objects representing the available options. 
         case_sensitive (bool): Whether the key selection should be case-sensitive.
-        cancellation_message (str): The message to display when the prompt is cancelled.
-        show_cancellation_message (bool): Whether to display the cancellation message.
         abort_time (float | None): The time after which the prompt should be aborted, or None if no timeout is set.
 
     Returns:
@@ -38,7 +34,7 @@ def select_key(
         CancelException: If the prompt is cancelled by the user.
     '''
         
-    prompt: SelectKey = SelectKey(message, options, case_sensitive, cancellation_message, show_cancellation_message, abort_time)
+    prompt: SelectKey = SelectKey(message, options, case_sensitive, abort_time)
     return prompt.selected_option # Must be initialized if prompt submits successfully
 
 class SelectKey(PromptBase):
@@ -50,8 +46,6 @@ class SelectKey(PromptBase):
         message: str,
         options: list[ClackOption[str]],
         case_sensitive: bool,
-        cancellation_message: str,
-        show_cancellation_message: bool,
         abort_time: float | None):
         '''
         Initialize a SelectKey prompt.
@@ -60,8 +54,6 @@ class SelectKey(PromptBase):
             message (str): The message to display to the user.
             options (list[ClackOption[str]]): A list of ClackOption objects representing the available options.
             case_sensitive (bool): Whether the key selection should be case-sensitive.
-            cancellation_message (str): The message to display when the prompt is cancelled.
-            show_cancellation_message (bool): Whether to display the cancellation message.
             abort_time (float | None): The time after which the prompt should be aborted, or None if no timeout is set.
 
         Raises:
@@ -74,8 +66,6 @@ class SelectKey(PromptBase):
         self.message: str = message
         self.options: list[ClackOption[str]] = options
         self.case_sensitive: bool = case_sensitive
-        self.cancellation_message: str = cancellation_message
-        self.show_cancellation_message: bool = show_cancellation_message
 
         if not self.options:
             raise RuntimeError('Options cannot be empty')
@@ -300,9 +290,7 @@ class SelectKey(PromptBase):
         theme: Theme = get_active_theme()
         step_marker_cancel: str = theme.symbols.step_marker_cancel.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
-        connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
-        closing_prefix_muted: Text = Text(f'{connector_bar_end}  ', theme.muted)
 
         frame_builder: FrameBuilder = FrameBuilder()
 
@@ -323,17 +311,8 @@ class SelectKey(PromptBase):
             prefix_muted)
         frame_builder.add_lines(*selected_option_lines)
 
-        if self.show_cancellation_message:
-            frame_builder.add_line(prefix_muted)
-            cancel_lines: list[Text] = build_message_close(
-                self.cancellation_message,
-                theme.cancel,
-                prefix_muted,
-                closing_prefix_muted)
-            frame_builder.add_lines(*cancel_lines)
-
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
 
         Stdout.put(cc.show_cursor())
-        raise CancelException[ClackOption[str]](self.cancellation_message, self.options[0])
+        raise CancelException[ClackOption[str]](self.options[0])

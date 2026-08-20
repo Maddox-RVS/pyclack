@@ -13,8 +13,6 @@ def autocomplete(
     placeholder: str = 'Type to search...',
     show_instructions: bool = True,
     max_items: int = 7,
-    cancellation_message: str = 'Operation Cancelled',
-    show_cancellation_message: bool = True,
     filter: Callable[[str, list[ClackOption]], list[ClackOption]] | None = None,
     abort_time: float | None = None) -> ClackOption:
     '''
@@ -33,8 +31,6 @@ def autocomplete(
         placeholder (str, optional): The placeholder text to display in the search input. Defaults to 'Type to search...'.
         show_instructions (bool, optional): If True, shows the instructions for the prompt. Defaults to True.
         max_items (int, optional): The maximum number of items to display in the list. Defaults to 7.
-        cancellation_message (str, optional): The message to display if the user cancels the operation. Defaults to 'Operation Cancelled'.
-        show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
         filter (Callable[[str, list[ClackOption]], list[ClackOption]] | None, optional): A callable that takes the current search string and the list of options, and returns a filtered list of options. If None, the default filtering behavior is used. Defaults to None.
         abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
@@ -46,7 +42,7 @@ def autocomplete(
         CancelException[ClackOption]: If the user cancels the operation.
     '''
 
-    prompt: Autocomplete = Autocomplete(message, placeholder, cancellation_message, options, show_instructions, max_items, show_cancellation_message, filter, abort_time)
+    prompt: Autocomplete = Autocomplete(message, placeholder, options, show_instructions, max_items, filter, abort_time)
     return prompt.searched_options[prompt.selected_option_index]
 
 class Autocomplete(PromptBase):
@@ -57,11 +53,9 @@ class Autocomplete(PromptBase):
     def __init__(self, 
         message: str,
         placeholder: str,
-        cancellation_message: str,
         options: list[ClackOption], 
         show_instructions: bool, 
         max_items: int,
-        show_cancellation_message: bool,
         filter: Callable[[str, list[ClackOption]], list[ClackOption]] | None,
         abort_time: float | None):
         '''
@@ -70,11 +64,9 @@ class Autocomplete(PromptBase):
         Args:
             message (str): The message to display to the user.
             placeholder (str): The placeholder text to display in the search input.
-            cancellation_message (str): The message to display if the user cancels the operation.
             options (list[ClackOption]): The list of options to display.
             show_instructions (bool): If True, shows the instructions for the prompt.
             max_items (int): The maximum number of items to display in the list.
-            show_cancellation_message (bool): If True shows cancellation message, shows no cancellation message if False.
             filter (Callable[[str, list[ClackOption]], list[ClackOption]] | None): A callable that takes the current search string and the list of options, and returns a filtered list of options. If None, the default filtering behavior is used. Defaults to None.
             abort_time (float | None): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel.
 
@@ -87,11 +79,9 @@ class Autocomplete(PromptBase):
             
         self.message: str = message
         self.placeholder: str = placeholder
-        self.cancellation_message: str = cancellation_message
         self.options: list[ClackOption] = options
         self.show_instructions: bool = show_instructions
         self.max_items: int = max(5, max_items)
-        self.show_cancellation_message: bool = show_cancellation_message
         self.filter: Callable[[str, list[ClackOption]], list[ClackOption]] | None = filter
 
         self.render_frame: RenderFrame = RenderFrame()
@@ -311,20 +301,21 @@ class Autocomplete(PromptBase):
                 self.text_box_controller.cursor_right()
                 self.show_cursor = True
             case 'BACKSPACE':
-                self.text_box_controller.delete()
-                self._update_search()
-                self._update_view_window()
-                self.show_cursor = True
+                if self.text_box_controller.get_input():
+                    self.text_box_controller.delete()
+                    self._update_search()
+                    self._update_view_window()
+                    self.show_cursor = True
             case _:
                 map: dict[str, str] = {'SPACE': ' '}
 
-                if key not in self.text_inputs: key = ''
-                else: key = map.get(key, key)
-
-                self.text_box_controller.insert(key)
-                self._update_search()
-                self._update_view_window()
-                self.show_cursor = True
+                if key in self.text_inputs:
+                    key = map.get(key, key)
+    
+                    self.text_box_controller.insert(key)
+                    self._update_search()
+                    self._update_view_window()
+                    self.show_cursor = True
 
         # Create and render next frame based on the current input buffer and state
         theme: Theme = get_active_theme()
@@ -443,9 +434,7 @@ class Autocomplete(PromptBase):
         theme: Theme = get_active_theme()
         step_marker_cancel: str = theme.symbols.step_marker_cancel.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
-        connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
-        closing_prefix_muted: Text = Text(f'{connector_bar_end}  ', theme.muted)
 
         frame_builder: FrameBuilder = FrameBuilder()
 
@@ -466,15 +455,6 @@ class Autocomplete(PromptBase):
                 Text(self.searched_options[self.selected_option_index].label, strikethrough_style),
                 prefix_muted)
             frame_builder.add_lines(*option_lines)
-        
-        if self.show_cancellation_message:
-            frame_builder.add_line(prefix_muted)
-            cancel_lines: list[Text] = build_message_close(
-                self.cancellation_message,
-                theme.cancel,
-                prefix_muted,
-                closing_prefix_muted)
-            frame_builder.add_lines(*cancel_lines)
 
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
@@ -483,4 +463,4 @@ class Autocomplete(PromptBase):
         value: ClackOption | None = None
         if self.searched_options and not self.searched_options[self.selected_option_index].disabled:
             value = self.searched_options[self.selected_option_index]
-        raise CancelException[ClackOption](self.cancellation_message, value)
+        raise CancelException[ClackOption](value)

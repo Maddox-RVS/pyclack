@@ -13,8 +13,6 @@ def pick_date(message: str,
         initial_date: date,
         min_date: date,
         max_date: date,
-        cancellation_message: str = 'Operation Cancelled',
-        show_cancellation_message: bool = True,
         validate: Callable[[date], str | None] | None = None,
         abort_time: float | None = None) -> date:
     '''
@@ -33,8 +31,6 @@ def pick_date(message: str,
         initial_date (date): The initial date to display in the prompt.
         min_date (date): The minimum date that can be selected.
         max_date (date): The maximum date that can be selected.
-        cancellation_message (str, optional): The message to display if the user cancels the operation.
-        show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
         validate (Callable[[date], str | None], optional): A function that takes a date and returns an error message if the date is invalid, or None if the date is valid.
         abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
@@ -45,7 +41,7 @@ def pick_date(message: str,
         CancelException: If the user cancels the operation.
     '''
 
-    prompt: PickDate = PickDate(message, initial_date, min_date, max_date, cancellation_message, validate, show_cancellation_message, abort_time)
+    prompt: PickDate = PickDate(message, initial_date, min_date, max_date, validate, abort_time)
     return date(int(prompt.date_buffer[2]), int(prompt.date_buffer[0]), int(prompt.date_buffer[1]))
 
 class PickDate(PromptBase):
@@ -58,9 +54,7 @@ class PickDate(PromptBase):
                 initial_date: date,
                 min_date: date,
                 max_date: date,
-                cancellation_message: str,
                 validate: Callable[[date], str | None] | None,
-                show_cancellation_message: bool,
                 abort_time: float | None):
         '''
         Initialize a Date prompt.
@@ -70,9 +64,7 @@ class PickDate(PromptBase):
             initial_date (date): The initial date to display in the prompt.
             min_date (date): The minimum date that can be selected.
             max_date (date): The maximum date that can be selected.
-            cancellation_message (str): The message to display if the user cancels the operation.
             validate (Callable[[date], str | None]): A function that takes a date and returns an error message if the date is invalid, or None if the date is valid.
-            show_cancellation_message (bool): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
             abort_time (float): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
         Raises:
@@ -85,8 +77,6 @@ class PickDate(PromptBase):
         self.initial_date: date = initial_date
         self.min_date: date = min_date
         self.max_date: date = max_date
-        self.cancellation_message: str = cancellation_message
-        self.show_cancellation_message: bool = show_cancellation_message
         self.validate: Callable[[date], str | None] | None = validate
 
         self.date_buffer: list[str] = [str(self.initial_date.month),
@@ -410,9 +400,7 @@ class PickDate(PromptBase):
         theme: Theme = get_active_theme()
         step_marker_cancel: str = theme.symbols.step_marker_cancel.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
-        connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
-        closing_prefix_muted: Text = Text(f'{connector_bar_end}  ', theme.muted)
 
         # Create and render next frame based on the current input buffer and state
         frame_builder: FrameBuilder = FrameBuilder()
@@ -450,17 +438,7 @@ class PickDate(PromptBase):
             year_text)
         frame_builder.add_line(date_selector_text)
 
-        if self.show_cancellation_message:
-            frame_builder.add_line(prefix_muted)
-            cancel_lines: list[Text] = build_message_close(
-                self.cancellation_message,
-                theme.cancel,
-                prefix_muted,
-                closing_prefix_muted)
-            frame_builder.add_lines(*cancel_lines)
-
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
         Stdout.put(cc.show_cursor())
-        raise CancelException(self.cancellation_message,
-            f'{year_text.get_raw_isolated_text()}-{month_text.get_raw_isolated_text()}-{day_text.get_raw_isolated_text()}')
+        raise CancelException(f'{year_text.get_raw_isolated_text()}-{month_text.get_raw_isolated_text()}-{day_text.get_raw_isolated_text()}')

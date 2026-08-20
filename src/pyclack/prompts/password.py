@@ -12,8 +12,6 @@ def password(message: str,
         show_nothing: bool = False,
         clear_on_error: bool = False,
         validate: Callable[[str], str | None] | None = None,
-        cancellation_message: str = 'Operation Cancelled',
-        show_cancellation_message: bool = True,
         abort_time: float | None = None) -> str:
     '''
     Ask the user for input as a password.
@@ -28,8 +26,6 @@ def password(message: str,
         show_nothing (bool, optional): If True, the input will not be displayed at all. Defaults to False.
         clear_on_error (bool, optional): If True, the input buffer will be cleared on error. Defaults to False.
         validate (Callable[[str], str | None], optional): A function to validate the input. Defaults to None.
-        cancellation_message (str, optional): The message to display if the user cancels the operation.
-        show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
         abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
     Returns:
@@ -39,30 +35,26 @@ def password(message: str,
         CancelException: If the user cancels the operation.
     '''
     
-    prompt: Password = Password(message, cancellation_message, mask, show_nothing, clear_on_error, validate, show_cancellation_message, abort_time)
+    prompt: Password = Password(message, mask, show_nothing, clear_on_error, validate, abort_time)
     return prompt.text_box_controller.get_input()
 
 class Password(PromptBase):
     def __init__(self,
             message: str,
-            cancellation_message: str,
             mask: Symbol | None,
             show_nothing: bool,
             clear_on_error: bool,
             validate: Callable[[str], str | None] | None,
-            show_cancellation_message: bool,
             abort_time: float | None):
         '''
         Initialize a Password prompt.
 
         Args:
             message (str): The message to display to the user.
-            cancellation_message (str): The message to display if the user cancels the operation.
             mask (Symbol): The symbol to use for masking the input. Defaults to None.
             show_nothing (bool): If True, the input will not be displayed at all. Defaults to False.
             clear_on_error (bool): If True, the input buffer will be cleared on error. Defaults to False.
             validate (Callable[[str], str | None]): A function to validate the input. Defaults to None.
-            show_cancellation_message (bool): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
             abort_time (float): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
         Raises:
@@ -72,8 +64,6 @@ class Password(PromptBase):
         super().__init__()
 
         self.message: str = message
-        self.cancellation_message: str = cancellation_message
-        self.show_cancellation_message: bool = show_cancellation_message
         self.mask: Symbol | None = mask
         self.show_nothing: bool = show_nothing
         self.clear_on_error: bool = clear_on_error
@@ -230,9 +220,7 @@ class Password(PromptBase):
         theme: Theme = get_active_theme()
         step_marker_cancel: str = theme.symbols.step_marker_cancel.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
-        connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
-        closing_prefix_muted: Text = Text(f'{connector_bar_end}  ', theme.muted)
 
         # Create and render next frame based on the current input buffer and state
         mask: str = self.mask.resolve() if self.mask else theme.symbols.selection_widget_password_mask.resolve()
@@ -255,18 +243,9 @@ class Password(PromptBase):
         if len(input_buffer) > 0:
             input_buffer_text: Text = Text(input_buffer, text_style)
             frame_builder.add_lines(*build_wrapped_lines(input_buffer_text, prefix_muted))
-
-        if self.show_cancellation_message:
-            frame_builder.add_line(prefix_muted)
-            cancel_lines: list[Text] = build_message_close(
-                self.cancellation_message,
-                theme.cancel,
-                prefix_muted,
-                closing_prefix_muted)
-            frame_builder.add_lines(*cancel_lines)
         
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
 
         Stdout.put(cc.show_cursor())
-        raise CancelException(self.cancellation_message, self.text_box_controller.get_input())
+        raise CancelException(self.text_box_controller.get_input())

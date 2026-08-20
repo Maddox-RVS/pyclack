@@ -11,8 +11,6 @@ def multiline(message: str,
         placeholder: str | None = None, 
         initial_value: str | None = None, 
         validate: Callable[[str], str | None] | None = None,
-        cancellation_message: str = 'Operation Cancelled',
-        show_cancellation_message: bool = True,
         show_submit: bool = False,
         abort_time: float | None = None) -> str:
     '''
@@ -30,8 +28,6 @@ def multiline(message: str,
         placeholder (str, optional): The placeholder text to display when the input is empty.
         initial_value (str, optional): The initial value of the input.
         validate (Callable[[str], str | None], optional): A function to validate the input.
-        cancellation_message (str, optional): The message to display if the user cancels the operation.
-        show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
         show_submit (bool, optional): When True it shows a ` [ submit ] ` button that can be focused with 'Tab', when False no submit button is shown and pressing 'Enter' twice will submit. 
         Defaults to False.
         abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
@@ -43,7 +39,7 @@ def multiline(message: str,
         CancelException: If the user cancels the operation.
     '''
     
-    prompt: Multiline = Multiline(message, cancellation_message, placeholder, initial_value, validate, show_cancellation_message, show_submit, abort_time)
+    prompt: Multiline = Multiline(message, placeholder, initial_value, validate, show_submit, abort_time)
     return prompt.text_box_controller.get_input()
 
 class Multiline(PromptBase):
@@ -53,11 +49,9 @@ class Multiline(PromptBase):
 
     def __init__(self,
             message: str,
-            cancellation_message: str,
             placeholder: str | None,
             initial_value: str | None,
             validate: Callable[[str], str | None] | None,
-            show_cancellation_message: bool,
             show_submit: bool,
             abort_time: float | None):
         '''
@@ -65,11 +59,9 @@ class Multiline(PromptBase):
 
         Args:
             message (str): The message to display to the user.
-            cancellation_message (str): The message to display if the user cancels the operation.
             placeholder (str): The placeholder text to display when the input is empty.
             initial_value (str): The initial value of the input.
             validate (Callable[[str], str | None]): A function to validate the input.
-            show_cancellation_message (bool): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
             show_submit (bool): When True it shows a ` [ submit ] ` button that can be focused with 'Tab', when False no submit button is shown and pressing 'Enter' twice will submit. 
             Defaults to False.
             abort_time (float): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
@@ -81,8 +73,6 @@ class Multiline(PromptBase):
         super().__init__()
 
         self.message: str = message
-        self.cancellation_message: str = cancellation_message
-        self.show_cancellation_message: bool = show_cancellation_message
         self.show_submit: bool = show_submit
         self.placeholder: str | None = placeholder
         self.initial_value: str | None = initial_value
@@ -261,9 +251,7 @@ class Multiline(PromptBase):
         theme: Theme = get_active_theme()
         step_marker_cancel: str = theme.symbols.step_marker_cancel.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
-        connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
-        closing_prefix_muted: Text = Text(f'{connector_bar_end}  ', theme.muted)
 
         # Create and render next frame based on the current input buffer and state
         input_buffer: str = self.text_box_controller.get_input()
@@ -283,18 +271,9 @@ class Multiline(PromptBase):
         if len(input_buffer) > 0:
             input_buffer_text: Text = Text(input_buffer, text_style)
             frame_builder.add_lines(*build_wrapped_lines(input_buffer_text, prefix_muted))  
-
-        if self.show_cancellation_message:
-            frame_builder.add_line(prefix_muted)
-            cancel_lines: list[Text] = build_message_close(
-                self.cancellation_message,
-                theme.cancel,
-                prefix_muted,
-                closing_prefix_muted)
-            frame_builder.add_lines(*cancel_lines)
         
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
 
         Stdout.put(cc.show_cursor())
-        raise CancelException(self.cancellation_message, input_buffer)
+        raise CancelException(input_buffer)

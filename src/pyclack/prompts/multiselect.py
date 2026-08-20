@@ -12,8 +12,6 @@ def multiselect(
     options: list[ClackOption], 
     show_instructions: bool = True,
     max_items: int = 7,
-    cancellation_message: str = 'Operation Cancelled',
-    show_cancellation_message: bool = True,
     abort_time: float | None = None) -> list[ClackOption]:
     '''
     Ask the user to select multiple options from a list of options.
@@ -29,8 +27,6 @@ def multiselect(
         options (list[ClackOption]): The list of options to display to the user.
         show_instructions (bool, optional): Whether to show instructions for the user. Defaults to True.
         max_items (int, optional): The maximum number of items to display at once. Defaults to 7.
-        cancellation_message (str, optional): The message to display if the user cancels the operation. Defaults to 'Operation Cancelled'.
-        show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
         abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
     Returns:
@@ -41,7 +37,7 @@ def multiselect(
         CancelException: If the user cancels the operation.
     '''
 
-    prompt: Multiselect = Multiselect(message, cancellation_message, options, show_instructions, max_items, show_cancellation_message, abort_time)
+    prompt: Multiselect = Multiselect(message, options, show_instructions, max_items, abort_time)
     selected_options: list[ClackOption] = [prompt.options[index] for index in prompt.selected_options]
     return selected_options
 
@@ -52,22 +48,18 @@ class Multiselect(PromptBase):
 
     def __init__(self, 
         message: str,
-        cancellation_message: str,
         options: list[ClackOption], 
         show_instructions: bool, 
         max_items: int,
-        show_cancellation_message: bool,
         abort_time: float | None):
         '''
         Initialize a Multiselect prompt.
 
         Args:
             message (str): The message to display to the user.
-            cancellation_message (str): The message to display if the user cancels the operation.
             options (list[ClackOption]): The list of options to display to the user.
             show_instructions (bool): Whether to show instructions for the user.
             max_items (int): The maximum number of items to display at once.
-            show_cancellation_message (bool): If True shows cancellation message, shows no cancellation message if False.
             abort_time (float | None): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel.
 
         Raises:
@@ -78,11 +70,9 @@ class Multiselect(PromptBase):
         super().__init__()
             
         self.message: str = message
-        self.cancellation_message: str = cancellation_message
         self.options: list[ClackOption] = options
         self.show_instructions: bool = show_instructions
         self.max_items: int = max(5, max_items)
-        self.show_cancellation_message: bool = show_cancellation_message
 
         if not self.options:
             raise RuntimeError('Options cannot be empty')
@@ -453,9 +443,7 @@ class Multiselect(PromptBase):
         theme: Theme = get_active_theme()
         step_marker_cancel: str = theme.symbols.step_marker_cancel.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
-        connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
-        closing_prefix_muted: Text = Text(f'{connector_bar_end}  ', theme.muted)
 
         frame_builder: FrameBuilder = FrameBuilder()
 
@@ -469,25 +457,16 @@ class Multiselect(PromptBase):
             prefix_muted)
         frame_builder.add_lines(*message_lines)
 
-        selected_options_text: Text = self._build_selected_options_line(strikethrough=True)
-        selected_options_lines: list[Text] = build_wrapped_lines(
-            selected_options_text,
-            prefix_muted)
-        frame_builder.add_lines(*selected_options_lines)
-        
-        if self.show_cancellation_message:
-            if self.selected_options:
-                frame_builder.add_line(prefix_muted)
-            cancel_lines: list[Text] = build_message_close(
-                self.cancellation_message,
-                theme.cancel,
-                prefix_muted,
-                closing_prefix_muted)
-            frame_builder.add_lines(*cancel_lines)
+        if self.selected_options:
+            selected_options_text: Text = self._build_selected_options_line(strikethrough=True)
+            selected_options_lines: list[Text] = build_wrapped_lines(
+                selected_options_text,
+                prefix_muted)
+            frame_builder.add_lines(*selected_options_lines)
 
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
 
         Stdout.put(cc.show_cursor())
         selected_options: list[ClackOption] = [self.options[index] for index in self.selected_options]
-        raise CancelException[list[ClackOption]](self.cancellation_message, selected_options)
+        raise CancelException[list[ClackOption]](selected_options)

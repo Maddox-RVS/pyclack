@@ -11,8 +11,6 @@ def ask(message: str,
         placeholder: str | None = None, 
         initial_value: str | None = None, 
         validate: Callable[[str], str | None] | None = None,
-        cancellation_message: str = 'Operation Cancelled',
-        show_cancellation_message: bool = True,
         abort_time: float | None = None) -> str:
     '''
     Ask the user for input with a message, placeholder, initial value, and validation function.
@@ -27,8 +25,6 @@ def ask(message: str,
         placeholder (str, optional): The placeholder text to display when the input is empty.
         initial_value (str, optional): The initial value of the input.
         validate (Callable[[str], str | None], optional): A function to validate the input.
-        cancellation_message (str): The message to display if the user cancels the operation.
-        show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
         abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
     Returns:
@@ -38,7 +34,7 @@ def ask(message: str,
         CancelException: If the user cancels the operation.
     '''
     
-    prompt: Ask = Ask(message, cancellation_message, placeholder, initial_value, validate, show_cancellation_message, abort_time)
+    prompt: Ask = Ask(message, placeholder, initial_value, validate, abort_time)
     return prompt.text_box_controller.get_input()
 
 class Ask(PromptBase):
@@ -48,22 +44,18 @@ class Ask(PromptBase):
 
     def __init__(self,
             message: str,
-            cancellation_message: str,
             placeholder: str | None,
             initial_value: str | None,
             validate: Callable[[str], str | None] | None,
-            show_cancellation_message: bool,
             abort_time: float | None):
         '''
         Initialize an Ask prompt.
 
         Args:
             message (str): The message to display to the user.
-            cancellation_message (str): The message to display if the user cancels the operation.
             placeholder (str, optional): The placeholder text to display when the input is empty.
             initial_value (str, optional): The initial value of the input.
             validate (Callable[[str], str | None], optional): A function to validate the input.
-            show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
             abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
 
         Raises:
@@ -73,8 +65,6 @@ class Ask(PromptBase):
         super().__init__()
 
         self.message: str = message
-        self.cancellation_message: str = cancellation_message
-        self.show_cancellation_message: bool = show_cancellation_message
         self.placeholder: str | None = placeholder
         self.initial_value: str | None = initial_value
         self.validate: Callable[[str], str | None] | None = validate
@@ -240,9 +230,7 @@ class Ask(PromptBase):
         theme: Theme = get_active_theme()
         step_marker_cancel: str = theme.symbols.step_marker_cancel.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
-        connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
-        closing_prefix_muted: Text = Text(f'{connector_bar_end}  ', theme.muted)
 
         # Create and render next frame based on the current input buffer and state
         input_buffer: str = self.text_box_controller.get_input()
@@ -262,18 +250,9 @@ class Ask(PromptBase):
         if len(input_buffer) > 0:
             input_buffer_text: Text = Text(input_buffer, text_style)
             frame_builder.add_lines(*build_wrapped_lines(input_buffer_text, prefix_muted))  
-
-        if self.show_cancellation_message:
-            frame_builder.add_line(prefix_muted)
-            cancel_lines: list[Text] = build_message_close(
-                self.cancellation_message,
-                theme.cancel,
-                prefix_muted,
-                closing_prefix_muted)
-            frame_builder.add_lines(*cancel_lines)
         
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
 
         Stdout.put(cc.show_cursor())
-        raise CancelException(self.cancellation_message, input_buffer)
+        raise CancelException(input_buffer)

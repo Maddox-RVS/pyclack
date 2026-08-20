@@ -15,8 +15,6 @@ def select_path(
     placeholder: str = 'Type to search...',
     show_instructions: bool = True,
     max_items: int = 7,
-    cancellation_message: str = 'Operation Cancelled',
-    show_cancellation_message: bool = True,
     root: Path = Path(os.getcwd()),
     directory: bool = False,
     abort_time: float | None = None) -> Path:
@@ -35,8 +33,6 @@ def select_path(
         placeholder (str, optional): The placeholder text to display in the search input. Defaults to 'Type to search...'.
         show_instructions (bool, optional): If True, shows the instructions for the prompt. Defaults to True.
         max_items (int, optional): The maximum number of items to display in the list. Defaults to 7.
-        cancellation_message (str, optional): The message to display if the user cancels the operation. Defaults to 'Operation Cancelled'.
-        show_cancellation_message (bool, optional): If True shows cancellation message, shows no cancellation message if False. Defaults to True.
         root (Path, optional): The root directory to start the search from. Defaults to the current working directory.
         directory (bool, optional): If True, only directories will be shown in the list of options. If False, both files and directories will be shown. Defaults to False.
         abort_time (float, optional): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel. Defaults to None.
@@ -49,7 +45,7 @@ def select_path(
         CancelException: If the user cancels the operation.
     '''
 
-    prompt: SelectPath = SelectPath(message, root, directory, placeholder, cancellation_message, show_instructions, max_items, show_cancellation_message, abort_time)
+    prompt: SelectPath = SelectPath(message, root, directory, placeholder, show_instructions, max_items, abort_time)
     return prompt.searched_options[prompt.selected_option_index].value
 
 class SelectPath(PromptBase):
@@ -62,10 +58,8 @@ class SelectPath(PromptBase):
         root: Path,
         directory: bool,
         placeholder: str,
-        cancellation_message: str,
         show_instructions: bool, 
         max_items: int,
-        show_cancellation_message: bool,
         abort_time: float | None):
         '''
         Initialize the Autocomplete prompt.
@@ -75,10 +69,8 @@ class SelectPath(PromptBase):
             root (Path): The root directory to start the search from.
             directory (bool): If True, only directories will be shown in the list of options.
             placeholder (str): The placeholder text to display in the search input.
-            cancellation_message (str): The message to display if the user cancels the operation.
             show_instructions (bool): If True, shows the instructions for the prompt.
             max_items (int): The maximum number of items to display in the list.
-            show_cancellation_message (bool): If True shows cancellation message, shows no cancellation message if False.
             abort_time (float | None): Floating point number representing seconds in time before the prompt is auto-cancelled, if set to None the prompt will never auto-cancel.
         '''
 
@@ -88,10 +80,8 @@ class SelectPath(PromptBase):
         self.root: Path = root
         self.directory: bool = directory
         self.placeholder: str = placeholder
-        self.cancellation_message: str = cancellation_message
         self.show_instructions: bool = show_instructions
         self.max_items: int = max(5, max_items)
-        self.show_cancellation_message: bool = show_cancellation_message
 
         if not root.exists():
             raise FileNotFoundError(f'root path "{root}" does not exist')
@@ -502,9 +492,7 @@ class SelectPath(PromptBase):
         theme: Theme = get_active_theme()
         step_marker_cancel: str = theme.symbols.step_marker_cancel.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
-        connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
-        closing_prefix_muted: Text = Text(f'{connector_bar_end}  ', theme.muted)
 
         frame_builder: FrameBuilder = FrameBuilder()
 
@@ -525,18 +513,9 @@ class SelectPath(PromptBase):
                 Text(self.searched_options[self.selected_option_index].label, strikethrough_style),
                 prefix_muted)
             frame_builder.add_lines(*option_lines)
-        
-        if self.show_cancellation_message:
-            frame_builder.add_line(prefix_muted)
-            cancel_lines: list[Text] = build_message_close(
-                self.cancellation_message,
-                theme.cancel,
-                prefix_muted,
-                closing_prefix_muted)
-            frame_builder.add_lines(*cancel_lines)
 
         frame: tuple[Text, ...] = frame_builder.build()
         self.render_frame.draw_frame(*frame)
 
         Stdout.put(cc.show_cursor())
-        raise CancelException[Path](self.cancellation_message, self.searched_options[self.selected_option_index].value if self.searched_options else None)
+        raise CancelException[Path](self.searched_options[self.selected_option_index].value if self.searched_options else None)
