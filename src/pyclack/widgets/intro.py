@@ -40,6 +40,8 @@ class Intro(PromptBase):
 
     @override
     def handle_submit(self) -> bool:
+        Stdout.put(cc.hide_cursor())
+        
         theme: Theme = get_active_theme()
         connector_bar_start: str = theme.symbols.connector_bar_start.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()

@@ -40,6 +40,8 @@ class Outro(PromptBase):
 
     @override
     def handle_submit(self) -> bool:
+        Stdout.put(cc.hide_cursor())
+        
         theme: Theme = get_active_theme()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
         connector_bar_end: str = theme.symbols.connector_bar_end.resolve()
