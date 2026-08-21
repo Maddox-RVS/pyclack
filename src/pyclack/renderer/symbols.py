@@ -143,8 +143,12 @@ class Symbols:
         selection_widget_checkbox_inactive: Symbol,
         selection_widget_password_mask: Symbol,
         box_drawing_horizontal_bar: Symbol,
-        box_drawing_top_right_corner: Symbol,
+        box_drawing_top_right_corner_rounded: Symbol,
         box_drawing_left_connector: Symbol,
+        box_drawing_bottom_right_corner_rounded: Symbol,
+        box_drawing_top_left_corner_rounded: Symbol,
+        box_drawing_bottom_left_corner_rounded: Symbol,
+        box_drawing_top_right_corner: Symbol,
         box_drawing_bottom_right_corner: Symbol,
         log_level_info: Symbol,
         log_level_success: Symbol,
@@ -159,24 +163,28 @@ class Symbols:
             step_marker_cancel (Symbol): Symbol for cancel step marker.
             step_marker_error (Symbol): Symbol for error step marker.
             step_marker_submit (Symbol): Symbol for submit step marker.
-            connector_bar_start (Symbol): Symbol for the start of a connector bar.
+            connector_bar_start (Symbol): Symbol for start of connector bar.
             connector_bar_vertical (Symbol): Symbol for vertical connector bar.
-            connector_bar_end (Symbol): Symbol for the end of a connector bar.
-            selection_widget_radio_active (Symbol): Symbol for active radio button.
-            selection_widget_radio_inactive (Symbol): Symbol for inactive radio button.
-            selection_widget_checkbox_active (Symbol): Symbol for active checkbox.
-            selection_widget_checkbox_selected (Symbol): Symbol for selected checkbox.
-            selection_widget_checkbox_inactive (Symbol): Symbol for inactive checkbox.
+            connector_bar_end (Symbol): Symbol for end of connector bar.
+            selection_widget_radio_active (Symbol): Symbol for active radio button in selection widget.
+            selection_widget_radio_inactive (Symbol): Symbol for inactive radio button in selection widget.
+            selection_widget_checkbox_active (Symbol): Symbol for active checkbox in selection widget.
+            selection_widget_checkbox_selected (Symbol): Symbol for selected checkbox in selection widget.
+            selection_widget_checkbox_inactive (Symbol): Symbol for inactive checkbox in selection widget.
             selection_widget_password_mask (Symbol): Symbol for password mask in selection widget.
-            box_drawing_horizontal_bar (Symbol): Symbol for horizontal box drawing bar.
-            box_drawing_top_right_corner (Symbol): Symbol for top right corner of box drawing.
+            box_drawing_horizontal_bar (Symbol): Symbol for horizontal bar in box drawing.
+            box_drawing_top_right_corner_rounded (Symbol): Symbol for rounded top right corner in box drawing.
             box_drawing_left_connector (Symbol): Symbol for left connector in box drawing.
-            box_drawing_bottom_right_corner (Symbol): Symbol for bottom right corner of box drawing.
+            box_drawing_bottom_right_corner_rounded (Symbol): Symbol for rounded bottom right corner in box drawing.
+            box_drawing_top_left_corner_rounded (Symbol): Symbol for rounded top left corner in box drawing.
+            box_drawing_bottom_left_corner_rounded (Symbol): Symbol for rounded bottom left corner in box drawing.
+            box_drawing_top_right_corner (Symbol): Symbol for top right corner in box drawing.
+            box_drawing_bottom_right_corner (Symbol): Symbol for bottom right corner in box drawing.
             log_level_info (Symbol): Symbol for info log level.
             log_level_success (Symbol): Symbol for success log level.
             log_level_warn (Symbol): Symbol for warning log level.
             log_level_error (Symbol): Symbol for error log level.
-            spinner (SpinnerSymbols): Symbols to use for spinner animations.
+            spinner (SpinnerSymbols): Spinner symbols object containing Unicode and ASCII representations of spinner symbols.
         '''
 
         self.step_marker_active: Symbol = step_marker_active
@@ -187,14 +195,18 @@ class Symbols:
         self.connector_bar_vertical: Symbol = connector_bar_vertical
         self.connector_bar_end: Symbol = connector_bar_end
         self.selection_widget_radio_active: Symbol = selection_widget_radio_active
-        self.selection_widget_radio_inactive: Symbol = selection_widget_radio_inactive
+        self.selection_widget_radio_inactive: Symbol = selection_widget_checkbox_inactive
         self.selection_widget_checkbox_active: Symbol = selection_widget_checkbox_active
         self.selection_widget_checkbox_selected: Symbol = selection_widget_checkbox_selected
         self.selection_widget_checkbox_inactive: Symbol = selection_widget_checkbox_inactive
         self.selection_widget_password_mask: Symbol = selection_widget_password_mask
         self.box_drawing_horizontal_bar: Symbol = box_drawing_horizontal_bar
-        self.box_drawing_top_right_corner: Symbol = box_drawing_top_right_corner
+        self.box_drawing_top_right_corner_rounded: Symbol = box_drawing_top_right_corner_rounded
         self.box_drawing_left_connector: Symbol = box_drawing_left_connector
+        self.box_drawing_bottom_right_corner_rounded: Symbol = box_drawing_bottom_right_corner_rounded
+        self.box_drawing_top_left_corner_rounded: Symbol = box_drawing_top_left_corner_rounded
+        self.box_drawing_bottom_left_corner_rounded: Symbol = box_drawing_bottom_left_corner_rounded
+        self.box_drawing_top_right_corner: Symbol = box_drawing_top_right_corner
         self.box_drawing_bottom_right_corner: Symbol = box_drawing_bottom_right_corner
         self.log_level_info: Symbol = log_level_info
         self.log_level_success: Symbol = log_level_success

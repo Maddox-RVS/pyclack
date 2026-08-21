@@ -39,7 +39,7 @@ class Intro(PromptBase):
         super().activate()
 
     @override
-    def handle_submit(self) -> bool:
+    def handle_active(self, key: str | None) -> bool:
         Stdout.put(cc.hide_cursor())
         
         theme: Theme = get_active_theme()
