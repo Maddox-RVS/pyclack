@@ -25,6 +25,11 @@ class CancelException[T](Exception):
         super().__init__()
         self.value: T | None = value
 
+class Alignment(Enum):
+    LEFT = 'left'
+    CENTER = 'center'
+    RIGHT = 'right'
+
 class PromptState(Enum):
     INITIAL = 'initial'
     ACTIVE = 'active'
