@@ -66,10 +66,10 @@ class Note(PromptBase):
         theme: Theme = get_active_theme()
         step_marker_submit: str = theme.symbols.step_marker_submit.resolve()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
-        box_drawing_bottom_right_corner: str = theme.symbols.box_drawing_bottom_right_corner.resolve()
+        box_drawing_bottom_right_corner_rounded: str = theme.symbols.box_drawing_bottom_right_corner_rounded.resolve()
         box_drawing_horizontal_bar: str = theme.symbols.box_drawing_horizontal_bar.resolve()
         box_drawing_left_connector: str = theme.symbols.box_drawing_left_connector.resolve()
-        box_drawing_top_right_corner: str = theme.symbols.box_drawing_top_right_corner.resolve()
+        box_drawing_top_right_corner_rounded: str = theme.symbols.box_drawing_top_right_corner_rounded.resolve()
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
         
         frame_builder: FrameBuilder = FrameBuilder()
@@ -96,7 +96,7 @@ class Note(PromptBase):
                     ' ',
                     padding_text,
                     (box_drawing_horizontal_bar, theme.muted),
-                    (box_drawing_top_right_corner, theme.muted))
+                    (box_drawing_top_right_corner_rounded, theme.muted))
             frame_builder.add_line(chunk_text)
 
         seperator_text: Text = Text.assemble(
@@ -120,7 +120,7 @@ class Note(PromptBase):
         bottom_line_text: Text = Text.assemble(
             (f'{box_drawing_left_connector}', theme.muted),
             (f'{box_drawing_horizontal_bar}' * (longest_line_len + 4), theme.muted),
-            (f'{box_drawing_bottom_right_corner}', theme.muted))
+            (f'{box_drawing_bottom_right_corner_rounded}', theme.muted))
         frame_builder.add_line(bottom_line_text)
 
         frame: tuple[Text, ...] = frame_builder.build()

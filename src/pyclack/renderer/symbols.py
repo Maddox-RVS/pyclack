@@ -195,7 +195,7 @@ class Symbols:
         self.connector_bar_vertical: Symbol = connector_bar_vertical
         self.connector_bar_end: Symbol = connector_bar_end
         self.selection_widget_radio_active: Symbol = selection_widget_radio_active
-        self.selection_widget_radio_inactive: Symbol = selection_widget_checkbox_inactive
+        self.selection_widget_radio_inactive: Symbol = selection_widget_radio_inactive
         self.selection_widget_checkbox_active: Symbol = selection_widget_checkbox_active
         self.selection_widget_checkbox_selected: Symbol = selection_widget_checkbox_selected
         self.selection_widget_checkbox_inactive: Symbol = selection_widget_checkbox_inactive
