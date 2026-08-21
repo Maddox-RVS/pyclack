@@ -150,6 +150,8 @@ class Symbols:
         box_drawing_bottom_left_corner_rounded: Symbol,
         box_drawing_top_right_corner: Symbol,
         box_drawing_bottom_right_corner: Symbol,
+        box_drawing_top_left_corner: Symbol,
+        box_drawing_bottom_left_corner: Symbol,
         log_level_info: Symbol,
         log_level_success: Symbol,
         log_level_warn: Symbol,
@@ -180,6 +182,8 @@ class Symbols:
             box_drawing_bottom_left_corner_rounded (Symbol): Symbol for rounded bottom left corner in box drawing.
             box_drawing_top_right_corner (Symbol): Symbol for top right corner in box drawing.
             box_drawing_bottom_right_corner (Symbol): Symbol for bottom right corner in box drawing.
+            box_drawing_top_left_corner (Symbol): Symbol for the top left corner in box drawing.
+            box_drawing_bottom_left_corner (Symbol): Symbol for the bottom left corner in box drawing.
             log_level_info (Symbol): Symbol for info log level.
             log_level_success (Symbol): Symbol for success log level.
             log_level_warn (Symbol): Symbol for warning log level.
@@ -208,6 +212,8 @@ class Symbols:
         self.box_drawing_bottom_left_corner_rounded: Symbol = box_drawing_bottom_left_corner_rounded
         self.box_drawing_top_right_corner: Symbol = box_drawing_top_right_corner
         self.box_drawing_bottom_right_corner: Symbol = box_drawing_bottom_right_corner
+        self.box_drawing_top_left_corner: Symbol = box_drawing_top_left_corner
+        self.box_drawing_bottom_left_corner: Symbol = box_drawing_bottom_left_corner
         self.log_level_info: Symbol = log_level_info
         self.log_level_success: Symbol = log_level_success
         self.log_level_warn: Symbol = log_level_warn

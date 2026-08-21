@@ -112,6 +112,8 @@ class Themes:
             box_drawing_bottom_left_corner_rounded   = Symbol('╰', '+'),
             box_drawing_top_right_corner             = Symbol('┐', '+'),
             box_drawing_bottom_right_corner          = Symbol('┘', '+'),
+            box_drawing_top_left_corner              = Symbol('┌', '+'),
+            box_drawing_bottom_left_corner           = Symbol('└', '+'),
             log_level_info                           = Symbol('●', '•'),
             log_level_success                        = Symbol('◆', '*'),
             log_level_warn                           = Symbol('▲', '!'),

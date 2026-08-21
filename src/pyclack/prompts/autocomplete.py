@@ -234,13 +234,6 @@ class Autocomplete(PromptBase):
         theme: Theme = get_active_theme()
         selection_widget_radio_active: str = theme.symbols.selection_widget_radio_active.resolve()
         selection_widget_radio_inactive: str = theme.symbols.selection_widget_radio_inactive.resolve()
-        print(selection_widget_radio_inactive)
-        print(selection_widget_radio_inactive)
-        print(selection_widget_radio_inactive)
-        print(selection_widget_radio_inactive)
-        print(selection_widget_radio_inactive)
-        print(selection_widget_radio_inactive)
-        print(selection_widget_radio_inactive)
 
         disabled_style: Style = copy(theme.muted)
         disabled_style.strikethrough = True
