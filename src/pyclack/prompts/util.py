@@ -210,6 +210,119 @@ def build_wrapped_lines(text: Text, prefix: Text) -> list[Text]:
 
     return wrapped
 
+def _chunkify(string: str, max_line_len: int) -> list[str]:
+    '''
+    Splits a string into chunks of a specified maximum line length,
+    respecting existing newlines as hard breaks first.
+ 
+    Args:
+        string (str): The string to be chunked.
+        max_line_len (int): The maximum length of each chunk.
+ 
+    Returns:
+        list[str]: A list of string chunks.
+    '''
+ 
+    def _chunk(string: str, max_line_len: int) -> list[str]:
+        return [string[i:i+max_line_len] for i in range(0, len(string), max_line_len)]
+ 
+    pieces: list[str] = string.split('\n')
+    chunks: list[str] = []
+    for piece in pieces:
+        piece_chunks: list[str] = _chunk(piece, max_line_len)
+        for chunk in piece_chunks: chunks.append(chunk)
+    return chunks
+ 
+def build_attached_box_lines(
+    title: str,
+    message: str,
+    prefix: Text,
+    title_marker_prefix: Text,
+    title_style: Style,
+    message_style: Style,
+    border_style: Style,
+    right_bar_symbol: str,
+    horizontal_bar_symbol: str,
+    left_connector_symbol: str,
+    top_right_corner_symbol: str,
+    bottom_right_corner_symbol: str) -> list[Text]:
+    '''
+    Builds a box "attached" to a connector bar on the left, in clack's
+    `note()` style: the left side is just the ordinary prefix continuing
+    through (no left border is drawn), the box hangs off the right side
+    only, its top-right corner attaches to a horizontal bar that begins
+    right after the title marker prefix, and the bottom closes with a
+    left-connector T-junction rather than a full left corner.
+ 
+    Args:
+        title (str): The title text shown on the box's top line.
+        message (str): The body content shown inside the box.
+        prefix (Text): The ordinary left-side prefix (e.g. a muted connector bar) used for every line except the title's first line.
+        title_marker_prefix (Text): The special prefix used only for the title's first line (e.g. a step marker).
+        title_style (Style): Style applied to the title text.
+        message_style (Style): Style applied to the message text.
+        border_style (Style): Style applied to all border characters (bars, corners, connector).
+        right_bar_symbol (str): The glyph used for the box's right-side vertical bar.
+        horizontal_bar_symbol (str): The glyph used for horizontal bar segments.
+        left_connector_symbol (str): The glyph used at the bottom-left T-junction.
+        top_right_corner_symbol (str): The glyph used at the top-right corner.
+        bottom_right_corner_symbol (str): The glyph used at the bottom-right corner.
+ 
+    Returns:
+        list[Text]: The fully assembled, ready-to-render lines of the box.
+    '''
+ 
+    cols, _ = shutil.get_terminal_size()
+    max_chars_per_line: int = cols - (len(prefix) * 2)
+    title_chunks: list[str] = _chunkify(title, max_chars_per_line)
+    message_chunks: list[str] = _chunkify(message, max_chars_per_line)
+    longest_line_len: int = max(len(title_chunks[-1]), max(len(line) for line in message_chunks))
+ 
+    lines: list[Text] = []
+ 
+    for i, chunk in enumerate(title_chunks):
+        prefix_custom: Text = prefix
+        if i == 0: prefix_custom = title_marker_prefix
+ 
+        chunk_text: Text = prefix_custom + Text(chunk, title_style)
+        if i == len(title_chunks) - 1:
+            padding_amount: int = longest_line_len - len(chunk)
+            padding_text: Text = Text(f'{horizontal_bar_symbol}' * padding_amount, border_style)
+            chunk_text = Text.assemble(
+                prefix_custom,
+                (chunk, title_style),
+                ' ',
+                padding_text,
+                (horizontal_bar_symbol, border_style),
+                (top_right_corner_symbol, border_style))
+        lines.append(chunk_text)
+ 
+    seperator_text: Text = Text.assemble(
+        prefix,
+        ' ' * longest_line_len,
+        (f'  {right_bar_symbol}', border_style))
+    lines.append(seperator_text)
+ 
+    for chunk in message_chunks:
+        padding_amount = longest_line_len - len(chunk)
+        padding_text = Text(' ' * padding_amount, message_style)
+        chunk_text = Text.assemble(
+            prefix,
+            (chunk, message_style),
+            padding_text,
+            (f'  {right_bar_symbol}', border_style))
+        lines.append(chunk_text)
+ 
+    lines.append(seperator_text)
+ 
+    bottom_line_text: Text = Text.assemble(
+        (f'{left_connector_symbol}', border_style),
+        (f'{horizontal_bar_symbol}' * (longest_line_len + 4), border_style),
+        (f'{bottom_right_corner_symbol}', border_style))
+    lines.append(bottom_line_text)
+ 
+    return lines
+
 class TextBoxController:
     '''
     A class to manage the input buffer and cursor position for a text box. It provides methods to manipulate the 
