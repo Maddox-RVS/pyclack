@@ -395,33 +395,51 @@ def build_box_lines(
     '''
  
     title = title.strip()
+ 
+    cols, _ = shutil.get_terminal_size()
+    max_total_width: int = max(1, cols - len(prefix.get_raw_text()))
+ 
+    if width is not None:
+        max_content_padding: int = max(0, (width - 2 - 1) // 2)
+        content_padding = min(content_padding, max_content_padding)
+        max_title_padding: int = max(0, (width - 2 - 2 - 1) // 2)
+        title_padding = min(title_padding, max_title_padding)
+ 
     title_gap: str = ' ' * title_padding if title else ''
-    padded_title: str = f'{title_gap}{title}{title_gap}' if title else ''
+ 
+    max_inner_width: int = max(1, max_total_width - (2 + content_padding * 2))
  
     if width is None:
         raw_lines: list[str] = content.split('\n')
         widest_content: int = max((len(line) for line in raw_lines), default=0)
-        inner_width: int = widest_content
-        min_width_for_title: int = len(padded_title) if title else 0
-        inner_width = max(inner_width, min_width_for_title - content_padding * 2)
-        inner_width = max(inner_width, 0)
-        content_lines: list[str] = raw_lines
+        inner_width = min(widest_content, max_inner_width)
     else:
         total_border_and_padding: int = 2 + content_padding * 2  # left + right border chars, plus padding
-        inner_width = max(1, width - total_border_and_padding)
-        content_lines = []
-        for raw_line in content.split('\n'):
-            if len(raw_line) <= inner_width: content_lines.append(raw_line)
-            else:
-                content_lines.extend(
-                    raw_line[i:i + inner_width] for i in range(0, len(raw_line), inner_width))
+        inner_width = max(1, min(width - total_border_and_padding, max_inner_width))
+ 
+    content_lines: list[str] = []
+    for raw_line in content.split('\n'):
+        if len(raw_line) <= inner_width: content_lines.append(raw_line)
+        else:
+            content_lines.extend(
+                raw_line[i:i + inner_width] for i in range(0, len(raw_line), inner_width))
  
     lines: list[Text] = []
  
-    # Top border, with the title embedded
     top_border_span: int = inner_width + content_padding * 2
+ 
     if title:
-        available_for_bars: int = max(0, top_border_span - len(padded_title))
+        max_title_chunk_len: int = max(1, top_border_span - title_padding * 2 - 2)
+        title_lines: list[str] = [
+            title[i:i + max_title_chunk_len] for i in range(0, len(title), max_title_chunk_len)
+        ] or ['']
+ 
+        for chunk in title_lines[:-1]:
+            lines.append(Text.assemble(prefix, (chunk, title_style)))
+ 
+        last_chunk: str = title_lines[-1]
+        padded_last_chunk: str = f'{title_gap}{last_chunk}{title_gap}'
+        available_for_bars: int = max(0, top_border_span - len(padded_last_chunk))
         if title_align == Alignment.LEFT:
             left_bars, right_bars = 1, available_for_bars - 1
         elif title_align == Alignment.RIGHT:
@@ -436,7 +454,7 @@ def build_box_lines(
             prefix,
             (top_left_symbol, border_style),
             (horizontal_bar_symbol * left_bars, border_style),
-            (padded_title, title_style),
+            (padded_last_chunk, title_style),
             (horizontal_bar_symbol * right_bars, border_style),
             (top_right_symbol, border_style))
     else:

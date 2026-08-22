@@ -2,6 +2,7 @@ from .prompt_base import CancelException as CancelException
 from .prompt_base import PromptState as PromptState
 from .prompt_base import PromptBase as PromptBase
 from .prompt_base import ClackOption as ClackOption
+from .prompt_base import Alignment
 from . import util as util
 
 # Prompts
