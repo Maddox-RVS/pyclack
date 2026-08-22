@@ -40,7 +40,7 @@ class SpinnerSymbols:
     ASCII symbols are used as a fallback for environments that do not support Unicode characters.
     '''
 
-    def __init__(self, unicode_symbols: tuple[str], ascii_symbols: tuple[str]):
+    def __init__(self, unicode_symbols: tuple[str, ...], ascii_symbols: tuple[str, ...]):
         '''
         Initialize a SpinnerSymbols object with the given Unicode and ASCII symbols.
 
@@ -143,6 +143,7 @@ class Symbols:
         selection_widget_checkbox_inactive: Symbol,
         selection_widget_password_mask: Symbol,
         box_drawing_horizontal_bar: Symbol,
+        box_drawing_vertical_bar: Symbol,
         box_drawing_top_right_corner_rounded: Symbol,
         box_drawing_left_connector: Symbol,
         box_drawing_bottom_right_corner_rounded: Symbol,
@@ -175,6 +176,7 @@ class Symbols:
             selection_widget_checkbox_inactive (Symbol): Symbol for inactive checkbox in selection widget.
             selection_widget_password_mask (Symbol): Symbol for password mask in selection widget.
             box_drawing_horizontal_bar (Symbol): Symbol for horizontal bar in box drawing.
+            box_drawing_vertical_bar (Symbol): Symbol for vertical bar in box drawing.
             box_drawing_top_right_corner_rounded (Symbol): Symbol for rounded top right corner in box drawing.
             box_drawing_left_connector (Symbol): Symbol for left connector in box drawing.
             box_drawing_bottom_right_corner_rounded (Symbol): Symbol for rounded bottom right corner in box drawing.
@@ -205,6 +207,7 @@ class Symbols:
         self.selection_widget_checkbox_inactive: Symbol = selection_widget_checkbox_inactive
         self.selection_widget_password_mask: Symbol = selection_widget_password_mask
         self.box_drawing_horizontal_bar: Symbol = box_drawing_horizontal_bar
+        self.box_drawing_vertical_bar: Symbol = box_drawing_vertical_bar
         self.box_drawing_top_right_corner_rounded: Symbol = box_drawing_top_right_corner_rounded
         self.box_drawing_left_connector: Symbol = box_drawing_left_connector
         self.box_drawing_bottom_right_corner_rounded: Symbol = box_drawing_bottom_right_corner_rounded

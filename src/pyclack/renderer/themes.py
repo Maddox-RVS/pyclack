@@ -105,6 +105,7 @@ class Themes:
             selection_widget_checkbox_inactive       = Symbol('◻', '[ ]'),
             selection_widget_password_mask           = Symbol('▪', '•'),
             box_drawing_horizontal_bar               = Symbol('─', '-'),
+            box_drawing_vertical_bar                 = Symbol('│', '|'),
             box_drawing_top_right_corner_rounded     = Symbol('╮', '+'),
             box_drawing_left_connector               = Symbol('├', '+'),
             box_drawing_bottom_right_corner_rounded  = Symbol('╯', '+'),
