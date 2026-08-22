@@ -1,10 +1,8 @@
 from ..renderer import Theme, RenderFrame, Text, FrameBuilder
 from ..prompts.util import build_message_close
 from ..terminal import CursorController as cc
-from ..prompts.prompt_base import PromptBase
 from ..config import get_active_theme
 from ..terminal import Stdout
-from typing import override
 
 def cancel(message: str) -> None:
     '''

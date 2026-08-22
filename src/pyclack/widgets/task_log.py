@@ -1,5 +1,3 @@
-from webbrowser import get
-
 from ..prompts.util import build_message_header, build_wrapped_lines
 from ..renderer import Text, Theme, FrameBuilder, RenderFrame
 from ..terminal import CursorController as cc
