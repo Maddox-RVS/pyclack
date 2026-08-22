@@ -1,4 +1,5 @@
 from ..renderer import Text, Style
+from .prompt_base import Alignment
 import shutil
 
 def build_message_open(
@@ -320,6 +321,151 @@ def build_attached_box_lines(
         (f'{horizontal_bar_symbol}' * (longest_line_len + 4), border_style),
         (f'{bottom_right_corner_symbol}', border_style))
     lines.append(bottom_line_text)
+ 
+    return lines
+
+def _align_line(text: str, inner_width: int, align: Alignment) -> str:
+    '''
+    Pads a single line of text to exactly inner_width characters, aligned
+    as specified. Assumes len(text) <= inner_width (the caller is
+    responsible for wrapping/chunking beforehand).
+ 
+    Args:
+        text (str): The line to pad.
+        inner_width (int): The total width to pad up to.
+        align (Alignment): Where the text should sit within that width.
+ 
+    Returns:
+        str: The padded line, exactly inner_width characters long.
+    '''
+ 
+    extra: int = inner_width - len(text)
+    if align == Alignment.LEFT: return text + (' ' * extra)
+    if align == Alignment.RIGHT: return (' ' * extra) + text
+    left_pad: int = extra // 2
+    right_pad: int = extra - left_pad
+    return (' ' * left_pad) + text + (' ' * right_pad)
+ 
+def build_box_lines(
+    content: str,
+    title: str,
+    prefix: Text,
+    content_style: Style,
+    title_style: Style,
+    border_style: Style,
+    top_left_symbol: str,
+    top_right_symbol: str,
+    bottom_left_symbol: str,
+    bottom_right_symbol: str,
+    horizontal_bar_symbol: str,
+    vertical_bar_symbol: str,
+    content_align: Alignment = Alignment.LEFT,
+    title_align: Alignment = Alignment.LEFT,
+    width: int | None = None,
+    title_padding: int = 1,
+    content_padding: int = 2) -> list[Text]:
+    '''
+    Builds a fully self-contained, four-sided bordered box (clack's `box()`
+    style): all four
+    corners are drawn, the title sits embedded in the top border, and the
+    box can either auto-size to its content or be constrained to a fixed
+    total width (wrapping content that doesn't fit).
+ 
+    Args:
+        content (str): The body content shown inside the box.
+        title (str): The title text embedded in the top border. Pass '' for no title.
+        prefix (Text): The left-side prefix prepended to every line (e.g. a muted connector bar).
+        content_style (Style): Style applied to the content text.
+        title_style (Style): Style applied to the title text.
+        border_style (Style): Style applied to all border characters (corners, bars, sides).
+        top_left_symbol (str): Glyph for the top-left corner.
+        top_right_symbol (str): Glyph for the top-right corner.
+        bottom_left_symbol (str): Glyph for the bottom-left corner.
+        bottom_right_symbol (str): Glyph for the bottom-right corner.
+        horizontal_bar_symbol (str): Glyph used for horizontal border segments.
+        vertical_bar_symbol (str): Glyph used for the left/right vertical sides.
+        content_align (Alignment): Horizontal alignment of content lines within the box. Defaults to Alignment.LEFT.
+        title_align (Alignment): Horizontal alignment of the title within the top border. Defaults to Alignment.LEFT.
+        width (int | None): Fixed total box width (including borders), or None to auto-size to fit the content/title. Defaults to None.
+        title_padding (int): Number of spaces surrounding the title text itself. Defaults to 1.
+        content_padding (int): Number of spaces surrounding content lines, on each side. Defaults to 2.
+ 
+    Returns:
+        list[Text]: The fully assembled, ready-to-render lines of the box.
+    '''
+ 
+    title = title.strip()
+    title_gap: str = ' ' * title_padding if title else ''
+    padded_title: str = f'{title_gap}{title}{title_gap}' if title else ''
+ 
+    if width is None:
+        raw_lines: list[str] = content.split('\n')
+        widest_content: int = max((len(line) for line in raw_lines), default=0)
+        inner_width: int = widest_content
+        min_width_for_title: int = len(padded_title) if title else 0
+        inner_width = max(inner_width, min_width_for_title - content_padding * 2)
+        inner_width = max(inner_width, 0)
+        content_lines: list[str] = raw_lines
+    else:
+        total_border_and_padding: int = 2 + content_padding * 2  # left + right border chars, plus padding
+        inner_width = max(1, width - total_border_and_padding)
+        content_lines = []
+        for raw_line in content.split('\n'):
+            if len(raw_line) <= inner_width: content_lines.append(raw_line)
+            else:
+                content_lines.extend(
+                    raw_line[i:i + inner_width] for i in range(0, len(raw_line), inner_width))
+ 
+    lines: list[Text] = []
+ 
+    # Top border, with the title embedded
+    top_border_span: int = inner_width + content_padding * 2
+    if title:
+        available_for_bars: int = max(0, top_border_span - len(padded_title))
+        if title_align == Alignment.LEFT:
+            left_bars, right_bars = 1, available_for_bars - 1
+        elif title_align == Alignment.RIGHT:
+            left_bars, right_bars = available_for_bars - 1, 1
+        else:
+            left_bars = available_for_bars // 2
+            right_bars = available_for_bars - left_bars
+        left_bars = max(0, left_bars)
+        right_bars = max(0, right_bars)
+ 
+        top_line: Text = Text.assemble(
+            prefix,
+            (top_left_symbol, border_style),
+            (horizontal_bar_symbol * left_bars, border_style),
+            (padded_title, title_style),
+            (horizontal_bar_symbol * right_bars, border_style),
+            (top_right_symbol, border_style))
+    else:
+        top_line = Text.assemble(
+            prefix,
+            (top_left_symbol, border_style),
+            (horizontal_bar_symbol * top_border_span, border_style),
+            (top_right_symbol, border_style))
+    lines.append(top_line)
+ 
+    # Content lines
+    pad_str: str = ' ' * content_padding
+    for line in content_lines:
+        aligned: str = _align_line(line, inner_width, content_align)
+        content_line: Text = Text.assemble(
+            prefix,
+            (vertical_bar_symbol, border_style),
+            (f'{pad_str}{aligned}{pad_str}', content_style),
+            (vertical_bar_symbol, border_style))
+        lines.append(content_line)
+ 
+    # Bottom border
+    bottom_span: int = inner_width + content_padding * 2
+    bottom_line: Text = Text.assemble(
+        prefix,
+        (bottom_left_symbol, border_style),
+        (horizontal_bar_symbol * bottom_span, border_style),
+        (bottom_right_symbol, border_style))
+    lines.append(bottom_line)
  
     return lines
 
