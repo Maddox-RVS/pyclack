@@ -6,7 +6,6 @@ from ..config import get_active_theme
 from threading import Thread, Event
 from ..terminal import Stdout
 import signal
-import shutil
 import time
 
 class Spinner:
@@ -42,11 +41,8 @@ class Spinner:
         self._render_frame: RenderFrame = RenderFrame()
         self._was_cancelled: bool = False
         self._start_time: float = 0
-
         self._stop_event: Event = Event()
         self._animation_thread: Thread = Thread()
-
-        self._keyboard_cancelled: bool = False
 
     def start(self, msg: str) -> None:
         '''
@@ -57,7 +53,6 @@ class Spinner:
         '''
 
         Stdout.put(cc.hide_cursor())
-        self._keyboard_cancelled = False
         self._old_sigint_handler = signal.getsignal(signal.SIGINT)
         signal.signal(signal.SIGINT, self._handle_interrupt)
         self._stop_event.clear()
@@ -97,11 +92,6 @@ class Spinner:
 
             frame: tuple[Text, ...] = frame_builder.build()
             self._render_frame.draw_frame(*frame)
-
-            # hacky way around the inserted newline from pressing ctrl+c due to terminal echo
-            if self._keyboard_cancelled:
-                cols, _ = shutil.get_terminal_size()
-                Stdout.put(cc.cursor_up() + cc.cursor_to_col(cols) + cc.clear_below())
         
     def cancel(self, msg: str) -> None:
         '''
@@ -135,11 +125,6 @@ class Spinner:
             frame: tuple[Text, ...] = frame_builder.build()
             self._render_frame.draw_frame(*frame)
 
-            # hacky way around the inserted newline from pressing ctrl+c due to terminal echo
-            if self._keyboard_cancelled:
-                cols, _ = shutil.get_terminal_size()
-                Stdout.put(cc.cursor_up() + cc.cursor_to_col(cols) + cc.clear_below())
-
     def error(self, msg: str) -> None:
         '''
         Displays an error message and stops the spinner animation.
@@ -171,11 +156,6 @@ class Spinner:
             frame: tuple[Text, ...] = frame_builder.build()
             self._render_frame.draw_frame(*frame)
 
-            # hacky way around the inserted newline from pressing ctrl+c due to terminal echo
-            if self._keyboard_cancelled:
-                cols, _ = shutil.get_terminal_size()
-                Stdout.put(cc.cursor_up() + cc.cursor_to_col(cols) + cc.clear_below())
-
     def clear(self) -> None:
         '''
         Clears the spinner from the terminal without displaying any message.
@@ -184,11 +164,6 @@ class Spinner:
         if not self._stop_event.is_set():
             self._cleanup()
             self._render_frame.clear_frame()
-
-            # hacky way around the inserted newline from pressing ctrl+c due to terminal echo
-            if self._keyboard_cancelled:
-                cols, _ = shutil.get_terminal_size()
-                Stdout.put(cc.cursor_up() + cc.cursor_to_col(cols) + cc.clear_below())
 
     def is_cancelled(self) -> bool:
         '''
@@ -215,7 +190,6 @@ class Spinner:
         Handles the SIGINT signal (Ctrl+C) to cancel the spinner and raise a CancelException.
         '''
 
-        self._keyboard_cancelled = True
         raise CancelException
 
     def _cleanup(self):
