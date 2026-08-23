@@ -7,6 +7,9 @@ from ..terminal import Stdout
 def cancel(message: str) -> None:
     '''
     Display a cancellation message to the user.
+
+    Args:
+        message (str): The cancellation message to display.
     '''
     
     Stdout.put(cc.hide_cursor())

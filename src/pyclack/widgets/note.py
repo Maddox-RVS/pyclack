@@ -7,6 +7,10 @@ from ..terminal import Stdout
 def note(title: str, message: str) -> None:
     '''
     Displays a note to the user with a title and message.
+
+    Args:
+        title (str): The title of the note.
+        message (str): The message content of the note.
     '''
 
     Stdout.put(cc.hide_cursor())

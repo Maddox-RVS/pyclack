@@ -5,9 +5,20 @@ from ...config import get_active_theme
 from ...terminal import Stdout
 
 class Log:
+    '''
+    A static class that provides methods to display various types of log messages in a structured format,
+    including standard messages, informational messages, warnings, errors, and success notifications.
+    '''
 
     @staticmethod
     def message(msg: str) -> None:
+        '''
+        Displays a standard message.
+
+        Args:
+            msg (str): The message to display.
+        '''
+
         Stdout.put(cc.hide_cursor())
     
         render_frame: RenderFrame = RenderFrame()
@@ -28,6 +39,13 @@ class Log:
 
     @staticmethod
     def info(msg: str) -> None:
+        '''
+        Displays an informational message.
+
+        Args:
+            msg (str): The informational message to display.
+        '''
+
         Stdout.put(cc.hide_cursor())
     
         render_frame: RenderFrame = RenderFrame()
@@ -54,6 +72,13 @@ class Log:
 
     @staticmethod
     def warning(msg: str) -> None:
+        '''
+        Displays a warning message.
+
+        Args:
+            msg (str): The warning message to display.
+        '''
+
         Stdout.put(cc.hide_cursor())
     
         render_frame: RenderFrame = RenderFrame()
@@ -80,10 +105,24 @@ class Log:
 
     @staticmethod
     def warn(msg: str) -> None:
+        '''
+        Displays a warning message. This is an alias for the `warning` method.
+
+        Args:
+            msg (str): The warning message to display.
+        '''
+
         Log.warning(msg)
 
     @staticmethod
     def error(msg: str) -> None:
+        '''
+        Displays an error message.
+
+        Args:
+            msg (str): The error message to display.
+        '''
+
         Stdout.put(cc.hide_cursor())
     
         render_frame: RenderFrame = RenderFrame()
@@ -110,6 +149,13 @@ class Log:
 
     @staticmethod
     def success(msg: str) -> None:
+        '''
+        Displays a success message.
+
+        Args:
+            msg (str): The success message to display.
+        '''
+
         Stdout.put(cc.hide_cursor())
     
         render_frame: RenderFrame = RenderFrame()
@@ -136,6 +182,13 @@ class Log:
 
     @staticmethod
     def step(msg: str) -> None:
+        '''
+        Displays a step message, typically used to indicate progress in a multi-step process.
+
+        Args:
+            msg (str): The step message to display.
+        '''
+
         Stdout.put(cc.hide_cursor())
     
         render_frame: RenderFrame = RenderFrame()
