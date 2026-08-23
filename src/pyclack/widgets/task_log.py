@@ -98,6 +98,7 @@ class TaskLog():
         Handles the SIGINT signal (Ctrl+C) to cancel the TaskLog and raise a CancelException.
         '''
 
+        signal.signal(signal.SIGINT, self._old_sigint_handler)
         raise CancelException
 
     def _render_title(self) -> None:
