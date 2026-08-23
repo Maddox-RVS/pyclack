@@ -1,8 +1,10 @@
 from ..prompts.util import build_message_header, build_wrapped_lines
 from ..renderer import Text, Theme, FrameBuilder, RenderFrame
 from ..terminal import CursorController as cc
+from ..prompts import CancelException
 from ..config import get_active_theme
 from ..terminal import Stdout
+import signal
 
 class TaskLog():
     '''
@@ -36,6 +38,8 @@ class TaskLog():
 
         self._render_title()
 
+        self._has_message: bool = False
+
     def get_log(self) -> list[str]:
         '''
         Returns the current log of messages.
@@ -55,6 +59,11 @@ class TaskLog():
         '''
 
         if self._is_success: return
+
+        if not self._has_message:
+            self._old_sigint_handler = signal.getsignal(signal.SIGINT)
+            signal.signal(signal.SIGINT, self._handle_interrupt)
+        self._has_message = True
         
         message_lines: list[Text] = self._build_message(msg)
         self._buffer.append(message_lines)
@@ -81,6 +90,15 @@ class TaskLog():
         self._log.append(msg)
         if not self._retain_log and self._limit and len(self._log) > self._limit:
             self._log = self._log[-self._limit:]
+
+        signal.signal(signal.SIGINT, self._old_sigint_handler)
+
+    def _handle_interrupt(self, signum, frame):
+        '''
+        Handles the SIGINT signal (Ctrl+C) to cancel the TaskLog and raise a CancelException.
+        '''
+
+        raise CancelException
 
     def _render_title(self) -> None:
         '''
