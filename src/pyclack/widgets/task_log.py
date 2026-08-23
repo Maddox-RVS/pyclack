@@ -92,6 +92,8 @@ class TaskLog():
             self._log = self._log[-self._limit:]
 
         signal.signal(signal.SIGINT, self._old_sigint_handler)
+        
+        Stdout.put(cc.show_cursor())
 
     def _handle_interrupt(self, signum, frame):
         '''
@@ -142,8 +144,6 @@ class TaskLog():
         
         frame: tuple[Text, ...] = frame_builder.build()
         self._render_frame.draw_frame(*frame)
-        
-        Stdout.put(cc.show_cursor())
 
     def _build_title(self) -> list[Text]:
         '''
