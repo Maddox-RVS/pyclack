@@ -9,3 +9,4 @@ from .log import log as log
 from .spinner import Spinner as Spinner
 from .progress import Progress as Progress
 from .progress import ProgressStyle as ProgressStyle
+from . import stream as stream

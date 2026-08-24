@@ -12,7 +12,7 @@ class Text:
     '''
 
     def __init__(self, 
-        text: str,
+        text: str = '',
         style: Style | None = None,
         inner_text: Text | None = None):
         '''

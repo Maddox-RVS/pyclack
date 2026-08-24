@@ -16,6 +16,13 @@ class FrameBuilder:
         
         self.lines: list[Text] = []
 
+    def clear(self) -> None:
+        '''
+        Clears the lines stored in the FrameBuilder instance.
+        '''
+        
+        self.lines = []
+
     def add_line(self, line: Text) -> None:
         '''
         Add a line to the frame. Appends the given Text object to the list of lines in the frame.
