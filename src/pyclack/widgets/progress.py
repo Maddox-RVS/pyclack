@@ -5,31 +5,29 @@ from ..terminal import Stdout, EchoController
 from ..prompts import CancelException
 from ..config import get_active_theme
 from threading import Thread, Event
+from enum import Enum
 import signal
 import time
 
-class Spinner:
-    '''
-    A terminal spinner that displays a message with an animated spinner, optional ellipsis, and optional timer.
-    '''
+class ProgressStyle(Enum):
+    LIGHT = 'light'
+    HEAVY = 'heavy'
+    BLOCK = 'block'
 
-    def __init__(self,
+class Progress:
+    def __init__(self, 
+        max: int, 
+        size: int,
+        style: ProgressStyle = ProgressStyle.HEAVY, 
         show_timer: bool = False,
         show_elipse: bool = True,
         spinner_delay: float = 80,
         elipse_delay: float = 500,
-        spinner_frames: SpinnerSymbols | None = None) -> None:
-        '''
-        Initializes a Spinner instance.
-
-        Args:
-            show_timer (bool): Whether to display a timer showing elapsed time. Defaults to False.
-            show_elipse (bool): Whether to display an animated ellipsis after the message. Defaults to True.
-            spinner_delay (float): Delay in milliseconds between spinner frames. Defaults to 80.
-            elipse_delay (float): Delay in milliseconds between ellipsis frames. Defaults to 500.
-            spinner_frames (SpinnerSymbols | None): Custom spinner frames. If None, uses the theme's default spinner frames. Defaults to None.
-        '''
+        spinner_frames: SpinnerSymbols | None = None):
             
+        self.style: ProgressStyle = style
+        self.max: int = max
+        self.size: int = size
         self.show_timer: bool = show_timer
         self.show_elipse: bool = show_elipse
         self.spinner_delay: float = spinner_delay
@@ -38,11 +36,15 @@ class Spinner:
 
         self.message: str = ''
 
+        self._amount: int = 0
         self._render_frame: RenderFrame = RenderFrame()
         self._was_cancelled: bool = False
         self._start_time: float = 0
         self._stop_event: Event = Event()
         self._animation_thread: Thread = Thread()
+
+    def advance(self, amount: int = 1) -> None:
+        self._amount = min(self.max, self._amount + amount)
 
     def start(self, msg: str) -> None:
         '''
@@ -254,11 +256,27 @@ class Spinner:
             current_spinner_frame_index: int = current_spinner_frame_step % len(spinner_frames)
             current_spinner_frame: str = spinner_frames[current_spinner_frame_index]
     
-            spinner_text: Text = Text(f'{current_spinner_frame}  ', theme.active) + Text(self.message, theme.text)
+            progress_text: Text = Text(f'{current_spinner_frame}  ', theme.active)
+
+            match self.style:
+                case ProgressStyle.LIGHT:
+                    progress_symbol: str = theme.symbols.progress_light.resolve()
+                case ProgressStyle.HEAVY:
+                    progress_symbol = theme.symbols.progress_heavy.resolve()
+                case ProgressStyle.BLOCK:
+                    progress_symbol = theme.symbols.progress_block.resolve()
+            
+            progress_char_fill: int = int((self._amount / self.max) * self.size)
+            progress_char_empty: int = self.size - progress_char_fill
+
+            progress_text += Text(progress_symbol * progress_char_fill, theme.active)
+            progress_text += Text(progress_symbol * progress_char_empty, theme.muted)
+
+            progress_text += Text(f' {self.message}', theme.text)
 
             if self.show_timer:
                 formatted_time: str = self._format_time(time_elapsed_ms)
-                spinner_text += Text(f' [{formatted_time}]', theme.text)
+                progress_text += Text(f' [{formatted_time}]', theme.text)
     
             if self.show_elipse:
                 elipse_frames: tuple[str, ...] = tuple(['', '.', '..', '...'])
@@ -266,16 +284,16 @@ class Spinner:
                 current_elipse_frame_index: int = current_elipse_frame_step % len(elipse_frames)
                 current_elipse_frame: str = elipse_frames[current_elipse_frame_index]
     
-                spinner_text += Text(current_elipse_frame, theme.text)
+                progress_text += Text(current_elipse_frame, theme.text)
     
             frame_builder: FrameBuilder = FrameBuilder()
 
             frame_builder.add_line(prefix_muted)
             
-            spinner_text_lines: list[Text] = build_wrapped_lines(spinner_text, prefix_active)
-            spinner_text_lines[0].text = spinner_text_lines[0].text[3:]
+            progress_text_lines: list[Text] = build_wrapped_lines(progress_text, prefix_active)
+            progress_text_lines[0].text = progress_text_lines[0].text[3:]
     
-            frame_builder.add_lines(*spinner_text_lines)
+            frame_builder.add_lines(*progress_text_lines)
             
             frame: tuple[Text, ...] = frame_builder.build()
             self._render_frame.draw_frame(*frame)

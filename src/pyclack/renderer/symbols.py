@@ -32,7 +32,7 @@ def _is_unicode_supported() -> bool:
         or term == "rxvt-unicode"
         or term == "rxvt-unicode-256color"
         or env.get("TERMINAL_EMULATOR") == "JetBrains-JediTerm"
-    )
+    )  
 
 class SpinnerSymbols:
     '''
@@ -52,7 +52,7 @@ class SpinnerSymbols:
         self.unicode_symbols = unicode_symbols
         self.ascii_symbols = ascii_symbols 
 
-    def resolve(self) -> tuple[str]:
+    def resolve(self) -> tuple[str, ...]:
         '''
         Resolve the appropriate symbols based on the environment's Unicode support. 
         If Unicode is supported, it returns the Unicode symbols; otherwise, it returns the ASCII symbols.
@@ -157,7 +157,10 @@ class Symbols:
         log_level_success: Symbol,
         log_level_warn: Symbol,
         log_level_error: Symbol,
-        spinner: SpinnerSymbols):
+        spinner: SpinnerSymbols,
+        progress_light: Symbol,
+        progress_heavy: Symbol,
+        progress_block: Symbol):
         '''
         Initialize a Symbols object with the given symbols.
 
@@ -191,6 +194,9 @@ class Symbols:
             log_level_warn (Symbol): Symbol for warning log level.
             log_level_error (Symbol): Symbol for error log level.
             spinner (SpinnerSymbols): Spinner symbols object containing Unicode and ASCII representations of spinner symbols.
+            progress_light (Symbol): Progress symbol for the light bar.
+            progress_heavy (Symbol): Progress symbol for the heavy bar.
+            progress_block (Symbol): Progress symbol for the block bar.
         '''
 
         self.step_marker_active: Symbol = step_marker_active
@@ -222,3 +228,6 @@ class Symbols:
         self.log_level_warn: Symbol = log_level_warn
         self.log_level_error: Symbol = log_level_error
         self.spinner: SpinnerSymbols = spinner
+        self.progress_light: Symbol = progress_light
+        self.progress_heavy: Symbol = progress_heavy
+        self.progress_block: Symbol = progress_block

@@ -7,3 +7,5 @@ from .box import box as box
 from .task_log import TaskLog as TaskLog
 from .log import log as log
 from .spinner import Spinner as Spinner
+from .progress import Progress as Progress
+from .progress import ProgressStyle as ProgressStyle

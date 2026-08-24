@@ -121,7 +121,10 @@ class Themes:
             log_level_error                          = Symbol('■', 'x'),
             spinner                                  = SpinnerSymbols(
                                                         unicode_symbols=('◒', '◐', '◓', '◑'), 
-                                                        ascii_symbols=('•', 'o', 'O', '0'))
+                                                        ascii_symbols=('•', 'o', 'O', '0')),
+            progress_light=Symbol('─', '-'),
+            progress_heavy=Symbol('━', '='),
+            progress_block=Symbol('█', '#')
         )
     )
 
