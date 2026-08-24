@@ -1,10 +1,10 @@
 from ..renderer import Text, Theme, FrameBuilder, RenderFrame, SpinnerSymbols
 from ..prompts.util import build_message_header, build_wrapped_lines
 from ..terminal import CursorController as cc
+from ..terminal import Stdout, EchoController
 from ..prompts import CancelException
 from ..config import get_active_theme
 from threading import Thread, Event
-from ..terminal import Stdout
 import signal
 import time
 
@@ -52,9 +52,14 @@ class Spinner:
             msg (str): The message to display alongside the spinner.
         '''
 
-        Stdout.put(cc.hide_cursor())
+        # Terminal state
         self._old_sigint_handler = signal.getsignal(signal.SIGINT)
         signal.signal(signal.SIGINT, self._handle_interrupt)
+        if EchoController.is_echo_enabled():
+            EchoController.disable_echo()
+
+        # Spinner state
+        Stdout.put(cc.hide_cursor())
         self._stop_event.clear()
         self._was_cancelled = False
         self._start_time = time.time()
@@ -190,6 +195,7 @@ class Spinner:
         Handles the SIGINT signal (Ctrl+C) to cancel the spinner and raise a CancelException.
         '''
 
+        EchoController.enable_echo()
         raise CancelException
 
     def _cleanup(self):
@@ -197,14 +203,15 @@ class Spinner:
         Cleans up the spinner by showing the cursor and stopping the animation.
         '''
 
-        Stdout.put(cc.show_cursor())
-
         self._stop_event.set()
 
         if self._animation_thread.is_alive():
             self._animation_thread.join()
 
+        # Terminal state
         signal.signal(signal.SIGINT, self._old_sigint_handler)
+        EchoController.enable_echo()
+        Stdout.put(cc.show_cursor())
 
     def _format_time(self, ms: float) -> str:
         '''

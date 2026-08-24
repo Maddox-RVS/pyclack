@@ -1,9 +1,9 @@
 from ..prompts.util import build_message_header, build_wrapped_lines
 from ..renderer import Text, Theme, FrameBuilder, RenderFrame
 from ..terminal import CursorController as cc
+from ..terminal import Stdout, EchoController
 from ..prompts import CancelException
 from ..config import get_active_theme
-from ..terminal import Stdout
 import signal
 
 class TaskLog():
@@ -33,11 +33,7 @@ class TaskLog():
         
         self._render_frame: RenderFrame = RenderFrame()
         self._buffer: list[list[Text]] = []
-
         self._is_success: bool = False
-
-        self._render_title()
-
         self._has_message: bool = False
 
     def get_log(self) -> list[str]:
@@ -61,9 +57,15 @@ class TaskLog():
         if self._is_success: return
 
         if not self._has_message:
+            self._render_title()
+
+            # Terminal state
             self._old_sigint_handler = signal.getsignal(signal.SIGINT)
             signal.signal(signal.SIGINT, self._handle_interrupt)
-        self._has_message = True
+            if EchoController.is_echo_enabled():
+                EchoController.disable_echo()
+            
+            self._has_message = True
         
         message_lines: list[Text] = self._build_message(msg)
         self._buffer.append(message_lines)
@@ -91,8 +93,9 @@ class TaskLog():
         if not self._retain_log and self._limit and len(self._log) > self._limit:
             self._log = self._log[-self._limit:]
 
+        # Terminal state
         signal.signal(signal.SIGINT, self._old_sigint_handler)
-        
+        EchoController.enable_echo()
         Stdout.put(cc.show_cursor())
 
     def _handle_interrupt(self, signum, frame):
