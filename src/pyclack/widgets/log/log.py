@@ -53,14 +53,14 @@ class Log:
         
         theme: Theme = get_active_theme()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
-        selection_widget_radio_active: str = theme.symbols.selection_widget_radio_active.resolve()
+        log_level_info: str = theme.symbols.log_level_info.resolve()
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
     
         frame_builder.add_line(prefix_muted)
         info_lines: list[Text] = build_message_header(
             msg,
             theme.text,
-            f'{selection_widget_radio_active}  ',
+            f'{log_level_info}  ',
             theme.active,
             prefix_muted)
         frame_builder.add_lines(*info_lines)
@@ -86,14 +86,14 @@ class Log:
         
         theme: Theme = get_active_theme()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
-        step_marker_error: str = theme.symbols.step_marker_error.resolve()
+        log_level_warn: str = theme.symbols.log_level_warn.resolve()
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
         
         frame_builder.add_line(prefix_muted)
         warning_lines: list[Text] = build_message_header(
             msg,
             theme.text,
-            f'{step_marker_error}  ',
+            f'{log_level_warn}  ',
             theme.error,
             prefix_muted)
         frame_builder.add_lines(*warning_lines)
@@ -130,14 +130,14 @@ class Log:
         
         theme: Theme = get_active_theme()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
-        step_marker_cancel: str = theme.symbols.step_marker_cancel.resolve()
+        log_level_error: str = theme.symbols.log_level_error.resolve()
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
     
         frame_builder.add_line(prefix_muted)
         error_lines: list[Text] = build_message_header(
             msg,
             theme.text,
-            f'{step_marker_cancel}  ',
+            f'{log_level_error}  ',
             theme.cancel,
             prefix_muted)
         frame_builder.add_lines(*error_lines)
@@ -163,14 +163,14 @@ class Log:
         
         theme: Theme = get_active_theme()
         connector_bar_vertical: str = theme.symbols.connector_bar_vertical.resolve()
-        step_marker_active: str = theme.symbols.step_marker_active.resolve()
+        log_level_success: str = theme.symbols.log_level_success.resolve()
         prefix_muted: Text = Text(f'{connector_bar_vertical}  ', theme.muted)
     
         frame_builder.add_line(prefix_muted)
         success_lines: list[Text] = build_message_header(
             msg,
             theme.text,
-            f'{step_marker_active}  ',
+            f'{log_level_success}  ',
             theme.submit,
             prefix_muted)
         frame_builder.add_lines(*success_lines)
