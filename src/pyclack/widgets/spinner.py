@@ -253,6 +253,10 @@ class Spinner:
             current_spinner_frame: str = spinner_frames[current_spinner_frame_index]
     
             spinner_text: Text = Text(f'{current_spinner_frame}  ', theme.active) + Text(self.message, theme.text)
+
+            if self.show_timer:
+                formatted_time: str = self._format_time(time_elapsed_ms)
+                spinner_text += Text(f' [{formatted_time}]', theme.text)
     
             if self.show_elipse:
                 elipse_frames: tuple[str, ...] = tuple(['', '.', '..', '...'])
@@ -261,10 +265,6 @@ class Spinner:
                 current_elipse_frame: str = elipse_frames[current_elipse_frame_index]
     
                 spinner_text += Text(current_elipse_frame, theme.text)
-    
-            if self.show_timer:
-                formatted_time: str = self._format_time(time_elapsed_ms)
-                spinner_text += Text(f' [{formatted_time}]', theme.text)
     
             frame_builder: FrameBuilder = FrameBuilder()
 
