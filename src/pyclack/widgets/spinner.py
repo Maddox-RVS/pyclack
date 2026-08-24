@@ -195,7 +195,9 @@ class Spinner:
         Handles the SIGINT signal (Ctrl+C) to cancel the spinner and raise a CancelException.
         '''
 
+        # Terminal state (just to be safe)
         EchoController.enable_echo()
+
         raise CancelException
 
     def _cleanup(self):

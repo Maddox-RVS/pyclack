@@ -103,7 +103,10 @@ class TaskLog():
         Handles the SIGINT signal (Ctrl+C) to cancel the TaskLog and raise a CancelException.
         '''
 
+        # Terminal state
         signal.signal(signal.SIGINT, self._old_sigint_handler)
+        EchoController.enable_echo()
+        
         raise CancelException
 
     def _render_title(self) -> None:
