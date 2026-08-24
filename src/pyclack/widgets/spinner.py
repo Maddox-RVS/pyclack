@@ -55,8 +55,8 @@ class Spinner:
         # Terminal state
         self._old_sigint_handler = signal.getsignal(signal.SIGINT)
         signal.signal(signal.SIGINT, self._handle_interrupt)
-        if EchoController.is_echo_enabled():
-            EchoController.disable_echo()
+        if EchoController.is_ctl_echo_enabled():
+            EchoController.disable_ctl_echo()
 
         # Spinner state
         Stdout.put(cc.hide_cursor())
@@ -195,7 +195,9 @@ class Spinner:
         Handles the SIGINT signal (Ctrl+C) to cancel the spinner and raise a CancelException.
         '''
 
-        EchoController.enable_echo()
+        # Terminal state (just to be safe)
+        EchoController.enable_ctl_echo()
+
         raise CancelException
 
     def _cleanup(self):
@@ -210,7 +212,7 @@ class Spinner:
 
         # Terminal state
         signal.signal(signal.SIGINT, self._old_sigint_handler)
-        EchoController.enable_echo()
+        EchoController.enable_ctl_echo()
         Stdout.put(cc.show_cursor())
 
     def _format_time(self, ms: float) -> str:

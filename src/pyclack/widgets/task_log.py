@@ -62,8 +62,8 @@ class TaskLog():
             # Terminal state
             self._old_sigint_handler = signal.getsignal(signal.SIGINT)
             signal.signal(signal.SIGINT, self._handle_interrupt)
-            if EchoController.is_echo_enabled():
-                EchoController.disable_echo()
+            if EchoController.is_ctl_echo_enabled():
+                EchoController.disable_ctl_echo()
             
             self._has_message = True
         
@@ -95,7 +95,7 @@ class TaskLog():
 
         # Terminal state
         signal.signal(signal.SIGINT, self._old_sigint_handler)
-        EchoController.enable_echo()
+        EchoController.enable_ctl_echo()
         Stdout.put(cc.show_cursor())
 
     def _handle_interrupt(self, signum, frame):
@@ -103,7 +103,10 @@ class TaskLog():
         Handles the SIGINT signal (Ctrl+C) to cancel the TaskLog and raise a CancelException.
         '''
 
+        # Terminal state
         signal.signal(signal.SIGINT, self._old_sigint_handler)
+        EchoController.enable_ctl_echo()
+        
         raise CancelException
 
     def _render_title(self) -> None:
