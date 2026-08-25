@@ -334,7 +334,7 @@ class SelectPath(PromptBase):
                     self.text_box_controller.set_input(str(current_option.value), 0)
                     self.text_box_controller.cursor_end()
                     if current_option.value.is_dir():
-                        self.text_box_controller.insert('\\')
+                        self.text_box_controller.insert(os.sep)
                     search = self.text_box_controller.get_input()
                     self._update_search(search)
                     self._update_view_window()
