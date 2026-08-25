@@ -25,6 +25,8 @@ class TaskLog():
             retain_log (bool): Whether to retain the log history instead of clearing it to limit if one is set. Defaults to False.
         '''
 
+        if limit and limit < 0: raise ValueError(f'limit must be non-negative integer, got {limit}') 
+
         self._log: list[str] = [title]
         
         self._title: str = title

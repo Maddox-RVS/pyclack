@@ -10,3 +10,4 @@ from .spinner import Spinner as Spinner
 from .progress import Progress as Progress
 from .progress import ProgressStyle as ProgressStyle
 from . import stream as stream
+from .activity import Activity as Activity

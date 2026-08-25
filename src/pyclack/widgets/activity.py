@@ -5,81 +5,57 @@ from ..terminal import Stdout, EchoController
 from ..prompts import CancelException
 from ..config import get_active_theme
 from threading import Thread, Event
-from enum import Enum
 import signal
 import time
 
-class ProgressStyle(Enum):
+class Activity:
     '''
-    Enum representing the different styles of progress bars available for the Progress widget.
-    '''
-
-    LIGHT = 'light'
-    HEAVY = 'heavy'
-    BLOCK = 'block'
-
-class Progress:
-    '''
-    A customizable progress widget that displays a progress bar, spinner, and optional timer in the terminal. It supports different styles, message updates, and cancellation handling.
+    A class that manages and displays an activity spinner in the terminal, with support for messages, timers, and cancellation.
     '''
 
-    def __init__(self, 
-        max: int, 
-        size: int,
-        style: ProgressStyle = ProgressStyle.HEAVY, 
+    def __init__(self,
+        limit: int | None = None, 
         show_timer: bool = False,
         show_elipse: bool = True,
         spinner_delay: float = 80,
         elipse_delay: float = 500,
-        spinner_frames: SpinnerSymbols | None = None):
+        spinner_frames: SpinnerSymbols | None = None) -> None:
         '''
-        Initializes a new instance of the Progress widget.
+        Initializes a Activity instance.
 
         Args:
-            max (int): The maximum value of the progress bar.
-            size (int): The total number of characters used to represent the progress bar.
-            style (ProgressStyle): The style of the progress bar. Defaults to ProgressStyle.HEAVY.
-            show_timer (bool): Whether to display a timer showing elapsed time. Defaults to False.
-            show_elipse (bool): Whether to display an ellipsis animation. Defaults to True.
+            limit (int | None): The maximum number of activity messages to display. If None, no limit is applied. Defaults to None.
+            show_timer (bool): Whether to display a timer showing the elapsed time since the spinner started. Defaults to False.
+            show_elipse (bool): Whether to display an ellipsis animation after the spinner message. Defaults to True.
             spinner_delay (float): The delay in milliseconds between spinner frames. Defaults to 80.
             elipse_delay (float): The delay in milliseconds between ellipsis frames. Defaults to 500.
-            spinner_frames (SpinnerSymbols | None): Custom spinner frames to use. If None, the default spinner frames from the active theme will be used. Defaults to None.
+            spinner_frames (SpinnerSymbols | None): Custom spinner frames to use for the spinner animation.
         '''
-            
-        self.style: ProgressStyle = style
-        self.max: int = max
-        self.size: int = size
+
+        if limit and limit < 0: raise ValueError(f'limit must be non-negative integer, got {limit}') 
+
+        self.limit: int | None = limit
         self.show_timer: bool = show_timer
         self.show_elipse: bool = show_elipse
         self.spinner_delay: float = spinner_delay
         self.elipse_delay: float = elipse_delay
         self.spinner_frames: SpinnerSymbols | None = spinner_frames
 
-        self.message: str = ''
+        self.spinner_message: str = ''
+        self.activity_message = ''
 
-        self._amount: int = 0
         self._render_frame: RenderFrame = RenderFrame()
         self._was_cancelled: bool = False
         self._start_time: float = 0
         self._stop_event: Event = Event()
         self._animation_thread: Thread = Thread()
 
-    def advance(self, amount: int = 1) -> None:
-        '''
-        Advances the progress bar by the specified amount, up to the maximum value.
-
-        Args:
-            amount (int): The amount to advance the progress bar by. Defaults to 1.
-        '''
-
-        self._amount = min(self.max, self._amount + amount)
-
     def start(self, msg: str) -> None:
         '''
-        Starts the progress animation with the provided message.
+        Starts the activity animation with the provided message.
 
         Args:
-            msg (str): The message to display alongside the progress bar.
+            msg (str): The message to display alongside the spinner.
         '''
 
         # Terminal state
@@ -88,21 +64,21 @@ class Progress:
         if EchoController.is_ctl_echo_enabled():
             EchoController.disable_ctl_echo()
 
-        # Spinner state
+        # Activity state
         Stdout.put(cc.hide_cursor())
         self._stop_event.clear()
         self._was_cancelled = False
         self._start_time = time.time()
-        self.message = msg
+        self.spinner_message = msg
         self._animation_thread = Thread(target=self._render_thread)
         self._animation_thread.start()
 
     def stop(self, msg: str) -> None:
         '''
-        Stops the progress animation and displays a final message.
+        Stops the activity animation and displays a final message.
 
         Args:
-            msg (str): The final message to display after stopping the progress bar.
+            msg (str): The final message to display after stopping the activity.
         '''
 
         if not self._stop_event.is_set():
@@ -130,10 +106,10 @@ class Progress:
         
     def cancel(self, msg: str) -> None:
         '''
-        Cancels the progress animation and displays a cancellation message.
+        Cancels the activity animation and displays a cancellation message.
 
         Args:
-            msg (str): The cancellation message to display after stopping the progress bar.
+            msg (str): The cancellation message to display after stopping the activity.
         '''
 
         if not self._stop_event.is_set():
@@ -162,10 +138,10 @@ class Progress:
 
     def error(self, msg: str) -> None:
         '''
-        Displays an error message and stops the progress animation.
+        Displays an error message and stops the activity animation.
 
         Args:
-            msg (str): The error message to display after stopping the progress bar.
+            msg (str): The error message to display after stopping the activity.
         '''
 
         if not self._stop_event.is_set():
@@ -193,7 +169,7 @@ class Progress:
 
     def clear(self) -> None:
         '''
-        Clears the progress bar from the terminal without displaying any message.
+        Clears the activity from the terminal without displaying any message.
         '''
 
         if not self._stop_event.is_set():
@@ -202,15 +178,15 @@ class Progress:
 
     def is_cancelled(self) -> bool:
         '''
-        Returns True if the progress bar was cancelled by the user, False otherwise.
+        Returns True if the activity was cancelled by the user, False otherwise.
 
         Returns:
-            bool: True if the progress bar was cancelled, False otherwise.
+            bool: True if the activity was cancelled, False otherwise.
         '''
 
         return self._was_cancelled
 
-    def set_message(self, msg: str) -> None:
+    def set_spinner_message(self, msg: str) -> None:
         '''
         Updates the message displayed alongside the spinner.
 
@@ -218,11 +194,31 @@ class Progress:
             msg (str): The new message to display.
         '''
 
-        self.message = msg
+        self.spinner_message = msg
+
+    def set_activity_message(self, msg: str) -> None:
+        '''
+        Updates the message displayed for the activity.
+
+        Args:
+            msg (str): The new message to display.
+        '''
+
+        self.activity_message = msg
+
+    def get_activity_message(self) -> str:
+        '''
+        Returns the current message displayed for the activity.
+
+        Returns:
+            str: The current activity message.
+        '''
+
+        return self.activity_message
 
     def _handle_interrupt(self, signum, frame):
         '''
-        Handles the SIGINT signal (Ctrl+C) to cancel the spinner and raise a CancelException.
+        Handles the SIGINT signal (Ctrl+C) to cancel the activity and raise a CancelException.
         '''
 
         # Terminal state (just to be safe)
@@ -232,7 +228,7 @@ class Progress:
 
     def _cleanup(self):
         '''
-        Cleans up the spinner by showing the cursor and stopping the animation.
+        Cleans up the activity by showing the cursor and stopping the animation.
         '''
 
         self._stop_event.set()
@@ -268,7 +264,8 @@ class Progress:
 
     def _render_thread(self) -> None:
         '''
-        The main rendering loop for the spinner animation. This method runs in a separate thread and updates the spinner's display based on the elapsed time, current spinner frame, ellipsis, and timer.
+        The main rendering loop for the activity animation. This method runs in a separate thread and updates the activity's 
+        display based on the elapsed time, current spinner frame, ellipsis, and timer.
         '''
 
         while not self._stop_event.is_set() and not self._was_cancelled:
@@ -284,27 +281,11 @@ class Progress:
             current_spinner_frame_index: int = current_spinner_frame_step % len(spinner_frames)
             current_spinner_frame: str = spinner_frames[current_spinner_frame_index]
     
-            progress_text: Text = Text(f'{current_spinner_frame}  ', theme.active)
-
-            match self.style:
-                case ProgressStyle.LIGHT:
-                    progress_symbol: str = theme.symbols.progress_light.resolve()
-                case ProgressStyle.HEAVY:
-                    progress_symbol = theme.symbols.progress_heavy.resolve()
-                case ProgressStyle.BLOCK:
-                    progress_symbol = theme.symbols.progress_block.resolve()
-            
-            progress_char_fill: int = int((self._amount / self.max) * self.size)
-            progress_char_empty: int = self.size - progress_char_fill
-
-            progress_text += Text(progress_symbol * progress_char_fill, theme.active)
-            progress_text += Text(progress_symbol * progress_char_empty, theme.muted)
-
-            progress_text += Text(f' {self.message}', theme.text)
+            spinner_text: Text = Text(f'{current_spinner_frame}  ', theme.active) + Text(self.spinner_message, theme.text)
 
             if self.show_timer:
                 formatted_time: str = self._format_time(time_elapsed_ms)
-                progress_text += Text(f' [{formatted_time}]', theme.text)
+                spinner_text += Text(f' [{formatted_time}]', theme.text)
     
             if self.show_elipse:
                 elipse_frames: tuple[str, ...] = tuple(['', '.', '..', '...'])
@@ -312,16 +293,23 @@ class Progress:
                 current_elipse_frame_index: int = current_elipse_frame_step % len(elipse_frames)
                 current_elipse_frame: str = elipse_frames[current_elipse_frame_index]
     
-                progress_text += Text(current_elipse_frame, theme.text)
+                spinner_text += Text(current_elipse_frame, theme.text)
     
             frame_builder: FrameBuilder = FrameBuilder()
 
             frame_builder.add_line(prefix_muted)
             
-            progress_text_lines: list[Text] = build_wrapped_lines(progress_text, prefix_active)
-            progress_text_lines[0].text = progress_text_lines[0].text[3:]
-    
-            frame_builder.add_lines(*progress_text_lines)
+            spinner_text_lines: list[Text] = build_wrapped_lines(spinner_text, prefix_active)
+            spinner_text_lines[0].text = spinner_text_lines[0].text[3:]
+            
+            frame_builder.add_lines(*spinner_text_lines)
+            
+            frame_builder.add_line(prefix_muted)
+
+            activity_message_text: Text = Text(self.activity_message, theme.muted)
+            activity_message_lines: list[Text] = build_wrapped_lines(activity_message_text, prefix_muted)
+            if self.limit: activity_message_lines = activity_message_lines[-self.limit:]
+            frame_builder.add_lines(*activity_message_lines)
             
             frame: tuple[Text, ...] = frame_builder.build()
             self._render_frame.draw_frame(*frame)

@@ -9,6 +9,14 @@ import asyncio
 import signal
 
 def render_iterable(iterable: Iterable[str] | AsyncIterable[str], step_marker_prefix: str, step_marker_prefix_style: Style) -> None:
+    '''
+    Renders an iterable or asynchronous iterable of strings to the terminal, displaying each string as a message header with a step marker prefix.
+
+    Args:
+        iterable (Iterable[str] | AsyncIterable[str]): An iterable or asynchronous iterable of strings to render as message headers.
+        step_marker_prefix (str): The prefix string to display before each message header.
+        step_marker_prefix_style (Style): The style to apply to the step marker prefix.
+    '''
 
     # Terminal state
     old_sigint_handler = signal.getsignal(signal.SIGINT)
