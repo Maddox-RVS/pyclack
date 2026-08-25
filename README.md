@@ -898,43 +898,45 @@ The option value must be a valid string key.
 ### Input
 
 ```python
-from pyclack.prompts import ClackOption, select_key
+from pyclack.prompts import select_key
+from pyclack import ClackOption
 
 options: list[ClackOption[str]] = [
-    ClackOption[str]("y", "Yes"),
-    ClackOption[str]("n", "No"),
-    ClackOption[str]("s", "Skip"),
+    ClackOption[str](value="y", label="Yes"),
+    ClackOption[str](value="n", label="No"),
+    ClackOption[str](value="s", label="Skip")
 ]
 
 selected: ClackOption[str] = select_key(
-    "Choose an action",
-    options,
-    case_sensitive=True,
+    message="Choose an action",
+    options=options,
+    case_sensitive=True
 )
 ```
 
 Parameters:
 
-- `message: str`
-- `options: list[ClackOption[str]]`
-- `case_sensitive: bool`
-- `abort_time: float | None`
+- `message: str` - prompt message
+- `options: list[ClackOption[str]]` - a list of options for the select prompt to iterate over
+- `case_sensitive: bool` - whether to treat capital and lower case variations of the same letters as identical or not
+- `abort_time: float | None` - optional timeout in seconds
 
 Pressing Enter selects the first option.
 
 ### Output
 
 ```python
-from pyclack.prompts import ClackOption, select_key
+from pyclack.prompts import select_key
+from pyclack import ClackOption
 
 options: list[ClackOption[str]] = [
-    ClackOption[str]("y", "Yes"),
-    ClackOption[str]("n", "No"),
+    ClackOption[str](value="y", label="Yes"),
+    ClackOption[str](value="n", label="No")
 ]
 
 selected: ClackOption[str] = select_key(
-    "Continue?",
-    options,
+    message="Continue?",
+    options=options
 )
 
 key: str = selected.value
@@ -945,17 +947,18 @@ key: str = selected.value
 `e.value` is the first option in the option list.
 
 ```python
-from pyclack.prompts import CancelException, ClackOption, select_key
+from pyclack.prompts import select_key
+from pyclack import ClackOption, CancelException
 
 options: list[ClackOption[str]] = [
-    ClackOption[str]("y", "Yes"),
-    ClackOption[str]("n", "No"),
+    ClackOption[str](value="y", label="Yes"),
+    ClackOption[str](value="n", label="No")
 ]
 
 try:
     selected: ClackOption[str] = select_key(
-        "Continue?",
-        options,
+        message="Continue?",
+        options=options
     )
 except CancelException as e:
     default_option: ClackOption[str] | None = e.value
@@ -977,21 +980,21 @@ from pathlib import Path
 from pyclack.prompts import select_path
 
 selected_path: Path = select_path(
-    "Select a path",
+    message="Select a path",
     root=Path.cwd(),
-    directory=False,
+    directory=False
 )
 ```
 
 Parameters:
 
-- `message: str`
-- `placeholder: str`
-- `show_instructions: bool`
-- `max_items: int`
-- `root: Path`
-- `directory: bool`
-- `abort_time: float | None`
+- `message: str` - prompt message
+- `placeholder: str` - text displayed when the input is empty
+- `show_instructions: bool` - whether to show instructions on how to navigate the prompt
+- `max_items: int` - the maximum number of lines that will be rendered with regards to the list of options (list is scrollable)
+- `root: Path` - the directory the prompt starts in and prioritizes
+- `directory: bool` - whether to only show directories or not
+- `abort_time: float | None` - optional timeout in seconds
 
 When `directory=False`, both files and directories can be shown.
 
@@ -1006,9 +1009,7 @@ from pathlib import Path
 
 from pyclack.prompts import select_path
 
-selected_path: Path = select_path(
-    "Select a file",
-)
+selected_path: Path = select_path(message="Select a file")
 ```
 
 The successful return value is a `Path`.
@@ -1022,12 +1023,11 @@ If the root path does not exist, `FileNotFoundError` is raised.
 ```python
 from pathlib import Path
 
-from pyclack.prompts import CancelException, select_path
+from pyclack.prompts import select_path
+from pyclack import CancelException
 
 try:
-    selected_path: Path = select_path(
-        "Select a file",
-    )
+    selected_path: Path = select_path(message="Select a file")
 except CancelException as e:
     selected_before_cancel: Path | None = e.value
 ```
@@ -1043,10 +1043,11 @@ Pressing Escape or Ctrl+C cancels an active prompt. A prompt may also cancel its
 The prompt raises `CancelException`:
 
 ```python
-from pyclack.prompts import CancelException, ask
+from pyclack.prompts import ask
+from pyclack import CancelException
 
 try:
-    value: str = ask("Value")
+    value: str = ask(message="Value")
 except CancelException as e:
     current_value: str | None = e.value
 ```
@@ -1054,17 +1055,17 @@ except CancelException as e:
 `CancelException` itself is generic:
 
 ```python
-from pyclack.prompts import CancelException
+from pyclack import CancelException
 
-exception: CancelException[str] = CancelException("partial input")
+exception: CancelException[str] = CancelException(message="error ocurred", value="partial input")
 ```
 
 Its `value` attribute is the state the prompt chooses to preserve:
 
 ```python
-from pyclack.prompts import CancelException
+from pyclack import CancelException
 
-exception: CancelException[str] = CancelException("partial input")
+exception: CancelException[str] = CancelException(message="error ocurred", value="partial input")
 
 value: str | None = exception.value
 ```
@@ -1073,17 +1074,17 @@ value: str | None = exception.value
 
 | Prompt | Successful return | `e.value` |
 | --- | --- | --- |
-| `ask()` | `str` | current `str` |
-| `password()` | `str` | current `str` |
-| `confirm()` | `bool` | current `bool` |
-| `pick_date()` | `date` | current date fields as `YYYY-MM-DD` text |
-| `multiline()` | `str` | current `str` |
-| `select()` | `ClackOption[T]` | currently highlighted `ClackOption[T]` |
-| `multiselect()` | `list[ClackOption[T]]` | currently selected options |
-| `autocomplete()` | `ClackOption[T]` | highlighted enabled option, or `None` |
-| `autocomplete_multiselect()` | `list[ClackOption[T]]` | currently selected options |
-| `select_key()` | `ClackOption[str]` | first option |
-| `select_path()` | `Path` | currently highlighted `Path`, or `None` |
+| `ask()` | `str` | current `str` or `None` |
+| `password()` | `str` | current `str` or `None` |
+| `confirm()` | `bool` | current `bool` or `None` |
+| `pick_date()` | `date` | current date fields as `YYYY-MM-DD` text `str` or `None` |
+| `multiline()` | `str` | current `str` or `None` |
+| `select()` | `ClackOption[T]` | currently highlighted option `ClackOption[T]` or `None` |
+| `multiselect()` | `list[ClackOption[T]]` | currently selected options `list[ClackOption[T]] or `None`` |
+| `autocomplete()` | `ClackOption[T]` | currently highlihgted option `ClackOption[T]` or `None` |
+| `autocomplete_multiselect()` | `list[ClackOption[T]]` | currently selected options `list[ClackOption[T]]` or `None` |
+| `select_key()` | `ClackOption[str]` | first option `ClackOption[str]` or `None` |
+| `select_path()` | `Path` | currently highlighted path `Path` or `None` |
 
 The important convention is that cancellation is communicated by the exception, while `e.value` preserves useful component state.
 
@@ -1112,7 +1113,7 @@ from pyclack.widgets import (
 )
 ```
 
-Simple rendering widgets return `None`.
+Simple rendering widgets don't return anything.
 
 Stateful widgets such as `Spinner`, `Progress`, `Activity`, and `TaskLog` are objects whose methods control their lifecycle.
 
@@ -1127,19 +1128,13 @@ Stateful widgets such as `Spinner`, `Progress`, `Activity`, and `TaskLog` are ob
 ```python
 from pyclack.widgets import intro
 
-result: None = intro(
-    "My Application",
-)
+intro(title="My Application")
 ```
 
 It accepts:
 
-- `title: str`
-- `custom_style: Style | None`
-
-### Output
-
-There is no meaningful return value. It renders the intro and returns `None`.
+- `title: str` - the widget title
+- `custom_style: Style | None` - a text custom style to apply to the widget title
 
 ---
 
@@ -1150,17 +1145,13 @@ There is no meaningful return value. It renders the intro and returns `None`.
 ```python
 from pyclack.widgets import outro
 
-result: None = outro(
-    "Done!",
-)
+outro(message="Done!")
 ```
 
 It accepts:
 
-- `message: str`
-- `custom_style: Style | None`
-
-It returns `None`.
+- `message: str` - the widget message
+- `custom_style: Style | None` - a text custom style to apply to the widget message
 
 ---
 
@@ -1171,14 +1162,12 @@ It returns `None`.
 ```python
 from pyclack.widgets import cancel
 
-result: None = cancel(
-    "Operation cancelled.",
-)
+cancel(message="Operation cancelled.")
 ```
 
-This does **not** raise `CancelException`. It is a rendering widget.
+It accepts:
 
-It returns `None`.
+- `message: str` - the cancellation message displayed by the widget
 
 ---
 
@@ -1189,18 +1178,13 @@ It returns `None`.
 ```python
 from pyclack.widgets import note
 
-result: None = note(
-    "Configuration",
-    "Using configuration from pyproject.toml.",
-)
+note(title="Configuration", message="Using configuration from pyproject.toml.")
 ```
 
 Parameters:
 
-- `title: str`
-- `message: str`
-
-It returns `None`.
+- `title: str` - the widget title
+- `message: str` - the message displayed inside the note box
 
 ---
 
@@ -1209,33 +1193,28 @@ It returns `None`.
 `box()` renders text inside a bordered box.
 
 ```python
-from pyclack.prompts import Alignment
+from pyclack import Alignment
 from pyclack.widgets import box
 
-result: None = box(
-    "Build complete.",
+box(
+    content="Build complete.",
     title="Status",
     content_align=Alignment.CENTER,
     title_align=Alignment.LEFT,
-    width=None,
-    rounded=True,
-    title_padding=0,
-    content_padding=2,
+    rounded=True
 )
 ```
 
 Parameters:
 
-- `content: str`
-- `title: str`
-- `content_align: Alignment`
-- `title_align: Alignment`
-- `width: int | None`
-- `rounded: bool`
-- `title_padding: int`
-- `content_padding: int`
-
-It returns `None`.
+- `content: str` - the content text to display inside the box
+- `title: str` - the title for the box widget
+- `content_align: Alignment` - the alignment of the content inside the box
+- `title_align: Alignment` - the alignment of the title on the box
+- `width: int | None` - the maximum allowed width of the box in the terminal, if None then no max is applied
+- `rounded: bool` - wether to use rounded corner for the box or not
+- `title_padding: int` - the spacing on either side of the title on the box
+- `content_padding: int` - the spacing on either side of the content in the box
 
 ---
 
@@ -1246,13 +1225,17 @@ It returns `None`.
 ```python
 from pyclack.widgets import log
 
-message_result: None = log.message("Starting build")
-info_result: None = log.info("Using Python 3.13")
-warning_result: None = log.warning("Configuration file not found")
-error_result: None = log.error("Compilation failed")
-success_result: None = log.success("Build complete")
-step_result: None = log.step("Installing dependencies")
+log.message(msg="Starting build")
+log.info(msg="Using Python 3.13")
+log.warning(msg="Configuration file not found")
+log.error(msg="Compilation failed")
+log.success(msg="Build complete")
+log.step(msg="Installing dependencies")
 ```
+
+These functions accept:
+
+- `msg: str` - the message to display
 
 The semantic levels are:
 
@@ -1266,8 +1249,6 @@ The semantic levels are:
 
 `warn()` is the warning alias.
 
-These methods render directly and return `None`.
-
 ---
 
 # `TaskLog`
@@ -1280,7 +1261,7 @@ These methods render directly and return `None`.
 from pyclack.widgets import TaskLog
 
 task: TaskLog = TaskLog(
-    "Building project",
+    title="Building project",
     limit=5,
     retain_log=False,
 )
@@ -1288,7 +1269,7 @@ task: TaskLog = TaskLog(
 
 Parameters:
 
-- `title: str`
+- `title: str` - the title displayed by the widget
 - `limit: int | None` - maximum number of messages retained/displayed
 - `retain_log: bool` - retain the complete log instead of trimming the stored log to the limit
 
@@ -1297,19 +1278,11 @@ Parameters:
 ```python
 from pyclack.widgets import TaskLog
 
-task: TaskLog = TaskLog("Building")
+task: TaskLog = TaskLog(title="Building")
 
-message_result: None = task.message(
-    "Compiling main.py",
-)
-
-message_result = task.message(
-    "Compiling utils.py",
-)
-
-success_result: None = task.success(
-    "Build complete",
-)
+task.message(msg="Compiling main.py")
+task.message(msg="Compiling utils.py")
+task.success(msg="Build complete")
 ```
 
 Once `success()` is called, the task is marked successful and subsequent `message()` calls are ignored.
@@ -1319,10 +1292,10 @@ Once `success()` is called, the task is marked successful and subsequent `messag
 ```python
 from pyclack.widgets import TaskLog
 
-task: TaskLog = TaskLog("Building")
+task: TaskLog = TaskLog(title="Building")
 
-message_result: None = task.message("Compiling")
-message_result = task.message("Linking")
+task.message(msg="Compiling")
+task.message(msg="Linking")
 
 messages: list[str] = task.get_log()
 ```
@@ -1336,15 +1309,19 @@ Ctrl+C while a `TaskLog` is active raises `CancelException`.
 The current implementation raises it without a value, so:
 
 ```python
-from pyclack.prompts import CancelException
-from pyclack.widgets import TaskLog
+from pyclack import CancelException
+from pyclack.widgets import TaskLog, cancel
 
-task: TaskLog = TaskLog("Building")
+task: TaskLog = TaskLog(title="Building")
 
 try:
-    message_result: None = task.message("Compiling")
-except CancelException as e:
-    value: None = e.value
+    task.message(msg="Compiling")
+    # ... do some work ...
+    # task.message(msg="progress update")
+    # ... more progress updates ...
+except CancelException:
+    cancel('Compiling cancelled!')
+    exit(0)
 ```
 
 ---
@@ -1368,11 +1345,11 @@ spinner: Spinner = Spinner(
 
 Parameters:
 
-- `show_timer: bool`
-- `show_elipse: bool`
+- `show_timer: bool`- whether to display a timer for time elapsed since spinner has started on the widget
+- `show_elipse: bool` - whether to display a loading elipse after the spinner message or not
 - `spinner_delay: float` - milliseconds between spinner frames
 - `elipse_delay: float` - milliseconds between ellipsis frames
-- `spinner_frames: SpinnerSymbols | None`
+- `spinner_frames: SpinnerSymbols | None` - a custom set of spinner frames to use for the spinner animation, uses themes default if None
 
 ### Lifecycle
 
@@ -1381,13 +1358,9 @@ from pyclack.widgets import Spinner
 
 spinner: Spinner = Spinner()
 
-start_result: None = spinner.start(
-    "Installing dependencies",
-)
-
-stop_result: None = spinner.stop(
-    "Dependencies installed",
-)
+spinner.start(msg="Installing dependencies")
+# ... do some work ...
+spinner.stop(msg="Dependencies installed")
 ```
 
 ### Updating the message
@@ -1397,10 +1370,9 @@ from pyclack.widgets import Spinner
 
 spinner: Spinner = Spinner()
 
-start_result: None = spinner.start("Installing")
-message_result: None = spinner.set_message(
-    "Installing package 2/5",
-)
+spinner.start(msg="Installing")
+# ... do some work ...
+spinner.set_message(msg="Installing package 2/5")
 ```
 
 ### Cancellation and errors
@@ -1410,11 +1382,9 @@ from pyclack.widgets import Spinner
 
 spinner: Spinner = Spinner()
 
-start_result: None = spinner.start("Installing")
-
-cancel_result: None = spinner.cancel(
-    "Installation cancelled",
-)
+spinner.start(msg="Installing")
+# ... do some interrupted work ...
+spinner.cancel(msg="Installation cancelled")
 ```
 
 ```python
@@ -1422,11 +1392,9 @@ from pyclack.widgets import Spinner
 
 spinner: Spinner = Spinner()
 
-start_result: None = spinner.start("Installing")
-
-error_result: None = spinner.error(
-    "Installation failed",
-)
+spinner.start(msg="Installing")
+# ... do some failed work ...
+spinner.error(msg="Installation failed")
 ```
 
 ### Clearing
@@ -1436,8 +1404,9 @@ from pyclack.widgets import Spinner
 
 spinner: Spinner = Spinner()
 
-start_result: None = spinner.start("Installing")
-clear_result: None = spinner.clear()
+spinner.start(msg="Installing")
+# ... do some work ...
+spinner.clear()
 ```
 
 ### Checking cancellation
@@ -1450,7 +1419,22 @@ spinner: Spinner = Spinner()
 cancelled: bool = spinner.is_cancelled()
 ```
 
-Ctrl+C is handled specially while the spinner is running. The spinner restores the terminal state during cleanup.
+Ctrl+C raises a `CancelException` while the spinner is running. The spinner restores the terminal state during cleanup.
+
+```python
+from pyclack.widget import Spinner, cancel
+
+spinner: Spinner = Spinner()
+
+spinner.start(msg="Installing")
+try:
+    # ... do some work ...
+except CancelException:
+    spinner.cancel("Installation cancelled")
+    cancel('Operation cancelled')
+    exit(0)
+spinner.stop(msg="Dependencies installed")
+```
 
 ---
 
@@ -1476,41 +1460,59 @@ Parameters include:
 
 - `max: int` - maximum progress value
 - `size: int` - visual width of the progress bar
-- `style: ProgressStyle`
-- `show_timer: bool`
-- `show_elipse: bool`
-- `spinner_delay: float`
-- `elipse_delay: float`
-- `spinner_frames: SpinnerSymbols | None`
+- `style: ProgressStyle` - either LIGHT, HEAVY, or BLOCK
+- `show_timer: bool` - whether to display a timer for time elapsed since the progress bar has started on the widget
+- `show_elipse: bool` - whether to display a loading elipse after the loading message or not
+- `spinner_delay: float` - milliseconds between spinner frames
+- `elipse_delay: float` - milliseconds between ellipsis frames
+- `spinner_frames: SpinnerSymbols | None` - a custom set of spinner frames to use for the spinner animation, uses themes default if None
 
 ### Basic lifecycle
 
 ```python
 from pyclack.widgets import Progress
 
-progress: Progress = Progress(
-    max=100,
-    size=30,
-)
+progress: Progress = Progress(max=100, size=30)
 
-start_result: None = progress.start(
-    "Downloading",
-)
+progress.start(msg="Downloading")
 
-advance_result: None = progress.advance(
-    25,
-)
+progress.advance(amount=25)
+progress.advance(amount=25)
 
-advance_result = progress.advance(
-    25,
-)
+progress.stop(msg="Download complete")
+```
 
-stop_result: None = progress.stop(
-    "Download complete",
-)
+The progress bar also has:
+```python
+progress.error(msg="Download failed")
+```
+```python
+progress.clear()
+```
+```python
+cancelled: bool = progress.is_cancelled()
 ```
 
 The progress widget is stateful: it maintains the current progress and redraws its frame as that state changes.
+
+Ctrl+C raises a `CancelException` while the progress bar is running. The progress bar restores the terminal state during cleanup.
+
+```python
+from pyclack.widgets import Progress
+from pyclack import CancelException, cancel
+
+progress: Progress = Progress(max=100, size=30)
+
+progress.start(msg="Downloading")
+try:
+    for i in range(100):
+        progress.advance()
+except CancelException:
+    progress.cancel(msg="Download cancelled")
+    cancel("Operation cancelled")
+    exit(0)
+progress.stop(msg="Download complete")
+```
 
 ---
 
@@ -1532,12 +1534,12 @@ activity: Activity = Activity(
 
 Parameters:
 
-- `limit: int | None`
-- `show_timer: bool`
-- `show_elipse: bool`
-- `spinner_delay: float`
-- `elipse_delay: float`
-- `spinner_frames: SpinnerSymbols | None`
+- `limit: int | None` - maximum number of messages retained/displayed
+- `show_timer: bool` - whether to display a timer for time elapsed since the activity has started on the widget
+- `show_elipse: bool` - whether to display a loading elipse after the spinner message or not
+- `spinner_delay: float` - milliseconds between spinner frames
+- `elipse_delay: float` - milliseconds between ellipsis frames
+- `spinner_frames: SpinnerSymbols | None` - a custom set of spinner frames to use for the spinner animation, uses themes default if None
 
 ### Lifecycle
 
