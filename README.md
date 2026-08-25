@@ -9,7 +9,7 @@ pyclack brings Clack's interactive prompts, terminal UI components, and styling 
 
 ![pyclack demo](assets/pyclack-demo.gif)
 
-## Features
+I miss-spelled "writing" 😔, but I'm too lazy to re-record and edit this GIF again so deal with it...
 
 - Interactive prompts for text input, multiline input, passwords, confirmations, selections, autocomplete, dates, and filesystem paths
 - Synchronous and asynchronous APIs
