@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "A Python library for building beautiful interactive CLI prompts with clack-style UX."
 readme = "README.md"
 authors = [
-    { name = "Maddox-RVS", email = "rynvnskl@yahoo.com" }
+    { name = "Maddox-RVS", email = "" }
 ]
 requires-python = ">=3.14"
 dependencies = [
