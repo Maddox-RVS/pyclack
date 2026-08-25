@@ -62,7 +62,7 @@ class PromptBase:
 
         read_key_thread: Thread = Thread(target=_reader, daemon=True)
         read_key_thread.start()
-        read_key_thread.join(timeout=self.abort_time)
+        read_key_thread.join(timeout=remaining_time)
 
         if read_key_thread.is_alive(): return None
 
