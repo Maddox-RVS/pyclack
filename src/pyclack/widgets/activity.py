@@ -313,3 +313,5 @@ class Activity:
             
             frame: tuple[Text, ...] = frame_builder.build()
             self._render_frame.draw_frame(*frame)
+
+            time.sleep(0.01) # Relieve some pressure on the CPU
