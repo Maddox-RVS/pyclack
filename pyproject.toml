@@ -1,6 +1,6 @@
 [project]
 name = "pyclack-lib"
-version = "1.0.0"
+version = "1.0.1"
 description = "A Python library for building beautiful interactive CLI prompts with clack-style UX."
 readme = "README.md"
 authors = [

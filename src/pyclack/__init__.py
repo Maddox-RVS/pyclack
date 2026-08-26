@@ -5,3 +5,4 @@ from .prompts import CancelException as CancelException
 from .prompts import ClackOption as ClackOption
 from .prompts import Alignment as Alignment
 from .renderer import Themes as Themes
+from .renderer import Style as Style
