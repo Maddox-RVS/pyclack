@@ -1,6 +1,6 @@
 version = 1
 revision = 3
-requires-python = ">=3.14"
+requires-python = ">=3.10"
 
 [[package]]
 name = "colorama"
@@ -33,8 +33,8 @@ wheels = [
 ]
 
 [[package]]
-name = "pyclack"
-version = "0.1.0"
+name = "pyclack-lib"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },

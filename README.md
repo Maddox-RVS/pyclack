@@ -113,12 +113,12 @@ The easiest way to get started with pyclack is via pip or uv. These methods will
 
 **Using pip:**  
 ```bash
-pip install pyclack
+pip install pyclack-lib
 ```
 
 **Using uv** (recommended for fast virtual environment management):   
 ```bash
-uv add pyclack
+uv add pyclack-lib
 ```
 
 ### Developer Installation & Local Development Build
