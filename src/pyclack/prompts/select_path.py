@@ -409,7 +409,7 @@ class SelectPath(PromptBase):
                 self.text_box_controller.get_cursor_position(),
                 theme.cursor)
             search_text_parts.append(search_input_text)
-            search_text_parts.append((f' ({len(self.searched_options)} matches)'))
+            search_text_parts.append((f' ({len(self.searched_options)} matches)', theme.text))
         search_text: Text = Text.assemble(*search_text_parts)
         search_lines: list[Text] = build_wrapped_lines(
             search_text,

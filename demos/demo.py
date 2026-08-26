@@ -1,8 +1,10 @@
 from pyclack.prompts import ask, autocomplete, autocomplete_multiselect, confirm, multiline, multiselect, password, pick_date, select, select_key, select_path, ClackOption, CancelException
 from pyclack.widgets import intro, outro, cancel, note, TaskLog, log, box, Spinner, Activity, stream, Progress
 from collections.abc import AsyncIterable
+from pyclack import set_active_theme
 from pyclack.renderer import Style
 from typing import LiteralString
+from pyclack import Themes
 from datetime import date
 from pathlib import Path
 from typing import cast
@@ -10,6 +12,37 @@ import subprocess
 import time
 
 def main() -> None:
+    # set_active_theme(Themes.AUTUMN)
+    # set_active_theme(Themes.ARCTIC)
+    # set_active_theme(Themes.CORAL)
+    # set_active_theme(Themes.CRIMSON)
+    # set_active_theme(Themes.CYBERPUNK)
+    # set_active_theme(Themes.DARK)
+    # set_active_theme(Themes.DESERT)
+    # set_active_theme(Themes.FOCUS)
+    # set_active_theme(Themes.FOREST)
+    # set_active_theme(Themes.FROST)
+    # set_active_theme(Themes.GALAXY)
+    # set_active_theme(Themes.GOLD)
+    # set_active_theme(Themes.HIGH_CONTRAST)
+    # set_active_theme(Themes.LIGHT)
+    # set_active_theme(Themes.MATRIX)
+    # set_active_theme(Themes.MIDNIGHT)
+    # set_active_theme(Themes.MINT)
+    # set_active_theme(Themes.MONOCHROME)
+    # set_active_theme(Themes.NEBULA)
+    # set_active_theme(Themes.OCEAN)
+    # set_active_theme(Themes.PASTEL)
+    # set_active_theme(Themes.RETRO)
+    # set_active_theme(Themes.ROYAL)
+    # set_active_theme(Themes.SAKURA)
+    # set_active_theme(Themes.SEPIA)
+    # set_active_theme(Themes.STEEL)
+    # set_active_theme(Themes.SUNSET)
+    # set_active_theme(Themes.TERRA)
+    # set_active_theme(Themes.TWILIGHT)
+    # set_active_theme(Themes.VOLCANO)
+    
     intro('Welcome to the demo', Style(bg_color='blue'))
 
     try:
@@ -221,6 +254,7 @@ def main() -> None:
             progress.advance()
     except CancelException:
         progress.cancel('Download cancelled')
+        cancel('You cancelled the progress widget!')
         exit(0)
     progress.stop('Done!')
 
@@ -251,6 +285,7 @@ def main() -> None:
         stream.step(['streams have steps too!', ' Alright...', ' Goodbye!'])
     except CancelException:
         cancel('You cancelled the stream prompt!')
+        exit(0)
 
     activity: Activity = Activity(limit=8, show_timer=True, show_elipse=True)
     activity.start('Displaying subprocess running Python code below')
@@ -273,6 +308,7 @@ def main() -> None:
             activity.set_activity_message(activity.get_activity_message() + line)
     except CancelException:
         activity.cancel('Activity cancelled')
+        cancel('You cancelled the activity widget!')
         exit(0)
     activity.stop('Finished display!')
 
