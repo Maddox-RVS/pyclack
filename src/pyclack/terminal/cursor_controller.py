@@ -1,6 +1,6 @@
 from colorama import just_fix_windows_console
 
-just_fix_windows_console()  # Fixes Windows console for ANSI escape sequences
+just_fix_windows_console() # Fixes Windows console for ANSI escape sequences
 
 CSI: str = '\x1b[' # Control Sequence Introducer, prefix for all these codes
 
