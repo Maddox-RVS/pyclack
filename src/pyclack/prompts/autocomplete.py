@@ -250,7 +250,7 @@ class Autocomplete(PromptBase):
         else: label_style = theme.text
        
         option_text: Text = Text(widget, widget_style) + ' ' + Text(option.label, label_style)
-        if selected or option.disabled and option.hint: option_text += Text(f' ({option.hint})', theme.muted)
+        if (selected or option.disabled) and option.hint: option_text += Text(f' ({option.hint})', theme.muted)
         return option_text
 
     def _update_search(self) -> None:
