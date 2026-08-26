@@ -94,7 +94,7 @@ class Multiselect(PromptBase):
         
         self._update_view_window()
 
-        self.propogate_key_after_error = True
+        self.propagate_key_after_error = True
         self.abort_time = abort_time
         
         self.activate()

@@ -45,7 +45,7 @@ class PromptBase:
         
         self.current_state: PromptState = PromptState.INITIAL
         self.abort_time: float | None = None
-        self.propogate_key_after_error: bool = False
+        self.propagate_key_after_error: bool = False
 
         self._deadline: float | None = None
 
@@ -198,7 +198,7 @@ class PromptBase:
             self._cancel()
         else:
             self.current_state = PromptState.ACTIVE
-            if self.propogate_key_after_error: self._active(propogation_key=propogate_key)
+            if self.propagate_key_after_error: self._active(propogation_key=propogate_key)
             else: self._active()
 
     def _cancel(self) -> None:

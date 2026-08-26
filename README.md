@@ -66,28 +66,100 @@ uv run examples/my_pyclack_text_script.py
 ---
 
 # Documentation
-
-pyclack is divided into two main concepts:
-
-- **Prompts** interact with the user and return a value.
-- **Widgets** render information to the terminal and generally return `None`.
-
-The synchronous APIs live under `pyclack.prompts` and `pyclack.widgets`.
-
-Asynchronous wrappers are provided under `pyclack.prompts_asyc` and `pyclack.widgets_asyc`. The `asyc` spelling is part of the current package API.
-
+ 
+pyclack has two kinds of building blocks:
+ 
+- **Prompts** collect input from the user and return a value.
+- **Widgets** show output in the terminal and usually return `None`.
+The synchronous API lives under `pyclack.prompts` and `pyclack.widgets`.
+ 
+The asynchronous API lives under `pyclack.prompts_async` and `pyclack.widgets_async`.
+ 
 ---
 
+# `ClackOption`
+ 
+Every selection prompt uses `ClackOption`, a generic dataclass.
+ 
+```python
+from pyclack import ClackOption
+ 
+option: ClackOption[str] = ClackOption[str](
+    value='python',
+    label='Python')
+```
+ 
+Its fields are:
+ 
+```python
+from pyclack import ClackOption
+ 
+option: ClackOption[str] = ClackOption[str](
+    value='python',
+    label='Python',
+    hint='Recommended',
+    disabled=False)
+```
+ 
+- `value: V` - the value the option carries
+- `label: str` - the text shown to the user
+- `hint: str | None` - optional extra text next to the label
+- `disabled: bool` - whether the user can select this option
+## Generic typing convention
+ 
+When you know the type of `value`, parameterize both the annotation and the constructor.
+ 
+```python
+from pyclack import ClackOption
+ 
+integer_option: ClackOption[int] = ClackOption[int](
+    value=3,
+    label='Three')
+```
+ 
+For a `str` value:
+ 
+```python
+from pyclack import ClackOption
+ 
+string_option: ClackOption[str] = ClackOption[str](
+    value='python',
+    label='Python')
+```
+ 
+For a custom type:
+ 
+```python
+from dataclasses import dataclass
+ 
+from pyclack import ClackOption
+ 
+@dataclass
+class Language:
+    name: str
+    version: str
+ 
+language: Language = Language(
+    name='Python',
+    version='3.13')
+ 
+option: ClackOption[Language] = ClackOption[Language](
+    value=language,
+    label='Python 3.13')
+```
+ 
+---
+ 
 # Prompts
-
-All prompts block until the user submits, cancels, or an `abort_time` expires.
-
-A successful prompt returns its documented value.
-
-A cancelled prompt raises `CancelException` rather than returning a special sentinel value.
-
+ 
+A prompt blocks until the user submits, cancels, or its `abort_time` runs out.
+ 
+A successful prompt returns the value described in its own section below.
+ 
+A cancelled prompt raises `CancelException`. It does not return a special value for cancellation.
+ 
 ## Prompt overview
-
+ 
 | Prompt | Purpose | Successful return |
 | --- | --- | --- |
 | `ask()` | Single-line text input | `str` |
@@ -101,1144 +173,929 @@ A cancelled prompt raises `CancelException` rather than returning a special sent
 | `autocomplete_multiselect()` | Filtered multiple selection | `list[ClackOption[T]]` |
 | `select_key()` | Selection by pressing a key | `ClackOption[str]` |
 | `select_path()` | Filesystem path selection | `Path` |
-
-The public prompt imports are:
-
+ 
+Import any prompt from `pyclack.prompts`:
+ 
 ```python
-from pyclack.prompts import (
-    ask,
-    autocomplete,
-    autocomplete_multiselect,
-    confirm,
-    multiline,
-    multiselect,
-    password,
-    pick_date,
-    select,
-    select_key,
-    select_path,
-)
+from pyclack.prompts import ask, autocomplete, autocomplete_multiselect, confirm, multiline, multiselect, password, pick_date, select, select_key, select_path
 ```
-
+ 
 ## Common prompt options
-
-Several prompts support an `abort_time`.
-
+ 
+Most prompts accept an `abort_time`, in seconds. When it runs out, the prompt cancels itself.
+ 
 ```python
 from pyclack.prompts import ask
-
+ 
 name: str = ask(
-    message="Name",
-    abort_time=10.0
-)
+    message='What is your name?',
+    abort_time=10.0)
 ```
-
-If the timeout expires, the prompt enters its cancellation path.
-
-Validation functions use the convention:
-
+ 
+Most prompts also accept a `validate` function.
+ 
 ```python
 from pyclack.prompts import ask
-
+ 
 def validate_name(value: str) -> str | None:
-    if not value:
-        return "Name cannot be empty"
-
+    if not value: return 'Name cannot be empty'
+ 
 name: str = ask(
-    message="Name",
-    validate=validate_name
-)
+    message='What is your name?',
+    validate=validate_name)
 ```
-
-Return `None` when the value is valid. Return a string containing the validation error when it is invalid.
-
+ 
+`validate` returns `None` when the value passes. It returns a `str` error message when the value fails.
+ 
 ---
-
+ 
 # `ask()`
-
-`ask()` collects a single line of text.
-
+ 
+`ask()` collects one line of text.
+ 
 ### Input
-
+ 
 ```python
 from pyclack.prompts import ask
-
+ 
 name: str = ask(
-    message="What is your name?",
-    placeholder="(e.g. Bobby)"
-)
+    message='What is your name?',
+    placeholder='(e.g. Bobby)')
 ```
-
+ 
 Parameters:
-
-- `message: str` - prompt message
-- `placeholder: str | None` - text displayed when the input is empty
-- `initial_value: str | None` - initial text in the prompt
-- `validate: Callable[[str], str | None] | None` - optional validator
-- `abort_time: float | None` - optional timeout in seconds
-
+ 
+- `message: str` - the prompt message
+- `placeholder: str | None` - text shown when the input is empty
+- `initial_value: str | None` - the starting text in the input
+- `validate: Callable[[str], str | None] | None` - an optional validator
+- `abort_time: float | None` - an optional timeout, in seconds
 ### Output
-
+ 
 ```python
 from pyclack.prompts import ask
-
-name: str = ask("Name")
+ 
+name: str = ask('What is your name?')
 ```
-
-The returned value is the entered `str`.
-
+ 
+The return value is the entered `str`.
+ 
 ### Cancellation
-
-`e.value` is the current input buffer.
-
+ 
+`e.value` holds the text the user had typed at the time of cancellation.
+ 
 ```python
 from pyclack.prompts import CancelException, ask
-
+ 
 try:
-    name: str = ask("Name")
+    name: str = ask('What is your name?')
 except CancelException as e:
     current_name: str | None = e.value
 ```
-
+ 
 ---
-
+ 
 # `password()`
-
-`password()` collects text without displaying the entered characters normally.
-
+ 
+`password()` collects text and masks each character as the user types it.
+ 
 ### Input
-
+ 
 ```python
 from pyclack.prompts import password
-
+ 
 secret: str = password(
-    message="Password",
-    show_nothing=False
-)
+    message='Create a password',
+    show_nothing=False)
 ```
-
+ 
 Parameters:
-
-- `message: str` - prompt message
-- `mask: Symbol | None` - custom masking symbol
-- `show_nothing: bool` - hide the entered characters completely
-- `clear_on_error: bool` - clear the input after validation failure
-- `validate: Callable[[str], str | None] | None` - optional validator
-- `abort_time: float | None` - optional timeout in seconds
-
-The default mask comes from the active theme.
-
+ 
+- `message: str` - the prompt message
+- `mask: Symbol | None` - a custom mask symbol
+- `show_nothing: bool` - hide the entered characters completely, with no mask at all
+- `clear_on_error: bool` - clear the input after a failed validation
+- `validate: Callable[[str], str | None] | None` - an optional validator
+- `abort_time: float | None` - an optional timeout, in seconds
+The active theme sets the default mask symbol.
+ 
 ### Output
-
+ 
 ```python
 from pyclack.prompts import password
-
-secret: str = password("Password")
+ 
+secret: str = password('Create a password')
 ```
-
-The returned value is the actual entered `str`, not the masked representation.
-
+ 
+The return value is the entered `str`, in plain text. It is never the masked text.
+ 
 ### Cancellation
-
-`e.value` is the current password input.
-
+ 
+`e.value` holds the password text entered so far.
+ 
 ```python
 from pyclack.prompts import CancelException, password
-
+ 
 try:
-    secret: str = password("Password")
+    secret: str = password('Create a password')
 except CancelException as e:
     current_secret: str | None = e.value
 ```
-
+ 
 ---
-
+ 
 # `confirm()`
-
-`confirm()` presents two choices and returns a boolean.
-
+ 
+`confirm()` asks a yes/no question and returns a `bool`.
+ 
 ### Input
-
+ 
 ```python
 from pyclack.prompts import confirm
-
-confirmed: bool = confirm("Continue?")
+ 
+confirmed: bool = confirm('Continue?')
 ```
-
+ 
 Parameters:
-
-- `message: str` - prompt message
-- `active: str` - label for `True`
-- `inactive: str` - label for `False`
-- `vertical: bool` - render the choices vertically
-- `default_option: bool` - initial selection
-- `abort_time: float | None` - optional timeout in seconds
-
+ 
+- `message: str` - the prompt message
+- `active: str` - the label for `True`
+- `inactive: str` - the label for `False`
+- `vertical: bool` - stack the two choices vertically instead of side by side
+- `default_option: bool` - the option selected when the prompt opens
+- `abort_time: float | None` - an optional timeout, in seconds
 ### Output
-
+ 
 ```python
 from pyclack.prompts import confirm
-
-confirmed: bool = confirm("Continue?")
+ 
+confirmed: bool = confirm('Continue?')
 ```
-
-The result is `True` or `False`.
-
+ 
+The return value is `True` or `False`.
+ 
 ### Cancellation
-
-`e.value` is the currently selected boolean.
-
+ 
+`e.value` holds the option selected at the time of cancellation.
+ 
 ```python
 from pyclack.prompts import CancelException, confirm
-
+ 
 try:
-    confirmed: bool = confirm("Continue?")
+    confirmed: bool = confirm('Continue?')
 except CancelException as e:
     current_choice: bool | None = e.value
 ```
-
+ 
 ---
-
+ 
 # `pick_date()`
-
-`pick_date()` selects a date constrained by a minimum and maximum date.
-
+ 
+`pick_date()` collects a date within a minimum and maximum bound.
+ 
 ### Input
-
+ 
 ```python
 from datetime import date
-
+ 
 from pyclack.prompts import pick_date
-
+ 
 release_date: date = pick_date(
-    message="Release date",
+    message='Release date',
     initial_date=date.today(),
     min_date=date(2026, 1, 1),
-    max_date=date(2030, 12, 31)
-)
+    max_date=date(2030, 12, 31))
 ```
-
+ 
 Parameters:
-
-- `message: str` - prompt message
-- `initial_date: date` - the initial date the prompt should start with
-- `min_date: date` - the minimum date the prompt will accept
-- `max_date: date` - the maximum date the prompt will accept
-- `validate: Callable[[date], str | None] | None` - optional validator
-- `abort_time: float | None` - optional timeout in seconds
-
-The date is entered as `mm/dd/yyyy`.
-
+ 
+- `message: str` - the prompt message
+- `initial_date: date` - the date the prompt starts on
+- `min_date: date` - the earliest date the prompt accepts
+- `max_date: date` - the latest date the prompt accepts
+- `validate: Callable[[date], str | None] | None` - an optional validator
+- `abort_time: float | None` - an optional timeout, in seconds
+The user enters the date as `mm/dd/yyyy`.
+ 
 ### Output
-
+ 
 ```python
 from datetime import date
-
+ 
 from pyclack.prompts import pick_date
-
+ 
 release_date: date = pick_date(
-    "Release date",
+    'Release date',
     initial_date=date.today(),
     min_date=date(2026, 1, 1),
-    max_date=date(2030, 12, 31)
-)
+    max_date=date(2030, 12, 31))
 ```
-
-The successful return value is a `datetime.date`.
-
+ 
+The return value is a `datetime.date`.
+ 
 ### Cancellation
-
-The current date fields are converted to a `YYYY-MM-DD` string and stored in `e.value`.
-
+ 
+At cancellation, pyclack converts the current date fields to a `YYYY-MM-DD` string and stores that string in `e.value`.
+ 
 ```python
 from datetime import date
-
+ 
 from pyclack.prompts import CancelException, pick_date
-
+ 
 try:
     release_date: date = pick_date(
-        "Release date",
+        'Release date',
         initial_date=date.today(),
         min_date=date(2026, 1, 1),
-        max_date=date(2030, 12, 31)
-    )
+        max_date=date(2030, 12, 31))
 except CancelException as e:
     current_date: str | None = e.value
 ```
-
+ 
 ---
-
+ 
 # `multiline()`
-
-`multiline()` collects text containing multiple lines.
-
+ 
+`multiline()` collects text that can span several lines.
+ 
 ### Input
-
+ 
 ```python
 from pyclack.prompts import multiline
-
+ 
 description: str = multiline(
-    message="Description",
-    placeholder="Enter a description...",
-    show_submit=True
-)
+    message='Description',
+    placeholder='Enter a description...',
+    show_submit=True)
 ```
-
+ 
 Parameters:
-
-- `message: str` - prompt message
-- `placeholder: str | None` - text displayed when the input is empty
-- `initial_value: str | None` - the initial text in the prompt
-- `validate: Callable[[str], str | None] | None` - optional validator
-- `show_submit: bool` - whether to show a submit button or not
-- `abort_time: float | None` - optional timeout in seconds
-
-When `show_submit=False`, pressing Enter twice submits.
-
-When `show_submit=True`, Tab moves focus to the submit button and Enter submits while it is focused.
-
+ 
+- `message: str` - the prompt message
+- `placeholder: str | None` - text shown when the input is empty
+- `initial_value: str | None` - the starting text in the input
+- `validate: Callable[[str], str | None] | None` - an optional validator
+- `show_submit: bool` - show a submit button the user can move focus to
+- `abort_time: float | None` - an optional timeout, in seconds
+When `show_submit=False`, pressing Enter twice in a row submits the input.
+ 
+When `show_submit=True`, Tab moves focus to the submit button, then Enter submits.
+ 
 ### Output
-
+ 
 ```python
 from pyclack.prompts import multiline
-
-description: str = multiline("Description")
+ 
+description: str = multiline('Description')
 ```
-
-The returned `str` contains the entered newline characters.
-
+ 
+The return value is a `str`. It keeps the newline characters the user typed.
+ 
 ### Cancellation
-
-`e.value` is the current multiline input.
-
+ 
+`e.value` holds the text entered so far.
+ 
 ```python
 from pyclack.prompts import CancelException, multiline
-
+ 
 try:
-    description: str = multiline("Description")
+    description: str = multiline('Description')
 except CancelException as e:
     current_description: str | None = e.value
 ```
-
+ 
 ---
-
-# `ClackOption`
-
-Selection prompts use `ClackOption`, a generic dataclass containing:
-
-```python
-from pyclack import ClackOption
-
-option: ClackOption[str] = ClackOption[str](
-    value="python",
-    label="Python"
-)
-```
-
-Its fields are:
-
-```python
-from pyclack import ClackOption
-
-option: ClackOption[str] = ClackOption[str](
-    value="python",
-    label="Python",
-    hint="Recommended",
-    disabled=False
-)
-```
-
-- `value: V` - the actual value associated with the option
-- `label: str` - text displayed to the user
-- `hint: str | None` - optional additional text
-- `disabled: bool` - whether the option can be selected
-
-## Generic typing convention
-
-When the type of `value` is known, parameterize **both** the annotation and the constructor.
-
-```python
-from pyclack import ClackOption
-
-integer_option: ClackOption[int] = ClackOption[int](
-    value=3,
-    label="Three"
-)
-```
-
-For a string:
-
-```python
-from pyclack import ClackOption
-
-string_option: ClackOption[str] = ClackOption[str](
-    value="python",
-    label="Python"
-)
-```
-
-For a custom type:
-
-```python
-from dataclasses import dataclass
-
-from pyclack import ClackOption
-
-@dataclass
-class Language:
-    name: str
-    version: str
-
-language: Language = Language(
-    name="Python",
-    version="3.13"
-)
-
-option: ClackOption[Language] = ClackOption[Language](
-    value=language,
-    label="Python 3.13"
-)
-```
-
-Do not drop the generic parameter when the type is already known.
-
-Prefer:
-
-```python
-from pyclack import ClackOption
-
-integer_option: ClackOption[int] = ClackOption[int](
-    value=3,
-    label="Three"
-)
-```
-
-over:
-
-```python
-from pyclack.prompts import ClackOption
-
-integer_option: ClackOption[int] = ClackOption(
-    value=3,
-    label="Three"
-)
-```
-
----
-
+ 
 # `select()`
-
+ 
 `select()` lets the user choose exactly one option.
-
+ 
 ### Input
-
+ 
 ```python
 from pyclack import ClackOption
 from pyclack.prompts import select
-
+ 
 options: list[ClackOption[str]] = [
-    ClackOption[str](
-        value="python",
-        label="Python"
-    ),
-    ClackOption[str](
-        value="rust",
-        label="Rust"
-    ),
-    ClackOption[str](
-        value="go",
-        label="Go"
-    ),
-]
-
+    ClackOption[str](value='python', label='Python'),
+    ClackOption[str](value='rust', label='Rust'),
+    ClackOption[str](value='go', label='Go')]
+ 
 selected: ClackOption[str] = select(
-    message="Choose a language",
-    options=options
-)
+    message='Choose a language',
+    options=options)
 ```
-
+ 
 Parameters:
-
-- `message: str` - prompt message
-- `options: list[ClackOption[T]]` - a list of options for the select prompt to iterate over
-- `show_instructions: bool` - whether to show instructions on how to navigate the prompt
-- `max_items: int` - the maximum number of lines that will be rendered with regards to the list of options (list is scrollable)
-- `abort_time: float | None` - optional timeout in seconds
-
-`max_items` controls the visible option window. The implementation keeps a minimum display size of five.
-
+ 
+- `message: str` - the prompt message
+- `options: list[ClackOption[T]]` - the list of options to choose from
+- `show_instructions: bool` - show navigation instructions above the list
+- `max_items: int` - the maximum number of option lines shown at once (the list scrolls past this)
+- `abort_time: float | None` - an optional timeout, in seconds
+`max_items` sets the size of the visible window into the option list. pyclack keeps this window at least 5 lines tall, even if you pass a smaller value.
+ 
 ### Output
-
+ 
 The return value is the selected `ClackOption`, not its `.value`.
-
+ 
 ```python
 from pyclack import ClackOption
 from pyclack.prompts import select
-
+ 
 options: list[ClackOption[int]] = [
-    ClackOption[int](value=1, label="One"),
-    ClackOption[int](value=2, label="Two"),
-    ClackOption[int](value=3, label="Three")
-]
-
+    ClackOption[int](value=1, label='One'),
+    ClackOption[int](value=2, label='Two'),
+    ClackOption[int](value=3, label='Three')]
+ 
 selected: ClackOption[int] = select(
-    message="Choose a number",
-    options=options,
-)
-
+    message='Choose a number',
+    options=options)
+ 
 number: int = selected.value
 ```
-
+ 
 ### Cancellation
-
-`e.value` is the currently highlighted `ClackOption`.
-
+ 
+`e.value` holds the option that was highlighted at the time of cancellation.
+ 
 ```python
-from pyclack import ClackOption, CancelException
+from pyclack import CancelException, ClackOption
 from pyclack.prompts import select
-
+ 
 options: list[ClackOption[str]] = [
-    ClackOption[str](value="python", label="Python"),
-    ClackOption[str](value="rust", label="Rust")
-]
-
+    ClackOption[str](value='python', label='Python'),
+    ClackOption[str](value='rust', label='Rust')]
+ 
 try:
     selected: ClackOption[str] = select(
-        message="Language",
-        options=options,
-    )
+        message='Language',
+        options=options)
 except CancelException as e:
     selected_before_cancel: ClackOption[str] | None = e.value
 ```
-
+ 
 An empty option list, or an option list where every option is disabled, raises `RuntimeError`.
-
+ 
 ---
-
+ 
 # `multiselect()`
-
-`multiselect()` lets the user select multiple options.
-
+ 
+`multiselect()` lets the user select more than one option.
+ 
 ### Input
-
+ 
 ```python
-from pyclack.prompts import multiselect
 from pyclack import ClackOption
-
+from pyclack.prompts import multiselect
+ 
 options: list[ClackOption[str]] = [
-    ClackOption[str](value="git", label="Git"),
-    ClackOption[str](value="docker", label="Docker"),
-    ClackOption[str](value="pytest", label="Pytest")
-]
-
+    ClackOption[str](value='git', label='Git'),
+    ClackOption[str](value='docker', label='Docker'),
+    ClackOption[str](value='pytest', label='Pytest')]
+ 
 selected: list[ClackOption[str]] = multiselect(
-    message="Select tools",
-    options=options
-)
+    message='Select tools',
+    options=options)
 ```
-
+ 
 Parameters:
-
-- `message: str` - prompt message
-- `options: list[ClackOption[T]]` - a list of options for the select prompt to iterate over
-- `show_instructions: bool` - whether to show instructions on how to navigate the prompt
-- `max_items: int` - the maximum number of lines that will be rendered with regards to the list of options (list is scrollable)
-- `abort_time: float | None` - optional timeout in seconds
-
+ 
+- `message: str` - the prompt message
+- `options: list[ClackOption[T]]` - the list of options to choose from
+- `show_instructions: bool` - show navigation instructions above the list
+- `max_items: int` - the maximum number of option lines shown at once (the list scrolls past this)
+- `abort_time: float | None` - an optional timeout, in seconds
 Space selects or deselects the focused option.
-
+ 
 ### Output
-
+ 
 ```python
-from pyclack.prompts import multiselect
 from pyclack import ClackOption
-
-options: list[ClackOption[str]] = [
-    ClackOption[str](value="git", label="Git"),
-    ClackOption[str](value="docker", label="Docker")
-]
-
-selected: list[ClackOption[str]] = multiselect(
-    message="Select tools",
-    options=options
-)
-
-tools: list[str] = [
-    option.value
-    for option in selected
-]
-```
-
-### Cancellation
-
-`e.value` is the list of options selected so far.
-
-```python
 from pyclack.prompts import multiselect
-from pyclack import ClackOption, CancelException
-
+ 
 options: list[ClackOption[str]] = [
-    ClackOption[str](value="git", label="Git"),
-    ClackOption[str](value="docker", label="Docker")
-]
-
+    ClackOption[str](value='git', label='Git'),
+    ClackOption[str](value='docker', label='Docker')]
+ 
+selected: list[ClackOption[str]] = multiselect(
+    message='Select tools',
+    options=options)
+ 
+tools: list[str] = [option.value for option in selected]
+```
+ 
+### Cancellation
+ 
+`e.value` holds the list of options selected so far. It is an empty list if nothing was selected yet.
+ 
+```python
+from pyclack import CancelException, ClackOption
+from pyclack.prompts import multiselect
+ 
+options: list[ClackOption[str]] = [
+    ClackOption[str](value='git', label='Git'),
+    ClackOption[str](value='docker', label='Docker')]
+ 
 try:
     selected: list[ClackOption[str]] = multiselect(
-        message="Select tools",
-        optins=options
-    )
+        message='Select tools',
+        options=options)
 except CancelException as e:
     selected_before_cancel: list[ClackOption[str]] | None = e.value
 ```
-
+ 
 An empty option list, or an option list where every option is disabled, raises `RuntimeError`.
-
+ 
 ---
-
+ 
 # `autocomplete()`
-
-`autocomplete()` combines text filtering with single-option selection.
-
+ 
+`autocomplete()` adds text search on top of single-option selection.
+ 
 ### Input
-
+ 
 ```python
-from pyclack.prompts import autocomplete
 from pyclack import ClackOption
-
+from pyclack.prompts import autocomplete
+ 
 options: list[ClackOption[str]] = [
-    ClackOption[str](value="python", label="Python"),
-    ClackOption[str](value="rust", label="Rust"),
-    ClackOption[str](value="javascript", label="JavaScript")
-]
-
+    ClackOption[str](value='python', label='Python'),
+    ClackOption[str](value='rust', label='Rust'),
+    ClackOption[str](value='javascript', label='JavaScript')]
+ 
 selected: ClackOption[str] = autocomplete(
-    message="Language",
+    message='Language',
     options=options,
-    placeholder="Type to search..."
-)
+    placeholder='Type to search...')
 ```
-
+ 
 Parameters:
-
-- `message: str` - prompt message
-- `options: list[ClackOption[T]]` - a list of options for the select prompt to iterate over
-- `placeholder: str` - text displayed when the input is empty
-- `show_instructions: bool` - whether to show instructions on how to navigate the prompt
-- `max_items: int` - the maximum number of lines that will be rendered with regards to the list of options (list is scrollable)
-- `filter: Callable[[str, list[ClackOption[T]]], list[ClackOption[T]]] | None` - optional filter to use for search
-- `abort_time: float | None` - optional timeout in seconds
-
-The default filter is used when `filter=None`.
-
-A custom filter receives the current search string and the full option list.
-
+ 
+- `message: str` - the prompt message
+- `options: list[ClackOption[T]]` - the list of options to choose from
+- `placeholder: str` - text shown when the search input is empty
+- `show_instructions: bool` - show navigation instructions above the list
+- `max_items: int` - the maximum number of option lines shown at once (the list scrolls past this)
+- `filter: Callable[[str, list[ClackOption[T]]], list[ClackOption[T]]] | None` - an optional custom search filter
+- `abort_time: float | None` - an optional timeout, in seconds
+When `filter=None`, pyclack uses its default filter.
+ 
+A custom filter receives the current search text and the full option list, and returns the options to show.
+ 
 ```python
-from pyclack.prompts import autocomplete
 from pyclack import ClackOption
-
-def filter_options(
-    search: str,
-    options: list[ClackOption[str]],
-) -> list[ClackOption[str]]:
+from pyclack.prompts import autocomplete
+ 
+def filter_options(search: str, options: list[ClackOption[str]]) -> list[ClackOption[str]]:
     search_lower: str = search.lower()
-
-    return [
-        option
-        for option in options
-        if search_lower in option.label.lower()
-    ]
-
+    return [option for option in options if search_lower in option.label.lower()]
+ 
 options: list[ClackOption[str]] = [
-    ClackOption[str](value="python", label="Python"),
-    ClackOption[str](value="rust", label="Rust")
-]
-
+    ClackOption[str](value='python', label='Python'),
+    ClackOption[str](value='rust', label='Rust')]
+ 
 selected: ClackOption[str] = autocomplete(
-    message="Language",
+    message='Language',
     options=options,
-    filter=filter_options
-)
+    filter=filter_options)
 ```
-
+ 
 ### Output
-
-The selected `ClackOption` is returned.
-
+ 
+The return value is the selected `ClackOption`.
+ 
 ```python
-from pyclack.prompts import autocomplete
 from pyclack import ClackOption
-
+from pyclack.prompts import autocomplete
+ 
 options: list[ClackOption[int]] = [
-    ClackOption[int](value=1, label="One"),
-    ClackOption[int](value=2, label="Two")
-]
-
+    ClackOption[int](value=1, label='One'),
+    ClackOption[int](value=2, label='Two')]
+ 
 selected: ClackOption[int] = autocomplete(
-    message="Number",
-    options=options
-)
-
+    message='Number',
+    options=options)
+ 
 number: int = selected.value
 ```
-
+ 
 ### Cancellation
-
-`e.value` is the currently highlighted enabled option, or `None` if there is no usable selected option.
-
+ 
+`e.value` holds the currently highlighted, enabled option. It is `None` when no option is usable.
+ 
 ```python
+from pyclack import CancelException, ClackOption
 from pyclack.prompts import autocomplete
-from pyclack import ClackOption, CancelException
-
+ 
 options: list[ClackOption[str]] = [
-    ClackOption[str](value="python", label="Python"),
-    ClackOption[str](value="rust", label="Rust"),
-]
-
+    ClackOption[str](value='python', label='Python'),
+    ClackOption[str](value='rust', label='Rust')]
+ 
 try:
     selected: ClackOption[str] = autocomplete(
-        message="Language",
-        options=options
-    )
+        message='Language',
+        options=options)
 except CancelException as e:
     selected_before_cancel: ClackOption[str] | None = e.value
 ```
-
+ 
 An empty option list, or an option list where every option is disabled, raises `RuntimeError`.
-
+ 
 ---
-
+ 
 # `autocomplete_multiselect()`
-
-`autocomplete_multiselect()` combines autocomplete filtering with multiple selection.
-
+ 
+`autocomplete_multiselect()` adds text search on top of multiple selection.
+ 
 ### Input
-
+ 
 ```python
-from pyclack.prompts import autocomplete_multiselect
 from pyclack import ClackOption
-
+from pyclack.prompts import autocomplete_multiselect
+ 
 options: list[ClackOption[str]] = [
-    ClackOption[str](value="git", label="Git"),
-    ClackOption[str](value="docker", label="Docker"),
-    ClackOption[str](value="pytest", label="Pytest")
-]
-
+    ClackOption[str](value='git', label='Git'),
+    ClackOption[str](value='docker', label='Docker'),
+    ClackOption[str](value='pytest', label='Pytest')]
+ 
 selected: list[ClackOption[str]] = autocomplete_multiselect(
-    message="Select tools",
-    options=options
-)
+    message='Select tools',
+    options=options)
 ```
-
+ 
 Parameters:
-
-- `message: str` - prompt message
-- `options: list[ClackOption[T]]` - a list of options for the select prompt to iterate over
-- `placeholder: str` - text displayed when the input is empty
-- `show_instructions: bool` - whether to show instructions on how to navigate the prompt
-- `max_items: int` - the maximum number of lines that will be rendered with regards to the list of options (list is scrollable)
-- `filter: Callable[[str, list[ClackOption[T]]], list[ClackOption[T]]] | None` - optional filter to use for search
-- `abort_time: float | None` - optional timeout in seconds
-
+ 
+- `message: str` - the prompt message
+- `options: list[ClackOption[T]]` - the list of options to choose from
+- `placeholder: str` - text shown when the search input is empty
+- `show_instructions: bool` - show navigation instructions above the list
+- `max_items: int` - the maximum number of option lines shown at once (the list scrolls past this)
+- `filter: Callable[[str, list[ClackOption[T]]], list[ClackOption[T]]] | None` - an optional custom search filter
+- `abort_time: float | None` - an optional timeout, in seconds
 Space selects or deselects the highlighted option.
-
+ 
 ### Output
-
+ 
 ```python
-from pyclack.prompts import autocomplete_multiselect
 from pyclack import ClackOption
-
-options: list[ClackOption[int]] = [
-    ClackOption[int](value=1, label="One"),
-    ClackOption[int](value=2, label="Two")
-]
-
-selected: list[ClackOption[int]] = autocomplete_multiselect(
-    message="Select numbers",
-    options=options
-)
-
-numbers: list[int] = [
-    option.value
-    for option in selected
-]
-```
-
-### Cancellation
-
-`e.value` is the current list of selected options. If nothing has been selected, it is an empty list.
-
-```python
 from pyclack.prompts import autocomplete_multiselect
-from pyclack import ClackOption, CancelException
-
+ 
+options: list[ClackOption[int]] = [
+    ClackOption[int](value=1, label='One'),
+    ClackOption[int](value=2, label='Two')]
+ 
+selected: list[ClackOption[int]] = autocomplete_multiselect(
+    message='Select numbers',
+    options=options)
+ 
+numbers: list[int] = [option.value for option in selected]
+```
+ 
+### Cancellation
+ 
+`e.value` holds the list of options selected so far. It is an empty list if nothing was selected yet.
+ 
+```python
+from pyclack import CancelException, ClackOption
+from pyclack.prompts import autocomplete_multiselect
+ 
 options: list[ClackOption[str]] = [
-    ClackOption[str](value="git", label="Git"),
-    ClackOption[str](value="docker", label="Docker"),
-]
-
+    ClackOption[str](value='git', label='Git'),
+    ClackOption[str](value='docker', label='Docker')]
+ 
 try:
     selected: list[ClackOption[str]] = autocomplete_multiselect(
-        message="Select tools",
-        options=options
-    )
+        message='Select tools',
+        options=options)
 except CancelException as e:
     selected_before_cancel: list[ClackOption[str]] | None = e.value
 ```
-
+ 
 An empty option list, or an option list where every option is disabled, raises `RuntimeError`.
-
+ 
 ---
-
+ 
 # `select_key()`
-
-`select_key()` selects an option by pressing its key.
-
-The option value must be a valid string key.
-
+ 
+`select_key()` selects an option when the user presses its key.
+ 
+Each option's `value` must be the key string that selects it.
+ 
 ### Input
-
+ 
 ```python
-from pyclack.prompts import select_key
 from pyclack import ClackOption
-
+from pyclack.prompts import select_key
+ 
 options: list[ClackOption[str]] = [
-    ClackOption[str](value="y", label="Yes"),
-    ClackOption[str](value="n", label="No"),
-    ClackOption[str](value="s", label="Skip")
-]
-
+    ClackOption[str](value='y', label='Yes'),
+    ClackOption[str](value='n', label='No'),
+    ClackOption[str](value='s', label='Skip')]
+ 
 selected: ClackOption[str] = select_key(
-    message="Choose an action",
+    'Choose an action',
     options=options,
-    case_sensitive=True
-)
+    case_sensitive=True)
 ```
-
+ 
 Parameters:
-
-- `message: str` - prompt message
-- `options: list[ClackOption[str]]` - a list of options for the select prompt to iterate over
-- `case_sensitive: bool` - whether to treat capital and lower case variations of the same letters as identical or not
-- `abort_time: float | None` - optional timeout in seconds
-
-Pressing Enter selects the first option.
-
+ 
+- `message: str` - the prompt message
+- `options: list[ClackOption[str]]` - the list of options to choose from
+- `case_sensitive: bool` - treat upper and lower case key presses as different keys
+- `abort_time: float | None` - an optional timeout, in seconds
+Pressing Enter selects the first option in the list.
+ 
 ### Output
-
+ 
 ```python
-from pyclack.prompts import select_key
 from pyclack import ClackOption
-
+from pyclack.prompts import select_key
+ 
 options: list[ClackOption[str]] = [
-    ClackOption[str](value="y", label="Yes"),
-    ClackOption[str](value="n", label="No")
-]
-
+    ClackOption[str](value='y', label='Yes'),
+    ClackOption[str](value='n', label='No')]
+ 
 selected: ClackOption[str] = select_key(
-    message="Continue?",
-    options=options
-)
-
+    'Continue?',
+    options=options)
+ 
 key: str = selected.value
 ```
-
+ 
 ### Cancellation
-
-`e.value` is the first option in the option list.
-
+ 
+`e.value` holds the first option in the list.
+ 
 ```python
+from pyclack import CancelException, ClackOption
 from pyclack.prompts import select_key
-from pyclack import ClackOption, CancelException
-
+ 
 options: list[ClackOption[str]] = [
-    ClackOption[str](value="y", label="Yes"),
-    ClackOption[str](value="n", label="No")
-]
-
+    ClackOption[str](value='y', label='Yes'),
+    ClackOption[str](value='n', label='No')]
+ 
 try:
     selected: ClackOption[str] = select_key(
-        message="Continue?",
-        options=options
-    )
+        'Continue?',
+        options=options)
 except CancelException as e:
     default_option: ClackOption[str] | None = e.value
 ```
-
-The prompt raises `RuntimeError` for invalid or duplicate key values, empty options, or all-disabled options.
-
+ 
+`select_key()` raises `RuntimeError` for an invalid or duplicate key value, an empty option list, or an option list where every option is disabled.
+ 
 ---
-
+ 
 # `select_path()`
-
-`select_path()` provides an autocomplete-style filesystem selector.
-
+ 
+`select_path()` is an autocomplete-style filesystem picker.
+ 
 ### Input
-
+ 
 ```python
 from pathlib import Path
-
+ 
 from pyclack.prompts import select_path
-
+ 
 selected_path: Path = select_path(
-    message="Select a path",
+    message='Select a path',
     root=Path.cwd(),
-    directory=False
-)
+    directory=False)
 ```
-
+ 
 Parameters:
-
-- `message: str` - prompt message
-- `placeholder: str` - text displayed when the input is empty
-- `show_instructions: bool` - whether to show instructions on how to navigate the prompt
-- `max_items: int` - the maximum number of lines that will be rendered with regards to the list of options (list is scrollable)
-- `root: Path` - the directory the prompt starts in and prioritizes
-- `directory: bool` - whether to only show directories or not
-- `abort_time: float | None` - optional timeout in seconds
-
-When `directory=False`, both files and directories can be shown.
-
-When `directory=True`, only directories are shown.
-
-The default `root` is the current working directory.
-
+ 
+- `message: str` - the prompt message
+- `placeholder: str` - text shown when the search input is empty
+- `show_instructions: bool` - show navigation instructions above the list
+- `max_items: int` - the maximum number of option lines shown at once (the list scrolls past this)
+- `root: Path` - the directory the prompt starts in
+- `directory: bool` - show only directories, not files
+- `abort_time: float | None` - an optional timeout, in seconds
+When `directory=False`, the prompt shows both files and directories.
+ 
+When `directory=True`, the prompt shows only directories.
+ 
+`root` defaults to the current working directory.
+ 
 ### Output
-
+ 
 ```python
 from pathlib import Path
-
+ 
 from pyclack.prompts import select_path
-
-selected_path: Path = select_path(message="Select a file")
+ 
+selected_path: Path = select_path('Select a file')
 ```
-
-The successful return value is a `Path`.
-
-If the root path does not exist, `FileNotFoundError` is raised.
-
+ 
+The return value is a `Path`.
+ 
+If `root` does not exist, `select_path()` raises `FileNotFoundError`.
+ 
 ### Cancellation
-
-`e.value` is the currently selected `Path`, or `None` if there is no selected path.
-
+ 
+`e.value` holds the currently selected `Path`. It is `None` when nothing is selected.
+ 
 ```python
 from pathlib import Path
-
-from pyclack.prompts import select_path
+ 
 from pyclack import CancelException
-
+from pyclack.prompts import select_path
+ 
 try:
-    selected_path: Path = select_path(message="Select a file")
+    selected_path: Path = select_path('Select a file')
 except CancelException as e:
     selected_before_cancel: Path | None = e.value
 ```
-
+ 
 ---
-
+ 
 # Cancellation
-
-Cancellation is deliberately consistent across pyclack.
-
-Pressing Escape or Ctrl+C cancels an active prompt. A prompt may also cancel itself when its `abort_time` expires.
-
+ 
+Cancellation works the same way across every prompt.
+ 
+Escape or Ctrl+C cancels the active prompt. A prompt also cancels itself when its `abort_time` runs out.
+ 
 The prompt raises `CancelException`:
-
+ 
 ```python
-from pyclack.prompts import ask
 from pyclack import CancelException
-
+from pyclack.prompts import ask
+ 
 try:
-    value: str = ask(message="Value")
+    value: str = ask('Value')
 except CancelException as e:
     current_value: str | None = e.value
 ```
-
-`CancelException` itself is generic:
-
+ 
+`CancelException` is generic over the type of value it carries:
+ 
 ```python
 from pyclack import CancelException
-
-exception: CancelException[str] = CancelException(message="error ocurred", value="partial input")
+ 
+exception: CancelException[str] = CancelException('partial input')
 ```
-
-Its `value` attribute is the state the prompt chooses to preserve:
-
+ 
+Its `value` attribute holds whatever state the prompt chose to keep at the time of cancellation:
+ 
 ```python
 from pyclack import CancelException
-
-exception: CancelException[str] = CancelException(message="error ocurred", value="partial input")
-
+ 
+exception: CancelException[str] = CancelException('partial input')
+ 
 value: str | None = exception.value
 ```
-
+ 
 ## Cancellation values
-
+ 
 | Prompt | Successful return | `e.value` |
 | --- | --- | --- |
-| `ask()` | `str` | current `str` or `None` |
-| `password()` | `str` | current `str` or `None` |
-| `confirm()` | `bool` | current `bool` or `None` |
-| `pick_date()` | `date` | current date fields as `YYYY-MM-DD` text `str` or `None` |
-| `multiline()` | `str` | current `str` or `None` |
-| `select()` | `ClackOption[T]` | currently highlighted option `ClackOption[T]` or `None` |
-| `multiselect()` | `list[ClackOption[T]]` | currently selected options `list[ClackOption[T]] or `None`` |
-| `autocomplete()` | `ClackOption[T]` | currently highlihgted option `ClackOption[T]` or `None` |
-| `autocomplete_multiselect()` | `list[ClackOption[T]]` | currently selected options `list[ClackOption[T]]` or `None` |
-| `select_key()` | `ClackOption[str]` | first option `ClackOption[str]` or `None` |
-| `select_path()` | `Path` | currently highlighted path `Path` or `None` |
-
-The important convention is that cancellation is communicated by the exception, while `e.value` preserves useful component state.
-
+| `ask()` | `str` | current `str`, or `None` |
+| `password()` | `str` | current `str`, or `None` |
+| `confirm()` | `bool` | current `bool`, or `None` |
+| `pick_date()` | `date` | current date as a `YYYY-MM-DD` `str`, or `None` |
+| `multiline()` | `str` | current `str`, or `None` |
+| `select()` | `ClackOption[T]` | highlighted `ClackOption[T]`, or `None` |
+| `multiselect()` | `list[ClackOption[T]]` | selected `list[ClackOption[T]]`, or `None` |
+| `autocomplete()` | `ClackOption[T]` | highlighted `ClackOption[T]`, or `None` |
+| `autocomplete_multiselect()` | `list[ClackOption[T]]` | selected `list[ClackOption[T]]`, or `None` |
+| `select_key()` | `ClackOption[str]` | first option `ClackOption[str]`, or `None` |
+| `select_path()` | `Path` | highlighted `Path`, or `None` |
+ 
+The exception always signals cancellation. `e.value` always carries the useful partial state. This split stays the same across every prompt.
+ 
 ---
-
+ 
 # Widgets
-
-Widgets render terminal UI instead of collecting a user-entered value.
-
-The public synchronous widget API is:
-
+ 
+A widget shows terminal output. It does not collect a value from the user.
+ 
+Import the synchronous widget API from `pyclack.widgets`:
+ 
 ```python
-from pyclack.widgets import (
-    Activity,
-    Progress,
-    ProgressStyle,
-    Spinner,
-    TaskLog,
-    box,
-    cancel,
-    intro,
-    log,
-    note,
-    outro,
-    stream,
-)
+from pyclack.widgets import Activity, Progress, ProgressStyle, Spinner, TaskLog, box, cancel, intro, log, note, outro, stream
 ```
-
-Simple rendering widgets don't return anything.
-
-Stateful widgets such as `Spinner`, `Progress`, `Activity`, and `TaskLog` are objects whose methods control their lifecycle.
-
+ 
+A simple widget, such as `intro()` or `note()`, returns `None` and has no state.
+ 
+A stateful widget, such as `Spinner`, `Progress`, `Activity`, and `TaskLog`, is an object. Its methods control what it shows and when.
+ 
 ---
-
+ 
 # `intro()`
-
-`intro()` renders an introductory message.
-
-### Input
-
+ 
+`intro()` shows an introductory message.
+ 
 ```python
 from pyclack.widgets import intro
-
-intro(title="My Application")
+ 
+intro('My Application')
 ```
-
-It accepts:
-
-- `title: str` - the widget title
-- `custom_style: Style | None` - a text custom style to apply to the widget title
-
+ 
+Parameters:
+ 
+- `title: str` - the title to show
+- `custom_style: Style | None` - an optional style override for the title
 ---
-
+ 
 # `outro()`
-
-`outro()` renders an ending message.
-
+ 
+`outro()` shows a closing message.
+ 
 ```python
 from pyclack.widgets import outro
-
-outro(message="Done!")
+ 
+outro('Done!')
 ```
-
-It accepts:
-
-- `message: str` - the widget message
-- `custom_style: Style | None` - a text custom style to apply to the widget message
-
+ 
+Parameters:
+ 
+- `message: str` - the message to show
+- `custom_style: Style | None` - an optional style override for the message
 ---
-
+ 
 # `cancel()`
-
-`cancel()` renders a cancellation message.
-
+ 
+`cancel()` shows a cancellation message.
+ 
 ```python
 from pyclack.widgets import cancel
-
-cancel(message="Operation cancelled.")
+ 
+cancel('Operation cancelled.')
 ```
-
-It accepts:
-
-- `message: str` - the cancellation message displayed by the widget
-
+ 
+Parameters:
+ 
+- `message: str` - the cancellation message to show
 ---
-
+ 
 # `note()`
-
-`note()` renders a titled note.
-
+ 
+`note()` shows a titled note.
+ 
 ```python
 from pyclack.widgets import note
-
-note(title="Configuration", message="Using configuration from pyproject.toml.")
+ 
+note('Configuration', 'Using configuration from pyproject.toml.')
 ```
-
+ 
 Parameters:
-
-- `title: str` - the widget title
-- `message: str` - the message displayed inside the note box
-
+ 
+- `title: str` - the note's title
+- `message: str` - the text inside the note
 ---
-
+ 
 # `box()`
-
-`box()` renders text inside a bordered box.
-
+ 
+`box()` shows text inside a bordered box.
+ 
 ```python
 from pyclack import Alignment
 from pyclack.widgets import box
-
+ 
 box(
-    content="Build complete.",
-    title="Status",
+    'Build complete.',
+    'Status',
     content_align=Alignment.CENTER,
     title_align=Alignment.LEFT,
-    rounded=True
-)
+    rounded=True)
 ```
-
+ 
 Parameters:
-
-- `content: str` - the content text to display inside the box
-- `title: str` - the title for the box widget
-- `content_align: Alignment` - the alignment of the content inside the box
-- `title_align: Alignment` - the alignment of the title on the box
-- `width: int | None` - the maximum allowed width of the box in the terminal, if None then no max is applied
-- `rounded: bool` - wether to use rounded corner for the box or not
-- `title_padding: int` - the spacing on either side of the title on the box
-- `content_padding: int` - the spacing on either side of the content in the box
-
+ 
+- `content: str` - the text inside the box
+- `title: str` - the box's title
+- `content_align: Alignment` - the alignment of the content
+- `title_align: Alignment` - the alignment of the title
+- `width: int | None` - the box's maximum width in the terminal, or `None` for no maximum
+- `rounded: bool` - use rounded corners
+- `title_padding: int` - the spacing on each side of the title
+- `content_padding: int` - the spacing on each side of the content
 ---
-
+ 
 # `log`
-
-`log` is a semantic logging interface.
-
+ 
+`log` shows one-off messages at different severity levels.
+ 
 ```python
 from pyclack.widgets import log
-
-log.message(msg="Starting build")
-log.info(msg="Using Python 3.13")
-log.warning(msg="Configuration file not found")
-log.error(msg="Compilation failed")
-log.success(msg="Build complete")
-log.step(msg="Installing dependencies")
+ 
+log.message('Starting build')
+log.info('Using Python 3.13')
+log.warning('Configuration file not found')
+log.error('Compilation failed')
+log.success('Build complete')
+log.step('Installing dependencies')
 ```
+ 
+Each function takes one argument:
+ 
+- `msg: str` - the message to show
 
-These functions accept:
-
-- `msg: str` - the message to display
-
-The semantic levels are:
-
+The available levels are:
+ 
 - `message()`
 - `info()`
 - `warning()`
@@ -1247,857 +1104,724 @@ The semantic levels are:
 - `success()`
 - `step()`
 
-`warn()` is the warning alias.
-
+`warn()` is an alias for `warning()`.
+ 
 ---
-
+ 
 # `TaskLog`
-
-`TaskLog` is for a task that accumulates messages while it is running.
-
+ 
+`TaskLog` shows a running task and the messages it produces while it works.
+ 
 ### Input
-
+ 
 ```python
 from pyclack.widgets import TaskLog
-
+ 
 task: TaskLog = TaskLog(
-    title="Building project",
+    title='Building project',
     limit=5,
-    retain_log=False,
-)
+    retain_log=False)
 ```
-
+ 
 Parameters:
-
-- `title: str` - the title displayed by the widget
-- `limit: int | None` - maximum number of messages retained/displayed
-- `retain_log: bool` - retain the complete log instead of trimming the stored log to the limit
-
+ 
+- `title: str` - the title shown above the log
+- `limit: int | None` - the maximum number of messages kept and shown at once
+- `retain_log: bool` - keep the full log instead of trimming it to `limit`
 ### Adding messages
-
+ 
 ```python
 from pyclack.widgets import TaskLog
-
-task: TaskLog = TaskLog(title="Building")
-
-task.message(msg="Compiling main.py")
-task.message(msg="Compiling utils.py")
-task.success(msg="Build complete")
+ 
+task: TaskLog = TaskLog(title='Building')
+ 
+task.message('Compiling main.py')
+task.message('Compiling utils.py')
+task.success('Build complete')
 ```
-
-Once `success()` is called, the task is marked successful and subsequent `message()` calls are ignored.
-
+ 
+Once `success()` runs, the task is marked done. Later calls to `message()` have no effect.
+ 
 ### Reading the log
-
+ 
 ```python
 from pyclack.widgets import TaskLog
-
-task: TaskLog = TaskLog(title="Building")
-
-task.message(msg="Compiling")
-task.message(msg="Linking")
-
+ 
+task: TaskLog = TaskLog(title='Building')
+ 
+task.message('Compiling')
+task.message('Linking')
+ 
 messages: list[str] = task.get_log()
 ```
-
-The initial title is part of the stored log.
-
+ 
+The stored log includes the initial title as its first entry.
+ 
 ### Cancellation
-
-Ctrl+C while a `TaskLog` is active raises `CancelException`.
-
-The current implementation raises it without a value, so:
-
+ 
+Ctrl+C while a `TaskLog` is active raises `CancelException`, with no value attached.
+ 
 ```python
 from pyclack import CancelException
 from pyclack.widgets import TaskLog, cancel
-
-task: TaskLog = TaskLog(title="Building")
-
+ 
+task: TaskLog = TaskLog(title='Building')
+ 
 try:
-    task.message(msg="Compiling")
+    task.message('Compiling')
     # ... do some work ...
-    # task.message(msg="progress update")
-    # ... more progress updates ...
 except CancelException:
     cancel('Compiling cancelled!')
     exit(0)
 ```
-
+ 
 ---
-
+ 
 # `Spinner`
-
-`Spinner` renders an animated spinner while work is being performed.
-
+ 
+`Spinner` shows an animated spinner while work runs.
+ 
 ### Input
-
+ 
 ```python
 from pyclack.widgets import Spinner
-
+ 
 spinner: Spinner = Spinner(
     show_timer=False,
     show_elipse=True,
     spinner_delay=80,
-    elipse_delay=500,
-)
+    elipse_delay=500)
 ```
-
+ 
 Parameters:
-
-- `show_timer: bool`- whether to display a timer for time elapsed since spinner has started on the widget
-- `show_elipse: bool` - whether to display a loading elipse after the spinner message or not
+ 
+- `show_timer: bool` - show elapsed time since the spinner started
+- `show_elipse: bool` - show an animated ellipsis after the message
 - `spinner_delay: float` - milliseconds between spinner frames
 - `elipse_delay: float` - milliseconds between ellipsis frames
-- `spinner_frames: SpinnerSymbols | None` - a custom set of spinner frames to use for the spinner animation, uses themes default if None
-
+- `spinner_frames: SpinnerSymbols | None` - a custom set of spinner frames, or `None` to use the active theme's set
 ### Lifecycle
-
+ 
 ```python
 from pyclack.widgets import Spinner
-
+ 
 spinner: Spinner = Spinner()
-
-spinner.start(msg="Installing dependencies")
+ 
+spinner.start('Installing dependencies')
 # ... do some work ...
-spinner.stop(msg="Dependencies installed")
+spinner.stop('Dependencies installed')
 ```
-
+ 
 ### Updating the message
-
+ 
 ```python
 from pyclack.widgets import Spinner
-
+ 
 spinner: Spinner = Spinner()
-
-spinner.start(msg="Installing")
+ 
+spinner.start('Installing')
 # ... do some work ...
-spinner.set_message(msg="Installing package 2/5")
+spinner.set_message('Installing package 2/5')
 ```
-
+ 
 ### Cancellation and errors
-
+ 
 ```python
 from pyclack.widgets import Spinner
-
+ 
 spinner: Spinner = Spinner()
-
-spinner.start(msg="Installing")
+ 
+spinner.start('Installing')
 # ... do some interrupted work ...
-spinner.cancel(msg="Installation cancelled")
+spinner.cancel('Installation cancelled')
 ```
-
+ 
 ```python
 from pyclack.widgets import Spinner
-
+ 
 spinner: Spinner = Spinner()
-
-spinner.start(msg="Installing")
+ 
+spinner.start('Installing')
 # ... do some failed work ...
-spinner.error(msg="Installation failed")
+spinner.error('Installation failed')
 ```
-
+ 
 ### Clearing
-
+ 
 ```python
 from pyclack.widgets import Spinner
-
+ 
 spinner: Spinner = Spinner()
-
-spinner.start(msg="Installing")
+ 
+spinner.start('Installing')
 # ... do some work ...
 spinner.clear()
 ```
-
+ 
 ### Checking cancellation
-
+ 
 ```python
 from pyclack.widgets import Spinner
-
+ 
 spinner: Spinner = Spinner()
-
+ 
 cancelled: bool = spinner.is_cancelled()
 ```
-
-Ctrl+C raises a `CancelException` while the spinner is running. The spinner restores the terminal state during cleanup.
-
+ 
+Ctrl+C raises `CancelException` while the spinner runs. The spinner restores the terminal state during cleanup either way.
+ 
 ```python
-from pyclack.widget import Spinner, cancel
-
+from pyclack import CancelException
+from pyclack.widgets import Spinner, cancel
+ 
 spinner: Spinner = Spinner()
-
-spinner.start(msg="Installing")
+ 
+spinner.start('Installing')
 try:
-    # ... do some work ...
+    pass # ... do some work ...
 except CancelException:
-    spinner.cancel("Installation cancelled")
+    spinner.cancel('Installation cancelled')
     cancel('Operation cancelled')
     exit(0)
-spinner.stop(msg="Dependencies installed")
+spinner.stop('Dependencies installed')
 ```
-
+ 
 ---
-
+ 
 # `Progress`
-
-`Progress` renders a progress bar with optional spinner, ellipsis, and timer behavior.
-
+ 
+`Progress` shows a progress bar, with an optional spinner, ellipsis, and timer.
+ 
 ### Input
-
+ 
 ```python
 from pyclack.widgets import Progress, ProgressStyle
-
+ 
 progress: Progress = Progress(
     max=100,
     size=30,
     style=ProgressStyle.HEAVY,
     show_timer=False,
-    show_elipse=True,
-)
+    show_elipse=True)
 ```
-
-Parameters include:
-
-- `max: int` - maximum progress value
-- `size: int` - visual width of the progress bar
-- `style: ProgressStyle` - either LIGHT, HEAVY, or BLOCK
-- `show_timer: bool` - whether to display a timer for time elapsed since the progress bar has started on the widget
-- `show_elipse: bool` - whether to display a loading elipse after the loading message or not
+ 
+Parameters:
+ 
+- `max: int` - the progress value that means "done"
+- `size: int` - the bar's width, in characters
+- `style: ProgressStyle` - `LIGHT`, `HEAVY`, or `BLOCK`
+- `show_timer: bool` - show elapsed time since the bar started
+- `show_elipse: bool` - show an animated ellipsis after the message
 - `spinner_delay: float` - milliseconds between spinner frames
 - `elipse_delay: float` - milliseconds between ellipsis frames
-- `spinner_frames: SpinnerSymbols | None` - a custom set of spinner frames to use for the spinner animation, uses themes default if None
-
+- `spinner_frames: SpinnerSymbols | None` - a custom set of spinner frames, or `None` to use the active theme's set
 ### Basic lifecycle
-
+ 
 ```python
 from pyclack.widgets import Progress
-
+ 
 progress: Progress = Progress(max=100, size=30)
-
-progress.start(msg="Downloading")
-
-progress.advance(amount=25)
-progress.advance(amount=25)
-
-progress.stop(msg="Download complete")
+ 
+progress.start('Downloading')
+ 
+progress.advance(25)
+progress.advance(25)
+ 
+progress.stop('Download complete')
 ```
-
-The progress bar also has:
+ 
+`Progress` also supports:
+ 
 ```python
-progress.error(msg="Download failed")
-```
-```python
+progress.error('Download failed')
 progress.clear()
-```
-```python
 cancelled: bool = progress.is_cancelled()
 ```
-
-The progress widget is stateful: it maintains the current progress and redraws its frame as that state changes.
-
-Ctrl+C raises a `CancelException` while the progress bar is running. The progress bar restores the terminal state during cleanup.
-
+ 
+`Progress` is stateful. It keeps its current value and redraws its own frame as that value changes.
+ 
+Ctrl+C raises `CancelException` while the bar runs. The bar restores the terminal state during cleanup either way.
+ 
 ```python
-from pyclack.widgets import Progress
 from pyclack import CancelException, cancel
-
+from pyclack.widgets import Progress
+ 
 progress: Progress = Progress(max=100, size=30)
-
-progress.start(msg="Downloading")
+ 
+progress.start('Downloading')
 try:
     for i in range(100):
         progress.advance()
 except CancelException:
-    progress.cancel(msg="Download cancelled")
-    cancel("Operation cancelled")
+    progress.cancel('Download cancelled')
+    cancel('Operation cancelled')
     exit(0)
-progress.stop(msg="Download complete")
+progress.stop('Download complete')
 ```
-
+ 
 ---
-
+ 
 # `Activity`
-
-`Activity` combines a spinner with a sequence of activity messages.
-
+ 
+`Activity` pairs a spinner with a running log of activity messages.
+ 
 ### Input
-
+ 
 ```python
 from pyclack.widgets import Activity
-
+ 
 activity: Activity = Activity(
     limit=5,
     show_timer=False,
-    show_elipse=True,
-)
+    show_elipse=True)
 ```
-
+ 
 Parameters:
-
-- `limit: int | None` - maximum number of messages retained/displayed
-- `show_timer: bool` - whether to display a timer for time elapsed since the activity has started on the widget
-- `show_elipse: bool` - whether to display a loading elipse after the spinner message or not
+ 
+- `limit: int | None` - the maximum number of messages kept and shown at once
+- `show_timer: bool` - show elapsed time since the activity started
+- `show_elipse: bool` - show an animated ellipsis after the spinner message
 - `spinner_delay: float` - milliseconds between spinner frames
 - `elipse_delay: float` - milliseconds between ellipsis frames
-- `spinner_frames: SpinnerSymbols | None` - a custom set of spinner frames to use for the spinner animation, uses themes default if None
-
+- `spinner_frames: SpinnerSymbols | None` - a custom set of spinner frames, or `None` to use the active theme's set
 ### Lifecycle
-
+ 
 ```python
 from pyclack.widgets import Activity
-
+ 
 activity: Activity = Activity()
-
-start_result: None = activity.start(
-    "Building",
-)
-
-message_result: None = activity.set_activity_message(
-    "Compiling main.py",
-)
-
-message_result = activity.set_activity_message(
-    "Compiling utils.py",
-)
-
-stop_result: None = activity.stop(
-    "Build complete",
-)
+ 
+activity.start('Building')
+activity.set_activity_message('Compiling main.py')
+activity.set_activity_message('Compiling utils.py')
+activity.stop('Build complete')
 ```
-
-The activity and spinner messages are separate pieces of state.
-
+ 
+The activity message and the spinner message are separate pieces of state.
+ 
 ```python
 from pyclack.widgets import Activity
-
+ 
 activity: Activity = Activity()
-
-start_result: None = activity.start("Building")
-
-spinner_result: None = activity.set_spinner_message(
-    "Still building",
-)
-
-activity_result: None = activity.set_activity_message(
-    "Compiling main.py",
-)
-
+ 
+activity.start('Building')
+activity.set_spinner_message('Still building')
+activity.set_activity_message('Compiling main.py')
+ 
 current_activity: str = activity.get_activity_message()
 ```
-
-It also supports:
-
+ 
+`Activity` also supports:
+ 
 ```python
-from pyclack.widgets import Activity
-
-activity: Activity = Activity()
-
-cancel_result: None = activity.cancel(
-    "Build cancelled",
-)
-
-error_result: None = activity.error(
-    "Build failed",
-)
-
-clear_result: None = activity.clear()
-
+activity.cancel('Build cancelled')
+activity.error('Build failed')
+activity.clear()
 cancelled: bool = activity.is_cancelled()
 ```
-
+ 
 ---
-
+ 
 # `stream`
-
-The stream widget is designed for output where the number of messages is not known ahead of time.
-
-Unlike the other widgets, `stream` directly accepts either a normal `Iterable[str]` or an `AsyncIterable[str]`.
-
+ 
+`stream` is for output where the number of messages is not known ahead of time.
+ 
+Unlike the other widgets, `stream` accepts an `Iterable[str]` or an `AsyncIterable[str]` directly, and shows each item as it arrives.
+ 
 ```python
-from collections.abc import Iterable
-
 from pyclack.widgets import stream
-
-messages: Iterable[str] = [
-    "Downloading...",
-    "Extracting...",
-    "Installing...",
-    "Complete",
-]
-
-result: None = stream.message(messages)
+ 
+messages: list[str] = ['Downloading...', 'Extracting...', 'Installing...', 'Complete']
+ 
+stream.message(messages)
 ```
-
-The three stream styles are:
-
+ 
+The three stream levels are:
+ 
 - `stream.message()`
 - `stream.info()`
 - `stream.step()`
-
-### Normal iterable
-
+### A normal iterable
+ 
 ```python
 from collections.abc import Iterator
-
+ 
 from pyclack.widgets import stream
-
+ 
 def messages() -> Iterator[str]:
-    yield "Downloading..."
-    yield "Extracting..."
-    yield "Installing..."
-    yield "Complete"
-
-result: None = stream.message(messages())
+    yield 'Downloading...'
+    yield 'Extracting...'
+    yield 'Installing...'
+    yield 'Complete'
+ 
+stream.message(messages())
 ```
-
-### Info stream
-
+ 
+### An info stream
+ 
 ```python
 from collections.abc import Iterator
-
+ 
 from pyclack.widgets import stream
-
+ 
 def messages() -> Iterator[str]:
-    yield "Connected"
-    yield "Downloading"
-    yield "Complete"
-
-result: None = stream.info(messages())
+    yield 'Connected'
+    yield 'Downloading'
+    yield 'Complete'
+ 
+stream.info(messages())
 ```
-
-### Step stream
-
+ 
+### A step stream
+ 
 ```python
 from collections.abc import Iterator
-
+ 
 from pyclack.widgets import stream
-
+ 
 def steps() -> Iterator[str]:
-    yield "Installing dependencies"
-    yield "Building project"
-    yield "Running tests"
-
-result: None = stream.step(steps())
+    yield 'Installing dependencies'
+    yield 'Building project'
+    yield 'Running tests'
+ 
+stream.step(steps())
 ```
-
-### Async iterable
-
+ 
+### An async iterable
+ 
 ```python
 from collections.abc import AsyncIterator
-
+ 
 from pyclack.widgets import stream
-
+ 
 async def messages() -> AsyncIterator[str]:
-    yield "Connecting..."
-    yield "Downloading..."
-    yield "Complete"
-
-result: None = stream.message(messages())
+    yield 'Connecting...'
+    yield 'Downloading...'
+    yield 'Complete'
+ 
+stream.message(messages())
 ```
-
-`stream.message()`, `stream.info()`, and `stream.step()` all accept:
-
+ 
+`stream.message()`, `stream.info()`, and `stream.step()` all accept the same type:
+ 
 ```python
 from collections.abc import AsyncIterable, Iterable
-
+ 
 values: Iterable[str] | AsyncIterable[str]
 ```
-
-The stream functions block until the supplied iterable is exhausted.
-
+ 
+Every stream function blocks until its iterable runs out of items.
+ 
 ---
-
+ 
 # Asynchronous APIs
-
-pyclack provides asynchronous wrappers for the interactive prompts under `pyclack.prompts_asyc`.
-
+ 
+pyclack provides asynchronous wrappers for every prompt, under `pyclack.prompts_async`.
+ 
 ```python
-from pyclack.prompts_asyc import ask
-
+from pyclack.prompts_async import ask
+ 
 async def get_name() -> str:
-    name: str = await ask(
-        "Name",
-        None,
-        None,
-        None,
-        None,
-    )
-
+    name: str = await ask('Name')
     return name
 ```
-
-The wrappers preserve the same behavior and return types as their synchronous counterparts.
-
-The wrappers run the synchronous prompt implementation in a worker thread using `asyncio.to_thread()`, so the prompt can be awaited without blocking the asyncio event loop.
-
-All prompt wrappers are available:
-
+ 
+Each wrapper keeps the same behavior and return type as its synchronous counterpart.
+ 
+A wrapper runs the synchronous prompt in a worker thread, through `asyncio.to_thread()`. This lets you `await` the prompt without blocking the event loop.
+ 
+Every prompt has a wrapper:
+ 
 ```python
-from pyclack.prompts_asyc import (
-    ask,
-    autocomplete,
-    autocomplete_multiselect,
-    confirm,
-    multiline,
-    multiselect,
-    password,
-    pick_date,
-    select,
-    select_key,
-    select_path,
-)
+from pyclack.prompts_async import ask, autocomplete, autocomplete_multiselect, confirm, multiline, multiselect, password, pick_date, select, select_key, select_path
 ```
-
-The widget wrappers live under `pyclack.widgets_asyc`:
-
+ 
+The widget wrappers live under `pyclack.widgets_async`:
+ 
 ```python
-from pyclack.widgets_asyc import (
-    Activity,
-    Progress,
-    Spinner,
-    TaskLog,
-    box,
-    cancel,
-    intro,
-    note,
-    outro,
-)
+from pyclack.widgets_async import Activity, Progress, Spinner, TaskLog, box, cancel, intro, note, outro, stream, log
 ```
-
-The asynchronous widget wrappers likewise delegate their synchronous operations through `asyncio.to_thread()`.
-
-For example:
-
+ 
+The async widget wrappers also delegate through `asyncio.to_thread()`. For example:
+ 
 ```python
-from pyclack.widgets_asyc import Spinner
-
+from pyclack.widgets_async import Spinner
+ 
 async def build() -> None:
     spinner: Spinner = Spinner()
-
-    await spinner.start("Building")
-
+ 
+    await spinner.start('Building')
     await do_async_build()
-
-    await spinner.stop("Build complete")
+    await spinner.stop('Build complete')
 ```
-
-The stream API is already asynchronous-iterable aware, so it does not require a separate `stream_asyc` namespace.
-
+ 
 ---
-
+ 
 # Themes
-
-Themes control the visual language used by prompts and widgets.
-
-A theme contains:
-
-- `active` style
-- `submit` style
-- `cancel` style
-- `error` style
-- `info` style
-- `muted` style
-- `text` style
-- `cursor` style
-- `symbols`
-
-Themes are defined by `Theme` and collected by `Themes`.
-
-The active theme can be changed with `set_active_theme()`:
-
+ 
+A theme sets the colors and symbols every prompt and widget uses.
+ 
+A `Theme` holds:
+ 
+- an `active` style
+- a `submit` style
+- a `cancel` style
+- an `error` style
+- an `info` style
+- a `muted` style
+- a `text` style
+- a `cursor` style
+- a `Symbols` object
+`Theme` defines one theme. `Themes` collects the built-in themes.
+ 
+Change the active theme with `set_active_theme()`:
+ 
 ```python
-from pyclack.config import set_active_theme
-from pyclack.renderer import Themes
-
-set_active_theme(
-    Themes.DEFAULT,
-)
+from pyclack import Themes, set_active_theme
+ 
+set_active_theme(Themes.DEFAULT)
 ```
-
-The current active theme can be retrieved with:
-
+ 
+Read the active theme with `get_active_theme()`:
+ 
 ```python
-from pyclack.config import get_active_theme
-
+from pyclack import get_active_theme
+ 
 theme = get_active_theme()
 ```
-
-The theme system is intentionally separate from the prompt and widget implementations. Prompts ask the active theme for their colors and symbols when they render.
-
-This means changing the active theme changes the appearance of existing components without rewriting their rendering logic.
-
+ 
+The theme system stays separate from the prompt and widget code. A prompt or widget asks the active theme for its colors and symbols each time it renders.
+ 
+This means switching the active theme changes how every prompt and widget looks, without changing a single line of their rendering code.
+ 
 ## Custom themes
-
-A theme is composed from `Style`, `Theme`, `Symbols`, `Symbol`, and `SpinnerSymbols`.
-
+ 
+Build a `Theme` from `Style`, `Symbols`, `Symbol`, and `SpinnerSymbols`.
+ 
 ```python
-from pyclack.config import set_active_theme
+from pyclack import set_active_theme
 from pyclack.renderer import SpinnerSymbols, Style, Symbol, Symbols, Theme
-
+ 
 custom_theme: Theme = Theme(
-    active=Style(fg_color="cyan"),
-    submit=Style(fg_color="green"),
-    cancel=Style(fg_color="red"),
-    error=Style(fg_color="yellow"),
-    info=Style(fg_color="blue"),
-    muted=Style(fg_color="bright_black"),
-    text=Style(fg_color="white"),
-    cursor=Style(
-        fg_color="bright_black",
-        bg_color="white",
-    ),
+    active=Style(fg_color='cyan'),
+    submit=Style(fg_color='green'),
+    cancel=Style(fg_color='red'),
+    error=Style(fg_color='yellow'),
+    info=Style(fg_color='blue'),
+    muted=Style(fg_color='bright_black'),
+    text=Style(fg_color='white'),
+    cursor=Style(fg_color='bright_black', bg_color='white'),
     symbols=Symbols(
-        step_marker_active=Symbol("◆", "*"),
-        step_marker_cancel=Symbol("■", "x"),
-        step_marker_error=Symbol("▲", "x"),
-        step_marker_submit=Symbol("◇", "o"),
-        connector_bar_start=Symbol("┌", "T"),
-        connector_bar_vertical=Symbol("│", "|"),
-        connector_bar_end=Symbol("└", "-"),
-        selection_widget_radio_active=Symbol("●", ">"),
-        selection_widget_radio_inactive=Symbol("○", " "),
-        selection_widget_checkbox_active=Symbol("◻", "[•]"),
-        selection_widget_checkbox_selected=Symbol("◼", "[+]"),
-        selection_widget_checkbox_inactive=Symbol("◻", "[ ]"),
-        selection_widget_password_mask=Symbol("▪", "*"),
-        box_drawing_horizontal_bar=Symbol("─", "-"),
-        box_drawing_vertical_bar=Symbol("│", "|"),
-        box_drawing_top_right_corner_rounded=Symbol("╮", "+"),
-        box_drawing_left_connector=Symbol("├", "+"),
-        box_drawing_bottom_right_corner_rounded=Symbol("╯", "+"),
-        box_drawing_top_left_corner_rounded=Symbol("╭", "+"),
-        box_drawing_bottom_left_corner_rounded=Symbol("╰", "+"),
-        box_drawing_top_right_corner=Symbol("┐", "+"),
-        box_drawing_bottom_right_corner=Symbol("┘", "+"),
-        box_drawing_top_left_corner=Symbol("┌", "+"),
-        box_drawing_bottom_left_corner=Symbol("└", "+"),
-        log_level_info=Symbol("●", "i"),
-        log_level_success=Symbol("◆", "*"),
-        log_level_warn=Symbol("▲", "!"),
-        log_level_error=Symbol("■", "x"),
+        step_marker_active=Symbol('◆', '*'),
+        step_marker_cancel=Symbol('■', 'x'),
+        step_marker_error=Symbol('▲', 'x'),
+        step_marker_submit=Symbol('◇', 'o'),
+        connector_bar_start=Symbol('┌', 'T'),
+        connector_bar_vertical=Symbol('│', '|'),
+        connector_bar_end=Symbol('└', '-'),
+        selection_widget_radio_active=Symbol('●', '>'),
+        selection_widget_radio_inactive=Symbol('○', ' '),
+        selection_widget_checkbox_active=Symbol('◻', '[•]'),
+        selection_widget_checkbox_selected=Symbol('◼', '[+]'),
+        selection_widget_checkbox_inactive=Symbol('◻', '[ ]'),
+        selection_widget_password_mask=Symbol('▪', '*'),
+        box_drawing_horizontal_bar=Symbol('─', '-'),
+        box_drawing_vertical_bar=Symbol('│', '|'),
+        box_drawing_top_right_corner_rounded=Symbol('╮', '+'),
+        box_drawing_left_connector=Symbol('├', '+'),
+        box_drawing_bottom_right_corner_rounded=Symbol('╯', '+'),
+        box_drawing_top_left_corner_rounded=Symbol('╭', '+'),
+        box_drawing_bottom_left_corner_rounded=Symbol('╰', '+'),
+        box_drawing_top_right_corner=Symbol('┐', '+'),
+        box_drawing_bottom_right_corner=Symbol('┘', '+'),
+        box_drawing_top_left_corner=Symbol('┌', '+'),
+        box_drawing_bottom_left_corner=Symbol('└', '+'),
+        log_level_info=Symbol('●', 'i'),
+        log_level_success=Symbol('◆', '*'),
+        log_level_warn=Symbol('▲', '!'),
+        log_level_error=Symbol('■', 'x'),
         spinner=SpinnerSymbols(
-            unicode_symbols=("◒", "◐", "◓", "◑"),
-            ascii_symbols=("|", "/", "-", "\\"),
-        ),
-        progress_light=Symbol("─", "-"),
-        progress_heavy=Symbol("━", "="),
-        progress_block=Symbol("█", "#"),
-    ),
-)
-
+            unicode_symbols=('◒', '◐', '◓', '◑'),
+            ascii_symbols=('|', '/', '-', '\\')),
+        progress_light=Symbol('─', '-'),
+        progress_heavy=Symbol('━', '='),
+        progress_block=Symbol('█', '#')))
+ 
 set_active_theme(custom_theme)
 ```
-
-The repository already contains several additional theme definitions covering different visual styles and color palettes. The theme architecture is designed so additional themes can be added without modifying individual prompts or widgets.
-
+ 
+The repository ships more than 30 built-in themes, each with its own colors and symbols. See `demos/demo.py` for the full list of names under `Themes`.
+ 
 ## Unicode and ASCII symbols
-
-Every `Symbol` can contain both a Unicode representation and an ASCII fallback.
-
+ 
+Every `Symbol` holds a Unicode form and an ASCII fallback.
+ 
 ```python
 from pyclack.renderer import Symbol
-
-marker: Symbol = Symbol(
-    "◆",
-    "*",
-)
+ 
+marker: Symbol = Symbol('◆', '*')
 ```
-
-The renderer automatically resolves the appropriate representation for the current terminal.
-
-ASCII-only output can also be forced:
-
+ 
+The renderer picks whichever form fits the current terminal.
+ 
+Force ASCII-only output with:
+ 
 ```python
-from pyclack.config import set_print_mode_ascii
-
-result: None = set_print_mode_ascii()
+from pyclack import set_print_mode_ascii
+ 
+set_print_mode_ascii()
 ```
-
+ 
 ---
-
+ 
 # Rendering
-
-The rendering system is exposed under `pyclack.renderer`.
-
+ 
+The rendering system lives under `pyclack.renderer`.
+ 
 ```python
-from pyclack.renderer import (
-    FrameBuilder,
-    RenderFrame,
-    SpinnerSymbols,
-    Style,
-    Symbol,
-    Symbols,
-    Text,
-    Theme,
-    Themes,
-)
+from pyclack.renderer import FrameBuilder, RenderFrame, SpinnerSymbols, Style, Symbol, Symbols, Text, Theme, Themes
 ```
-
-The basic rendering model is:
-
+ 
+The rendering model has four steps:
+ 
 1. Build `Text` objects.
 2. Add them to a `FrameBuilder`.
 3. Build the frame.
 4. Draw it with `RenderFrame`.
-
 ## `Text`
-
-`Text` represents terminal text together with optional style information.
-
+ 
+`Text` pairs terminal text with an optional style.
+ 
 ```python
 from pyclack.renderer import Style, Text
-
-style: Style = Style(
-    fg_color="cyan",
-    bold=True,
-)
-
-text: Text = Text(
-    "Hello",
-    style,
-)
+ 
+style: Style = Style(fg_color='cyan', bold=True)
+ 
+text: Text = Text('Hello', style)
 ```
-
-`Text` objects can be combined to construct more complex output.
-
+ 
+You can combine `Text` objects to build more complex output.
+ 
 ## `FrameBuilder`
-
-`FrameBuilder` collects the lines that make up one render frame.
-
+ 
+`FrameBuilder` collects the lines that make up one frame.
+ 
 ```python
 from pyclack.renderer import FrameBuilder, Text
-
+ 
 builder: FrameBuilder = FrameBuilder()
-
-line_one: None = builder.add_line(
-    Text("First line"),
-)
-
-line_two: None = builder.add_line(
-    Text("Second line"),
-)
-
+ 
+builder.add_line(Text('First line'))
+builder.add_line(Text('Second line'))
+ 
 frame: tuple[Text, ...] = builder.build()
 ```
-
-`add_lines()` can also be used for multiple lines.
-
+ 
+Use `add_lines()` to add more than one line at once.
+ 
 ```python
 from pyclack.renderer import FrameBuilder, Text
-
+ 
 builder: FrameBuilder = FrameBuilder()
-
-result: None = builder.add_lines(
-    Text("First"),
-    Text("Second"),
-    Text("Third"),
-)
-
+ 
+builder.add_lines(
+    Text('First'),
+    Text('Second'),
+    Text('Third'))
+ 
 frame: tuple[Text, ...] = builder.build()
 ```
-
+ 
 ## `RenderFrame`
-
-`RenderFrame` owns the currently rendered frame.
-
-When a new frame is drawn, the previous frame is cleared before the new frame is printed.
-
+ 
+`RenderFrame` owns the frame currently on screen.
+ 
+When you draw a new frame, `RenderFrame` clears the old one first.
+ 
 ```python
 from pyclack.renderer import RenderFrame, Text
-
+ 
 render_frame: RenderFrame = RenderFrame()
-
-result: None = render_frame.draw_frame(
-    Text("Loading..."),
-)
+ 
+render_frame.draw_frame(Text('Loading...'))
 ```
-
-A frame can later be cleared:
-
+ 
+Clear a frame directly with:
+ 
 ```python
 from pyclack.renderer import RenderFrame, Text
-
+ 
 render_frame: RenderFrame = RenderFrame()
-
-draw_result: None = render_frame.draw_frame(
-    Text("Loading..."),
-)
-
-clear_result: None = render_frame.clear_frame()
+ 
+render_frame.draw_frame(Text('Loading...'))
+render_frame.clear_frame()
 ```
-
-This frame-based model is what allows spinners, prompts, progress bars, and other components to redraw themselves without continuously appending new terminal lines.
-
+ 
+This frame model lets a spinner, a prompt, or a progress bar redraw itself in place, instead of printing a new line every time it updates.
+ 
 ---
-
+ 
 # Terminal
-
+ 
 The terminal subsystem lives under `pyclack.terminal`.
-
+ 
 ```python
-from pyclack.terminal import (
-    CursorController,
-    EchoController,
-    KeyReader,
-    Stdout,
-)
+from pyclack.terminal import CursorController, EchoController, KeyReader, Stdout
 ```
-
-It provides the low-level terminal operations used by prompts and widgets.
-
+ 
+It gives prompts and widgets the low-level terminal operations they need.
+ 
 ## `KeyReader`
-
-`KeyReader` reads individual keyboard input rather than waiting for a complete line.
-
-Custom interactive components should normally use the existing terminal input abstraction rather than directly reading from `stdin`.
-
+ 
+`KeyReader` reads one key at a time, instead of waiting for a full line of input.
+ 
+A custom component should use `KeyReader` instead of reading `stdin` directly.
+ 
 ## `CursorController`
-
-`CursorController` provides cursor-control escape sequences such as hiding and showing the cursor and moving/clearing rendered lines.
-
-For example:
-
+ 
+`CursorController` builds the escape sequences that hide the cursor, show the cursor, and move or clear rendered lines.
+ 
 ```python
 from pyclack.terminal import CursorController
-
+ 
 hide_sequence: str = CursorController.hide_cursor()
 show_sequence: str = CursorController.show_cursor()
 ```
-
+ 
 ## `Stdout`
-
-`Stdout` is the output abstraction used by pyclack's terminal components.
-
-Custom widgets should use it instead of mixing arbitrary `print()` calls into frame rendering.
-
+ 
+`Stdout` is the output abstraction every pyclack component writes through.
+ 
+A custom widget should use `Stdout` instead of calling `print()` directly inside its rendering code.
+ 
 ## `EchoController`
-
-`EchoController` controls terminal echo behavior used by interactive components.
-
-This is particularly important for prompts that need to control how Ctrl+C or keyboard input appears in the terminal.
-
-When writing a custom interactive component, use the existing terminal controllers instead of implementing platform-specific terminal manipulation yourself.
-
+ 
+`EchoController` turns terminal echo on and off for interactive components.
+ 
+This matters most for a prompt that needs to control how a keypress, such as Ctrl+C, appears on screen.
+ 
+A custom interactive component should use the existing terminal controllers, instead of writing its own platform-specific terminal code.
+ 
 ---
-
+ 
 # Building a custom prompt
-
-If the built-in prompts do not fit your use case, pyclack exposes `PromptBase` specifically so a custom prompt can follow the same state-machine and rendering conventions.
-
-A prompt is built around five states:
-
+ 
+If none of the built-in prompts fit your use case, subclass `PromptBase`. It gives your prompt the same state machine and rendering conventions the built-in prompts use.
+ 
+A prompt moves through five states:
+ 
 ```python
 from pyclack.prompts import PromptState
-
+ 
 initial: PromptState = PromptState.INITIAL
 active: PromptState = PromptState.ACTIVE
 submit: PromptState = PromptState.SUBMIT
 cancel: PromptState = PromptState.CANCEL
 error: PromptState = PromptState.ERROR
 ```
-
+ 
 The normal flow is:
-
+ 
 ```text
 INITIAL
    |
@@ -2111,383 +1835,283 @@ SUBMIT      |
    |
    v
 EXIT
-
+ 
 ACTIVE/ERROR
    |
    +----> CANCEL
 ```
-
-`PromptBase` provides the state machine. Your subclass supplies the behavior.
-
+ 
+`PromptBase` runs the state machine. Your subclass supplies the behavior for each state.
+ 
 ## Custom prompt structure
-
+ 
 A custom prompt should:
-
+ 
 1. Subclass `PromptBase`.
 2. Store its input state on the prompt instance.
 3. Create a `RenderFrame`.
 4. Implement `handle_active()`.
 5. Implement `handle_submit()`.
-6. Implement `handle_error()` if validation is needed.
+6. Implement `handle_error()`, if the prompt needs validation.
 7. Implement `handle_cancel()`.
 8. Raise `CancelException` from `handle_cancel()`.
-9. Render through `FrameBuilder`, `Text`, the active `Theme`, and `RenderFrame`.
-10. Expose a small public function that creates the prompt and returns its final value.
-
-A minimal structure looks like this:
-
+9. Render each state through `FrameBuilder`, `Text`, the active `Theme`, and `RenderFrame`.
+10. Expose a small public function that builds the prompt and returns its final value.
+A minimal prompt looks like this:
+ 
 ```python
 from typing import override
-
+ 
 from pyclack.prompts import CancelException, PromptBase
 from pyclack.renderer import FrameBuilder, RenderFrame, Text
-
-
+ 
 class CustomPrompt(PromptBase):
     def __init__(self, message: str) -> None:
         super().__init__()
-
+ 
         self.message: str = message
-        self.value: str = ""
+        self.value: str = ''
         self.render_frame: RenderFrame = RenderFrame()
-
+ 
         self.activate()
-
+ 
     @override
-    def handle_active(
-        self,
-        key: str | None,
-    ) -> bool:
+    def handle_active(self, key: str | None) -> bool:
         frame_builder: FrameBuilder = FrameBuilder()
-
-        frame_builder.add_line(
-            Text(self.message),
-        )
-
-        frame_builder.add_line(
-            Text(self.value),
-        )
-
+        frame_builder.add_line(Text(self.message))
+        frame_builder.add_line(Text(self.value))
+ 
         frame: tuple[Text, ...] = frame_builder.build()
-
-        self.render_frame.draw_frame(
-            *frame,
-        )
-
-        if key == "ENTER":
-            return True
-
-        if key:
-            self.value += key
-
+        self.render_frame.draw_frame(*frame)
+ 
+        if key == 'ENTER': return True
+        if key: self.value += key
         return False
-
+ 
     @override
     def handle_submit(self) -> bool:
         return True
-
+ 
     @override
     def handle_cancel(self) -> None:
-        raise CancelException[str](
-            self.value,
-        )
+        raise CancelException[str](self.value)
 ```
-
+ 
 Then expose it through a small function:
-
+ 
 ```python
 from pyclack.prompts import CancelException
-
-
+ 
 def custom_prompt(message: str) -> str:
     prompt: CustomPrompt = CustomPrompt(message)
-
     return prompt.value
 ```
-
-The exact rendering will normally be more involved, but the important convention is that the prompt owns its state and the base class owns the input/state-machine lifecycle.
-
+ 
+A real prompt's rendering is usually more involved than this. The convention that matters is: the prompt owns its state, and `PromptBase` owns the state machine.
+ 
 ## Validation
-
-If the prompt can enter an invalid state, `handle_submit()` should return `False`.
-
-That sends the prompt into `handle_error()`.
-
+ 
+When the prompt can enter an invalid state, `handle_submit()` should return `False`.
+ 
+Returning `False` sends the prompt into `handle_error()`.
+ 
 ```python
 from typing import override
-
+ 
 from pyclack.prompts import PromptBase
-
-
+ 
 class ValidatedPrompt(PromptBase):
     @override
     def handle_submit(self) -> bool:
-        if self._is_valid():
-            return True
-
-        return False
+        return self._is_valid()
 ```
-
-`handle_error()` should render the error state and return:
-
-- `False` to remain in the error state
-- `True` to return to the active state
-
-The base class handles the state transitions.
-
+ 
+`handle_error()` renders the error state, then returns one of:
+ 
+- `False`, to stay in the error state
+- `True`, to return to the active state
+`PromptBase` handles the state change either way.
+ 
 ## Propagating the key after an error
-
-Prompts that want the key that exits the error state to become the next active-state key can set:
-
+ 
+A prompt that wants the key that clears an error to also act as the next active-state key can set:
+ 
 ```python
 from pyclack.prompts import PromptBase
-
-
+ 
 class CustomPrompt(PromptBase):
     def __init__(self) -> None:
         super().__init__()
-
-        self.propogate_key_after_error: bool = True
+ 
+        self.propagate_key_after_error: bool = True
 ```
-
-This is the convention used by prompts such as `ask()` and `password()`.
-
+ 
 ---
-
+ 
 # Building a custom widget
-
-Widgets do not use the prompt state machine.
-
-A custom widget should instead own its rendering state and use `RenderFrame` to redraw it.
-
-A minimal stateful widget looks like:
-
+ 
+A widget does not use the prompt state machine.
+ 
+A custom widget owns its own rendering state directly, and uses `RenderFrame` to redraw it.
+ 
+A minimal stateful widget looks like this:
+ 
 ```python
 from pyclack.renderer import FrameBuilder, RenderFrame, Text
-
-
+ 
 class CustomWidget:
     def __init__(self) -> None:
         self.render_frame: RenderFrame = RenderFrame()
-        self.message: str = ""
-
+        self.message: str = ''
+ 
     def start(self, message: str) -> None:
         self.message = message
         self._render()
-
+ 
     def set_message(self, message: str) -> None:
         self.message = message
         self._render()
-
+ 
     def clear(self) -> None:
         self.render_frame.clear_frame()
-
+ 
     def _render(self) -> None:
         frame_builder: FrameBuilder = FrameBuilder()
-
-        frame_builder.add_line(
-            Text(self.message),
-        )
-
+        frame_builder.add_line(Text(self.message))
+ 
         frame: tuple[Text, ...] = frame_builder.build()
-
-        self.render_frame.draw_frame(
-            *frame,
-        )
+        self.render_frame.draw_frame(*frame)
 ```
-
-For a real pyclack widget, use the active theme instead of hard-coding visual styles:
-
+ 
+A real pyclack widget pulls its style from the active theme, instead of hard-coding it:
+ 
 ```python
-from pyclack.config import get_active_theme
+from pyclack import get_active_theme
 from pyclack.renderer import FrameBuilder, RenderFrame, Text
-
-
+ 
 class ThemedWidget:
     def __init__(self) -> None:
         self.render_frame: RenderFrame = RenderFrame()
-
+ 
     def render(self, message: str) -> None:
         theme = get_active_theme()
-
+ 
         frame_builder: FrameBuilder = FrameBuilder()
-
-        frame_builder.add_line(
-            Text(
-                message,
-                theme.text,
-            ),
-        )
-
+        frame_builder.add_line(Text(message, theme.text))
+ 
         frame: tuple[Text, ...] = frame_builder.build()
+        self.render_frame.draw_frame(*frame)
+```
+ 
+This keeps the widget correct under every active theme.
 
-        self.render_frame.draw_frame(
-            *frame,
-        )
+Some widgets take time to render, what if the user presses Ctrl+C during that? `CancelException` should be raised. pyclack does this be swapping the hander that runs when a `SIGINT` is raised by a Ctrl+C press.
+
+This is usually run at the start of the pyclack widget:
+```python
+import signal
+from pyclack import CancelException
+
+old_sigint_handler = signal.getsignal(signal.SIGINT)
+def handle_interrupt(signum, frame) -> None:
+    signal.signal(signal.SIGINT, old_sigint_handler) # resets back to old handler if cancelled
+    raise CancelException
+signal.signal(signal.SIGINT, handle_interrupt)
 ```
 
-This keeps the widget compatible with every active theme.
-
+At the end of the pyclack widget the handler is reset:
+```python
+signal.signal(signal.SIGINT, old_sigint_handler)
+```
+ 
 ---
-
+ 
 # Custom component conventions
-
-When extending pyclack, follow the same architecture used by the built-in components.
-
+ 
+When you extend pyclack, follow the same pattern as the built-in components.
+ 
 ### Prompts
-
-- Use `PromptBase`.
-- Keep interactive state on the prompt object.
-- Use `PromptState` through the base state machine rather than implementing another input loop.
+ 
+- Subclass `PromptBase`.
+- Keep interactive state on the prompt instance.
+- Drive the prompt through `PromptState`, using the base state machine, instead of writing a separate input loop.
 - Render every state through `RenderFrame`.
 - Build output with `Text` and `FrameBuilder`.
 - Pull colors and symbols from `get_active_theme()`.
-- Handle cancellation through `CancelException`.
-- Put the useful partial state in `CancelException.value`.
-- Use `abort_time` when the prompt supports automatic cancellation.
-- Expose a simple public function that returns the prompt's final value.
-
+- Signal cancellation through `CancelException`.
+- Put useful partial state in `CancelException.value`.
+- Support `abort_time` when the prompt should be able to cancel itself.
+- Expose one small public function that returns the prompt's final value.
 ### Widgets
-
-- Do not use `PromptBase`.
+ 
+- Do not subclass `PromptBase`.
 - Own the widget's state directly.
-- Use `RenderFrame` for redrawable output.
-- Use `FrameBuilder` and `Text` to construct frames.
+- Set own custom Ctrl+C handler.
+- Use `RenderFrame` for output that redraws in place.
+- Build frames with `FrameBuilder` and `Text`.
 - Pull visual properties from the active theme.
-- Use `Stdout` and the terminal controllers for terminal manipulation.
-- Clean up cursor/echo state when the widget finishes or is cancelled.
-
+- Use `Stdout` and the terminal controllers for terminal changes.
+- Restore old handler, cursor, and echo state when the widget finishes or is cancelled.
 ### Themes
-
-- Never hard-code a component's visual language when the value belongs in the theme.
-- Use `Theme` for styles.
+ 
+- Never hard-code a color or symbol that belongs in the theme.
+- Use `Style` for styles.
 - Use `Symbol` for individual symbols.
 - Use `SpinnerSymbols` for animated spinner frames.
-- Provide both Unicode and ASCII representations where appropriate.
-
-This separation is what lets pyclack change its appearance without every prompt and widget needing its own styling configuration.
-
+- Provide both a Unicode form and an ASCII fallback where one applies.
+This separation lets pyclack change its whole appearance without touching a single prompt or widget's code.
+ 
 ---
-
-# Package layout
-
-The important public portions of the package are organized as follows:
-
-```text
-pyclack/
-├── config/
-│   └── theme configuration
-├── prompts/
-│   ├── ask.py
-│   ├── autocomplete.py
-│   ├── autocomplete_multiselect.py
-│   ├── confirm.py
-│   ├── multiline.py
-│   ├── multiselect.py
-│   ├── password.py
-│   ├── pick_date.py
-│   ├── select.py
-│   ├── select_key.py
-│   ├── select_path.py
-│   └── prompt_base.py
-├── prompts_asyc/
-│   └── asynchronous prompt wrappers
-├── renderer/
-│   ├── Text
-│   ├── RenderFrame
-│   ├── FrameBuilder
-│   ├── Theme
-│   ├── Style
-│   ├── Symbol
-│   └── Symbols
-├── terminal/
-│   ├── KeyReader
-│   ├── CursorController
-│   ├── Stdout
-│   └── EchoController
-├── widgets/
-│   ├── Activity
-│   ├── box
-│   ├── cancel
-│   ├── intro
-│   ├── log
-│   ├── note
-│   ├── outro
-│   ├── Progress
-│   ├── Spinner
-│   ├── TaskLog
-│   └── stream
-└── widgets_asyc/
-    └── asynchronous widget wrappers
-```
-
-The package also includes `py.typed`, so type checkers can use pyclack's bundled type information.
-
----
-
+ 
 # Example
-
-A small application can combine prompts and widgets:
-
+ 
+This small script combines a few prompts and widgets. It follows the same style as `demos/demo.py`, which covers every prompt and widget in the package.
+ 
 ```python
-from pyclack.prompts import (
-    CancelException,
-    ClackOption,
-    ask,
-    select,
-)
-from pyclack.widgets import intro, outro
-
-
+from pyclack import CancelException, ClackOption
+from pyclack.prompts import ask, select
+from pyclack.widgets import intro, outro, cancel
+ 
 def main() -> None:
-    intro("Example")
-
+    intro('Example')
+ 
     try:
-        name: str = ask(
-            "What is your name?",
-        )
-
+        name: str = ask('What is your name?')
+ 
         languages: list[ClackOption[str]] = [
-            ClackOption[str](
-                "python",
-                "Python",
-            ),
-            ClackOption[str](
-                "rust",
-                "Rust",
-            ),
-        ]
-
+            ClackOption[str](value='python', label='Python'),
+            ClackOption[str](value='rust', label='Rust')]
+ 
         language: ClackOption[str] = select(
-            "Favorite language",
-            languages,
-        )
-
-        outro(
-            f"Hello {name}! You chose {language.value}.",
-        )
-
+            'Favorite language',
+            options=languages)
     except CancelException:
-        outro(
-            "Operation cancelled.",
-        )
+        cancel('Operation cancelled.')
+        exit(0)
 
-
-if __name__ == "__main__":
+    outro(f'Hello {name}! You chose {language.value}.')
+ 
+if __name__ == '__main__':
     main()
 ```
-
-The important pattern is simple:
-
-```text
-prompt -> value
-widget -> terminal output
-cancel -> CancelException
-partial state -> e.value
-selection -> ClackOption[T]
-theme -> active Theme
-custom prompt -> PromptBase
-custom widget -> RenderFrame
+ 
+Run the full demo with:
+ 
+```bash
+uv run demos/demo.py
 ```
-
+ 
+The pattern behind every piece of pyclack stays the same:
+ 
+```text
+prompt          -> value
+widget          -> terminal output
+cancel          -> CancelException
+partial state   -> e.value
+selection       -> ClackOption[T]
+theme           -> active Theme
+custom prompt   -> PromptBase
+custom widget   -> RenderFrame
+```
+ 
 That is the core of pyclack.

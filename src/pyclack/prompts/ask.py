@@ -75,7 +75,7 @@ class Ask(PromptBase):
             self.text_box_controller.set_input(initial_value, 0)
             self.text_box_controller.cursor_end()
         
-        self.propogate_key_after_error = True
+        self.propagate_key_after_error = True
         self.abort_time = abort_time
         
         self.allowed_inputs: tuple[str, ...] = self._construct_allowed_inputs()

@@ -72,7 +72,7 @@ class Password(PromptBase):
         self.render_frame: RenderFrame = RenderFrame()
         self.text_box_controller: TextBoxController = TextBoxController()
         
-        self.propogate_key_after_error = True
+        self.propagate_key_after_error = True
         self.abort_time = abort_time
         self.allowed_inputs: tuple[str, ...] = self._construct_allowed_inputs()
 

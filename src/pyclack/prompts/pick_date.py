@@ -84,7 +84,7 @@ class PickDate(PromptBase):
                                         str(self.initial_date.year)]
         self.date_index: int = 0
 
-        self.propogate_key_after_error = True
+        self.propagate_key_after_error = True
         self.abort_time = abort_time
         self.allowed_inputs: tuple[str, ...] = self._construct_allowed_inputs()
         self.render_frame: RenderFrame = RenderFrame()
