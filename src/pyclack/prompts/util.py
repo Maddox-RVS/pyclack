@@ -599,7 +599,7 @@ class TextBoxController:
         
         self._desired_line_position = None
         new_line_index: int = self._input_buffer.rfind('\n', 0, self._cursor_index)
-        self.set_cursor_position(new_line_index)
+        self.set_cursor_position(0 if new_line_index == -1 else new_line_index + 1)
  
     def is_cursor_home(self) -> bool:
         '''
